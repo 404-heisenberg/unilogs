@@ -1,0 +1,22 @@
+header=$(head -n 1 "$1")
+
+case "$header" in
+  Merge*|Revert*) exit 0 ;;
+esac
+
+pattern='^(repo|ci|backend|frontend|auth|entries|projects|tags|stats|docs): [a-z].{0,60}$'
+
+if ! printf '%s' "$header" | grep -Eq "$pattern"; then
+  echo ""
+  echo "Bad commit message."
+  echo "  Shape:   scope: what you did"
+  echo "  Example: entries: add validation to the entry form"
+  echo "  Scopes:  repo ci backend frontend auth entries projects tags stats docs"
+  echo "  Note:    feat, fix and chore are NOT scopes here."
+  echo ""
+  exit 1
+fi
+
+case "$header" in
+  *.) echo "No full stop at the end."; exit 1 ;;
+esac
