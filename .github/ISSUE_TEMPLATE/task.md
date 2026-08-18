@@ -1,7 +1,7 @@
 ---
 name: Task
 about: A unit of work for the board
-title: "[Task] "
+title: "[<scope>] "
 labels: enhancement
 ---
 
@@ -13,6 +13,6 @@ labels: enhancement
 
 <!--Specific tasks in the order they need to be done. Link to the relevant file or function where the change happens.-->
 
-- [ ] Task 1 (`src/auth.ts` → `login()`)
+- [ ] Task 1
 - [ ] Task 2
 - [ ] Task 3
