@@ -1,7 +1,7 @@
 ---
 name: Task
 about: A unit of work for the board
-title: "[<scope>] "
+title: '[Task] '
 labels: enhancement
 ---
 
