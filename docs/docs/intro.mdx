@@ -1,0 +1,50 @@
+---
+sidebar_position: 1
+slug: /
+title: Introduction
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# UniLogs
+
+A customisable digital logbook for university students, built by Team Code of Duty
+for COMS3011A Software Design Project.
+
+## What it does
+
+Students record what they work on — lectures attended, hours spent on a project,
+lab sessions, reading. UniLogs lets them define what a log entry looks like rather
+than forcing a fixed template, group entries into projects, tag them, and see
+where their time actually goes.
+
+## The stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, Tailwind, shadcn/ui |
+| Backend | Express, TypeScript, Prisma |
+| Database | PostgreSQL on Neon |
+| Auth | Better Auth |
+| Docs | Docusaurus |
+
+## Getting started
+
+Clone the repository and install each workspace separately. There are no npm
+workspaces, so every folder is installed on its own.
+
+```bash
+git clone https://github.com/404-heisenberg/unilogs.git
+cd unilogs
+npm install
+cd frontend && npm install
+cd ../backend && npm install
+cd ../docs && npm install
+```
+
+Copy each `.env.example` to `.env` and fill in the values before running anything.
+
+<AiDeclaration
+  tools="Claude-Web[Claude Opus 5]"
+  purpose="drafting and structuring the introduction page"
+/>
