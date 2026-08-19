@@ -72,24 +72,46 @@ Note the branch prefix and the commit scope are separate lists. A branch named
 `feature/14-password-reset` contains commits scoped `auth:`.
 
 **Merging** is squash merge, then delete the branch. Every change goes through a
-pull request with an approving review.
+pull request with an approving review and passing CI.
 
 Full detail is in the Git Methodology document.
 
+## Continuous integration
+
+Every pull request into `main` runs four jobs: frontend, backend and docs each
+lint, type check and build, and a fourth job checks formatting across the
+repository. All four must pass before a pull request can be merged.
+
+## Hosting
+
+| Service | Purpose                | Owner | Backup |
+| ------- | ---------------------- | ----- | ------ |
+| Vercel  | Frontend and docs site |       |        |
+| Render  | Backend API            |       |        |
+| Neon    | PostgreSQL database    |       |        |
+
+Deploys are automatic on merge to `main`. Dashboard access is not needed for
+normal development — ask the owner if something needs changing.
+
 ## AI declaration
 
-This project is developed with AI assistance in line with the course policy.
-Any commit where an AI tool wrote or materially shaped the change carries an
-`Assisted-by:` trailer naming the tool and model.
+This repository makes use of AI code generation using the following tools:
+Claude-Code[Claude Sonnet 5], Claude-Web[Claude Opus 5].
+
+This repository does not use AI in-line editing tools.
+
+This repository does not use AI code review.
+
+Commits where an AI tool wrote or materially shaped the change carry an
+`Assisted-by:` trailer naming the tool and model, in line with the course AI
+policy.
 
 The two commits that bootstrapped this repository, `30cbc3d` and `8382818`,
-predate the adoption of that convention. Both were produced with the assistance
-of `Claude-Web[Claude Opus 5]` — repository tooling, git hooks, and Prettier
+predate the adoption of that convention. Both were generated with the assistance
+of Claude-Web[Claude Opus 5] — repository tooling, git hooks and Prettier
 configuration. They are declared here rather than by rewriting history.
-
-In-line editor autocomplete is not declared per commit.
 
 ## Team
 
-Mosey · Renda Mudau · Chuene Thato · Dikeledi Mokoatle · Lethabo Sekgobela ·
+Renda Mudau · Chuene Thato · Dikeledi Mokoatle · Lethabo Sekgobela ·
 Ozuko Mabongo · McAtaaji Andongndou
