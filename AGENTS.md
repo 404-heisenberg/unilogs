@@ -34,6 +34,31 @@ folder before running `npm` commands.
 CI runs all of these on every pull request. If a check fails locally it will fail
 in CI, so run them first.
 
+### After pulling
+
+Run `npm install` in any folder whose `package-lock.json` changed. A missing
+module after a pull almost always means a teammate added a dependency.
+
+When adding a dependency, install it in the folder that needs it and commit both
+`package.json` and `package-lock.json`. If two people add dependencies at the same
+time the lockfiles will conflict — resolve by taking one side and re-running
+`npm install`. Never hand-edit a lockfile.
+
+### Keeping a branch current
+
+Pull `main` before starting a branch, and merge `main` into any branch that lives
+longer than a day:
+
+```bash
+git checkout main
+git pull
+git checkout your-branch
+git merge main
+```
+
+Small conflicts resolved daily are much cheaper than one large conflict at the end
+of a sprint.
+
 ## Commit messages
 
 Format is `scope: description`. The scope must be one of exactly ten values:
@@ -117,6 +142,28 @@ Merges are **squash merge**, then delete the branch.
 
 Keep pull requests narrow enough that one person can review them properly.
 
+## Database
+
+PostgreSQL on Neon, accessed through Prisma. The schema lives in
+`backend/prisma/schema.prisma`.
+
+```bash
+cd backend
+npx prisma generate      # regenerate the client after a schema change
+npx prisma migrate dev   # create and apply a migration locally
+npx prisma studio        # browse the data in a local UI
+```
+
+Run `npx prisma generate` after pulling any change to `schema.prisma`, or
+TypeScript will still be using the old generated types.
+
+Never edit files in `backend/prisma/migrations/` by hand. A migration that has
+been applied is history — correct it with a new migration instead.
+
+`DATABASE_URL` points at a Neon development branch for local work. The production
+connection string lives only in Render's environment variables and is never
+committed.
+
 ## Gotchas
 
 These catch people. Read them before writing code.
@@ -146,9 +193,20 @@ store API responses in Zustand.
 **Never commit `.env`.** When adding a new environment variable, add it to the
 matching `.env.example` with the value left blank.
 
-**Do not run `npm audit fix --force`.** The reported vulnerabilities are in
-Docusaurus build tooling that does not ship to users, and the available fixes
-require breaking major-version upgrades.
+**Do not run `npm audit fix --force` anywhere in this repository.**
+
+Two known advisories are accepted rather than fixed:
+
+- `docs/` — vulnerabilities in Docusaurus build tooling. These are development
+  dependencies that do not ship to users, and the available fixes require breaking
+  major-version upgrades.
+- `backend/` — `deepmerge-ts`, reached through `@prisma/config`. This is the Prisma
+  CLI: a development dependency that never runs in production and only parses our
+  own configuration file. The available fix downgrades Prisma across a major
+  version, which would break the current `prisma.config.ts` layout.
+
+Both were reviewed and accepted deliberately. Raise it in a pull request if you
+believe either has changed.
 
 ## Style
 
