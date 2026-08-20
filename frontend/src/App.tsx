@@ -1,12 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppShell from "./components/AppShell";
-import ProtectedRoute from "./components/ProtectedRoute";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import ProjectsPage from "./pages/ProjectsPage";
-import EntriesPage from "./pages/EntriesPage";
-import DashboardPage from "./pages/DashboardPage";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AppShell from './components/AppShell';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProjectsPage from './pages/ProjectsPage';
+import EntriesPage from './pages/EntriesPage';
+import DashboardPage from './pages/DashboardPage';
 
 export default function App() {
   return (
