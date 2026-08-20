@@ -1,10 +1,29 @@
-import { Button } from '@/components/ui/button';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppShell from "./components/AppShell";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import EntriesPage from "./pages/EntriesPage";
+import DashboardPage from "./pages/DashboardPage";
 
 export default function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl font-bold">UniLogs</h1>
-      <Button>It works</Button>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppShell />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/entries" element={<EntriesPage />} />
+          </Route>
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
