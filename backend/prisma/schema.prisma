@@ -59,7 +59,8 @@ model Entry {
 
   project Project @relation(fields: [projectId], references: [id])
 
-  tags EntryTag[]
+  tags      EntryTag[]
+  auditLogs AuditLog[]
 
   @@map("entries")
 }
@@ -82,4 +83,23 @@ model EntryTag {
 
   @@id([entryId, tagId])
   @@map("entry_tags")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model AuditLog {
+  id         Int         @id @default(autoincrement())
+  entryId    Int
+  action     AuditAction
+  oldData    Json?
+  newData    Json?
+  modifiedAt DateTime    @default(now())
+
+  entry Entry @relation(fields: [entryId], references: [id])
+
+  @@map("audit_logs")
 }
