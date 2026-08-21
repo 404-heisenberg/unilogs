@@ -59,5 +59,27 @@ model Entry {
 
   project Project @relation(fields: [projectId], references: [id])
 
+  tags EntryTag[]
+
   @@map("entries")
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  entries EntryTag[]
+
+  @@map("tags")
+}
+
+model EntryTag {
+  entryId Int
+  tagId   Int
+
+  entry Entry @relation(fields: [entryId], references: [id])
+  tag   Tag   @relation(fields: [tagId], references: [id])
+
+  @@id([entryId, tagId])
+  @@map("entry_tags")
 }
