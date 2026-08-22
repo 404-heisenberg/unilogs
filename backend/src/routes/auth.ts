@@ -20,8 +20,8 @@ router.post('/signup', async (req, res) => {
     });
 
     res.status(201).json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+  } catch (error: unknown) {
+    res.status(400).json({ error: 'Signup failed' });
   }
 });
 
@@ -33,15 +33,14 @@ router.post('/signin', async (req, res) => {
     });
 
     res.status(201).json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+  } catch (error: unknown) {
+    res.status(400).json({ error: 'Signin failed' });
   }
 });
 
 router.post('/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
-
     if (!token || !newPassword) {
       return res.status(400).json({ error: 'Token and new password are required' });
     }
@@ -92,9 +91,9 @@ router.post('/reset-password', async (req, res) => {
     });
 
     res.json({ message: 'Password reset successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Reset password error:', error);
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: 'Password reset failed' });
   }
 });
 
@@ -118,16 +117,16 @@ router.post('/forgot-password', async (req, res) => {
           expiresAt: new Date(Date.now() + 3600000),
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(`Verification table not found, using token: ${token}`);
     }
     const resetUrl = `http://localhost:3000/reset-password?token=${token}`;
     console.log(`Password reset for ${email}: ${resetUrl}`);
 
     res.json({ message: 'Reset link sent if account exists', token: token, url: resetUrl });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Forgot password error:', error);
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: 'Failed to send reset link' });
   }
 });
 
