@@ -2,21 +2,16 @@
 
 This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
-## Installation
+## Getting started
 
 ```bash
 npm install
+npm run start
 ```
 
 **Note**: feel free to use the package manager of your choice.
 
-## Local Development
-
-```bash
-npm run start
-```
-
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+`npm run start` starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
 
 ## Build
 
