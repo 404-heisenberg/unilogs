@@ -2,7 +2,7 @@
 
 React, TypeScript and Vite. Talks to the backend API.
 
-## Setup
+## Getting started
 
 ```bash
 npm install
