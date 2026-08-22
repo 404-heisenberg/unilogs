@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
 function useIsLoggedIn() {
-  return false; // replace with real check once auth exists
+  return true; // replace with real check once auth exists
 }
 
 export default function ProtectedRoute() {

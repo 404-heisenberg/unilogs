@@ -7,6 +7,7 @@ export default function AppShell() {
         <nav className="flex flex-col gap-2">
           <Link to="/projects">Projects</Link>
           <Link to="/entries">Entries</Link>
+          <Link to="/entries/new">New Entry</Link>
         </nav>
       </aside>
       <main className="flex-1 p-6">
