@@ -9,5 +9,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
+  req.userId = session.user.id;
   next();
 }
