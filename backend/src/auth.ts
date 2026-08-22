@@ -10,7 +10,16 @@ const prisma = new PrismaClient({
 });
 
 export const auth = betterAuth({
+  baseURL: 'http://localhost:3000',
+
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
+
+  emailAndPassword: { enabled: true },
+  email: {
+    sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
+      console.log(`Password reset for ${user.email}: ${url}`);
+    },
+  },
 });

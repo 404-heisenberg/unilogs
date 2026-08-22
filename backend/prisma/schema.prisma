@@ -10,6 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 model User {
@@ -127,6 +128,7 @@ model Account {
   accountId             String
   providerId            String
   userId                String
+  issuer                String    @default("")     
   accessToken           String?
   refreshToken          String?
   idToken               String?
