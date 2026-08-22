@@ -3,6 +3,7 @@ import cors from 'cors';
 import { healthRouter } from './routes/health.js';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth.js';
+import authRoutes from './routes/auth.js';
 
 export function createApp() {
   const app = express();
@@ -13,10 +14,9 @@ export function createApp() {
       credentials: true,
     }),
   );
-
-  app.all('/api/auth/*splat', toNodeHandler(auth));
-
   app.use(express.json());
+  app.use('/api/auth', authRoutes);
+  app.all('/api/auth/*splat', toNodeHandler(auth));
 
   app.use('/api/health', healthRouter);
 
