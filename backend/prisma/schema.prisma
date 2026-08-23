@@ -10,7 +10,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 model User {
@@ -34,7 +33,7 @@ model Project {
   name   String
   userId String
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   fields  FieldDefinition[]
   entries Entry[]
@@ -48,7 +47,7 @@ model FieldDefinition {
   name      String
   fieldType String
 
-  project Project @relation(fields: [projectId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("field_definitions")
 }
@@ -60,7 +59,7 @@ model Entry {
   createdAt DateTime @default(now())
   content   Json
 
-  project Project @relation(fields: [projectId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   tags      EntryTag[]
   auditLogs AuditLog[]
@@ -81,7 +80,7 @@ model EntryTag {
   entryId Int
   tagId   Int
 
-  entry Entry @relation(fields: [entryId], references: [id])
+  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
   tag   Tag   @relation(fields: [tagId], references: [id])
 
   @@id([entryId, tagId])
@@ -102,7 +101,7 @@ model AuditLog {
   newData    Json?
   modifiedAt DateTime    @default(now())
 
-  entry Entry @relation(fields: [entryId], references: [id])
+  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@map("audit_logs")
 }
@@ -128,7 +127,7 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  issuer                String    @default("")     
+  issuer                String    @default("")
   accessToken           String?
   refreshToken          String?
   idToken               String?
