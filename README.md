@@ -97,7 +97,7 @@ normal development — ask the owner if something needs changing.
 
 This repository makes use of AI code generation using the following tools:
 Claude-Code[Claude Sonnet 5], Claude-Web[Claude Opus 5], Claude-Web[Claude Sonnet 5],
-ChatGPT[GPT-5.6 Luna].
+ChatGPT[GPT-5.6 Luna], opencode[big-pickle].
 
 This repository does not use AI in-line editing tools.
 
