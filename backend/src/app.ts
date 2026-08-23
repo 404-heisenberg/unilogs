@@ -4,6 +4,7 @@ import { healthRouter } from './routes/health.js';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth.js';
 import authRoutes from './routes/auth.js';
+import entriesRoutes from './routes/entries.js';
 
 export function createApp() {
   const app = express();
@@ -14,10 +15,11 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json());
   app.use('/api/auth', authRoutes);
   app.all('/api/auth/*splat', toNodeHandler(auth));
+  app.use(express.json());
 
+  app.use('/api/entries', entriesRoutes);
   app.use('/api/health', healthRouter);
 
   app.get('/', (_req, res) => {
