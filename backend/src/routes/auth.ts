@@ -30,9 +30,19 @@ router.post('/signin', async (req, res) => {
     const { email, password } = req.body;
     const result = await auth.api.signInEmail({
       body: { email, password },
+      headers: req.headers,
+      asResponse: true,
     });
 
-    res.status(201).json(result);
+    const setCookie = result.headers.get('set-cookie');
+
+    if (setCookie) {
+      res.setHeader('Set-Cookie', setCookie);
+    }
+
+    const data = await result.json();
+
+    return res.status(result.status).json(data);
   } catch {
     res.status(400).json({ error: 'Signin failed' });
   }
