@@ -13,9 +13,12 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,yml,yaml}\""
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
+    "dotenv": "^17.4.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "prisma": "^7.9.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,css,yml,yaml}": "prettier --write"
