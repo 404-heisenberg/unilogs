@@ -139,4 +139,31 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
+router.delete('/account', async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        error: 'Password is required to delete your account',
+      });
+    }
+
+    await auth.api.deleteUser({
+      headers: req.headers,
+      body: {
+        password,
+      },
+    });
+
+    return res.status(200).json({
+      message: 'Account deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return res.status(400).json({
+      error: 'Failed to delete account',
+    });
+  }
+});
 export default router;
