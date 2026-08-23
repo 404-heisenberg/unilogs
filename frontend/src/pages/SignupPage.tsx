@@ -7,7 +7,7 @@ export const SignupPage: React.FC = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasMinLength = password.length >= 8;
   const hasUppercase = /[A-Z]/.test(password);
