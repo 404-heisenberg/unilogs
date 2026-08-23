@@ -16,6 +16,7 @@ export function createApp() {
       credentials: true,
     }),
   );
+  app.use(express.json());
   app.use('/api/auth', authRoutes);
   app.use('/api/projects', projectRouter);
   app.all('/api/auth/*splat', toNodeHandler(auth));
