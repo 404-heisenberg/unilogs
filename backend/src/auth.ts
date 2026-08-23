@@ -22,4 +22,9 @@ export const auth = betterAuth({
       console.log(`Password reset for ${user.email}: ${url}`);
     },
   },
+  user: {
+    deleteUser: {
+      enabled: true,
+    },
+  },
 });
