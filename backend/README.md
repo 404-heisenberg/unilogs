@@ -2,7 +2,7 @@
 
 Express and TypeScript. Serves the API the frontend consumes.
 
-## Setup
+## Getting started
 
 ```bash
 npm install

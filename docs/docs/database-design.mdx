@@ -21,7 +21,7 @@ The relationships between these tables are shown in the entity diagram below.
 
 ## Tables
 
-### user
+### User
 
 The `user` table stores the information required for user accounts. Its structure follows the schema required by Better Auth.
 
@@ -35,7 +35,7 @@ The `user` table stores the information required for user accounts. Its structur
 | `createdAt`     | timestamp |             |
 | `updatedAt`     | timestamp |             |
 
-### projects
+### Projects
 
 The `projects` table stores the projects created by users. Each project belongs to one user and acts as a container for its entries and field definitions.
 
@@ -45,7 +45,7 @@ The `projects` table stores the projects created by users. Each project belongs 
 | `name`    | varchar |                                    |
 | `user_id` | varchar | Not null, foreign key to `user.id` |
 
-### field definitions
+### Field definitions
 
 The `field_definitions` table stores the custom fields that define the format of entries within a project. Each field definition belongs to one project.
 
@@ -56,7 +56,7 @@ The `field_definitions` table stores the custom fields that define the format of
 | `name`       | varchar |                                        |
 | `field_type` | varchar |                                        |
 
-### entries
+### Entries
 
 The `entries` table stores the actual logbook entries created by users. Each entry belongs to a project and stores its user-defined field values as JSON.
 
@@ -68,7 +68,7 @@ The `entries` table stores the actual logbook entries created by users. Each ent
 | `created_at` | timestamp |                                        |
 | `content`    | jsonb     |                                        |
 
-### tags
+### Tags
 
 The `tags` table stores labels that can be attached to entries. A tag can be associated with multiple entries.
 
@@ -77,7 +77,7 @@ The `tags` table stores labels that can be attached to entries. A tag can be ass
 | `id`   | integer | Primary key |
 | `name` | varchar |             |
 
-### entry_tags
+### Entry_tags
 
 The `entry_tags` table is a junction table that connects entries and tags. This supports a many-to-many relationship, where an entry can have multiple tags and a tag can be attached to multiple entries.
 
@@ -88,7 +88,7 @@ The `entry_tags` table is a junction table that connects entries and tags. This 
 
 The combination of `entry_id` and `tag_id` forms the composite primary key, preventing the same tag from being attached to the same entry more than once.
 
-### audit_logs
+### Audit_logs
 
 The `audit_logs` table stores the history of changes made to entries. Each modification creates an audit record containing the action performed and the data before and after the change.
 
