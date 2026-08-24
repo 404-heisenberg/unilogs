@@ -31,6 +31,9 @@ export const auth = betterAuth({
     },
   },
   advanced: {
+    ipAddress: {
+      ipAddressHeaders: ['x-forwarded-for'],
+    },
     defaultCookieAttributes: {
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction,
