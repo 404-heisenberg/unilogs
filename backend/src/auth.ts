@@ -9,8 +9,11 @@ export const prisma = new PrismaClient({
   }),
 });
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const auth = betterAuth({
-  baseURL: 'http://localhost:3000',
+  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+  trustedOrigins: [process.env.CORS_ORIGIN ?? 'http://localhost:5173'],
 
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
@@ -25,6 +28,12 @@ export const auth = betterAuth({
   user: {
     deleteUser: {
       enabled: true,
+    },
+  },
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
     },
   },
 });
