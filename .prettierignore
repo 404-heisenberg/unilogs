@@ -5,3 +5,4 @@ coverage
 .docusaurus
 package-lock.json
 frontend/src/components/ui
+backend/src/generated
