@@ -2,6 +2,10 @@
   "name": "docs",
   "version": "0.0.0",
   "private": true,
+  "overrides": {
+    "serialize-javascript": "^7.0.3",
+    "uuid": "^11.1.1"
+  },
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
@@ -15,9 +19,9 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@docusaurus/core": "3.10.2",
+    "@docusaurus/core": "^3.10.2",
     "@docusaurus/faster": "3.10.2",
-    "@docusaurus/preset-classic": "3.10.2",
+    "@docusaurus/preset-classic": "^3.10.2",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
     "prism-react-renderer": "^2.3.0",

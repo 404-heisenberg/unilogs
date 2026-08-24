@@ -50,17 +50,17 @@ and runs on its own.
 
 ## Frontend
 
-| Tool | Why this one |
-| --- | --- |
-| **React** | The largest ecosystem and the one the team already knows. Time spent learning a framework is time not spent building features. |
-| **TypeScript** | Catches an entire class of bug before the code runs. With seven people editing shared code, types act as machine-checked documentation of what a function expects. |
-| **Vite** | Sub-second cold start and instant hot reload. Its predecessor, Create React App, is deprecated and no longer maintained. |
-| **Tailwind CSS** | Styles live next to the markup, so there is no separate stylesheet to keep in sync and no naming conventions to argue about. It also removes the risk of one person's CSS quietly breaking another's page. |
-| **shadcn/ui** | Components are copied into our repository rather than installed as a dependency. We own the code and can change it. Built on Radix, so keyboard navigation and screen reader support are correct by default — which the accessibility criterion is marked on. |
-| **React Router** | The standard for client-side routing in React. Nothing exotic required. |
-| **Zustand** | State that never touches the server, such as UI preferences. Chosen over Redux because Redux's boilerplate is only worth paying for at a scale we will not reach. |
-| **TanStack Query** | Everything that comes from the API. It handles caching, loading states, error states and refetching, which would otherwise be hand-written in every component and written slightly differently each time. |
-| **Recharts** | Charts for the statistics view. Declarative and React-native, so charts are composed the same way as the rest of the interface. |
+| Tool               | Why this one                                                                                                                                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **React**          | The largest ecosystem and the one the team already knows. Time spent learning a framework is time not spent building features.                                                                                                                                |
+| **TypeScript**     | Catches an entire class of bug before the code runs. With seven people editing shared code, types act as machine-checked documentation of what a function expects.                                                                                            |
+| **Vite**           | Sub-second cold start and instant hot reload. Its predecessor, Create React App, is deprecated and no longer maintained.                                                                                                                                      |
+| **Tailwind CSS**   | Styles live next to the markup, so there is no separate stylesheet to keep in sync and no naming conventions to argue about. It also removes the risk of one person's CSS quietly breaking another's page.                                                    |
+| **shadcn/ui**      | Components are copied into our repository rather than installed as a dependency. We own the code and can change it. Built on Radix, so keyboard navigation and screen reader support are correct by default — which the accessibility criterion is marked on. |
+| **React Router**   | The standard for client-side routing in React. Nothing exotic required.                                                                                                                                                                                       |
+| **Zustand**        | State that never touches the server, such as UI preferences. Chosen over Redux because Redux's boilerplate is only worth paying for at a scale we will not reach.                                                                                             |
+| **TanStack Query** | Everything that comes from the API. It handles caching, loading states, error states and refetching, which would otherwise be hand-written in every component and written slightly differently each time.                                                     |
+| **Recharts**       | Charts for the statistics view. Declarative and React-native, so charts are composed the same way as the rest of the interface.                                                                                                                               |
 
 The split between Zustand and TanStack Query is deliberate and worth stating
 plainly: **server data goes in TanStack Query, never in Zustand.** Mixing the two
@@ -68,15 +68,15 @@ is the most common way React applications end up with stale data on screen.
 
 ## Backend
 
-| Tool | Why this one |
-| --- | --- |
-| **Express** | Minimal and unopinionated. A heavier framework would impose structure we do not need and concepts the team would have to learn first. |
-| **TypeScript** | Same reasoning as the frontend, with an extra benefit — Prisma generates types from the schema, so the database shape is checked at compile time. |
-| **Prisma** | Type-safe database access generated from a single schema file. Its migration system means schema changes are versioned in git and applied identically by everyone. |
-| **PostgreSQL** | Relational, because our data is relational: users own entries, entries belong to projects, projects have tags. Also gives us JSON columns, which the customisable entry format needs. |
-| **Neon** | Serverless PostgreSQL with a usable free tier and database branching. No local database to install, so nobody loses a day to a broken Postgres setup. |
+| Tool            | Why this one                                                                                                                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Express**     | Minimal and unopinionated. A heavier framework would impose structure we do not need and concepts the team would have to learn first.                                                                             |
+| **TypeScript**  | Same reasoning as the frontend, with an extra benefit — Prisma generates types from the schema, so the database shape is checked at compile time.                                                                 |
+| **Prisma**      | Type-safe database access generated from a single schema file. Its migration system means schema changes are versioned in git and applied identically by everyone.                                                |
+| **PostgreSQL**  | Relational, because our data is relational: users own entries, entries belong to projects, projects have tags. Also gives us JSON columns, which the customisable entry format needs.                             |
+| **Neon**        | Serverless PostgreSQL with a usable free tier and database branching. No local database to install, so nobody loses a day to a broken Postgres setup.                                                             |
 | **Better Auth** | Handles email and password, password reset, sessions and Google OAuth in one library. The brief makes all of these compulsory, and hand-rolling authentication is the single easiest way to ship a security hole. |
-| **Zod** | Validates incoming request bodies and infers TypeScript types from the same schema, so validation and types cannot drift apart. |
+| **Zod**         | Validates incoming request bodies and infers TypeScript types from the same schema, so validation and types cannot drift apart.                                                                                   |
 
 ### A note on ESM
 
@@ -103,13 +103,13 @@ and gradually diverging.
 
 ## Tooling
 
-| Tool | Why this one |
-| --- | --- |
-| **ESLint** | Catches bugs that compile fine — unused variables, missing hook dependencies, unreachable code. |
-| **Prettier** | Formatting is decided by a tool, so it is never discussed in a code review. |
-| **Husky** | Runs both of the above before a commit is created, so a formatting mistake cannot reach the repository in the first place. |
-| **lint-staged** | Restricts those checks to staged files, keeping the pre-commit hook fast enough that nobody is tempted to skip it. |
-| **Custom `commit-msg` hook** | Enforces our Scoped Commits format against ten frozen scopes. |
+| Tool                         | Why this one                                                                                                               |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **ESLint**                   | Catches bugs that compile fine — unused variables, missing hook dependencies, unreachable code.                            |
+| **Prettier**                 | Formatting is decided by a tool, so it is never discussed in a code review.                                                |
+| **Husky**                    | Runs both of the above before a commit is created, so a formatting mistake cannot reach the repository in the first place. |
+| **lint-staged**              | Restricts those checks to staged files, keeping the pre-commit hook fast enough that nobody is tempted to skip it.         |
+| **Custom `commit-msg` hook** | Enforces our Scoped Commits format against ten frozen scopes.                                                              |
 
 ### Why we removed commitlint
 
@@ -124,12 +124,12 @@ tool, and the simpler option was better.
 
 ## Deployment
 
-| What | Where | Why |
-| --- | --- | --- |
-| Frontend | Vercel | Zero-config for Vite, deploys on push, preview URLs for every pull request. |
-| Docs | Vercel | Same pipeline, no second platform to learn. |
-| Backend | Render | Free tier that runs a long-lived Node process. Vercel's serverless model does not suit a persistent Express server. |
-| Database | Neon | Managed, free tier, no local installation. |
+| What     | Where  | Why                                                                                                                 |
+| -------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
+| Frontend | Vercel | Zero-config for Vite, deploys on push, preview URLs for every pull request.                                         |
+| Docs     | Vercel | Same pipeline, no second platform to learn.                                                                         |
+| Backend  | Render | Free tier that runs a long-lived Node process. Vercel's serverless model does not suit a persistent Express server. |
+| Database | Neon   | Managed, free tier, no local installation.                                                                          |
 
 Render's free tier spins a service down after inactivity, which adds a cold-start
 delay to the first request. Our `/api/health` endpoint exists partly for this
@@ -147,16 +147,16 @@ email and password authentication, which remains the primary login method.
 
 ## Considered and rejected
 
-| Instead of | We considered | Why not |
-| --- | --- | --- |
-| Vite | Next.js | Server-side rendering solves problems a logged-in tool does not have, and adds deployment complexity. |
-| Tailwind | CSS Modules | Slower to write and needs naming discipline across seven people. |
-| shadcn/ui (Radix) | Base UI | Newer and shadcn's current recommendation, but Radix has years of existing answers online, which matters more when six people are learning at once. |
-| Zustand | Redux Toolkit | More boilerplate than our state complexity justifies. |
-| Prisma | Drizzle, raw SQL | Drizzle is lighter but less familiar; raw SQL gives up type safety. |
-| Better Auth | Auth.js, hand-rolled | Auth.js is Next-oriented. Hand-rolling authentication is not a risk worth taking. |
-| Docusaurus | Markdown in the repository | Rejected on the grounds that the brief asks for a publicly accessible site with non-trivial content. |
-| Express | Fastify, NestJS | Fastify is faster but the difference is irrelevant at our scale; NestJS imposes a learning curve for structure we can add ourselves. |
+| Instead of        | We considered              | Why not                                                                                                                                             |
+| ----------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vite              | Next.js                    | Server-side rendering solves problems a logged-in tool does not have, and adds deployment complexity.                                               |
+| Tailwind          | CSS Modules                | Slower to write and needs naming discipline across seven people.                                                                                    |
+| shadcn/ui (Radix) | Base UI                    | Newer and shadcn's current recommendation, but Radix has years of existing answers online, which matters more when six people are learning at once. |
+| Zustand           | Redux Toolkit              | More boilerplate than our state complexity justifies.                                                                                               |
+| Prisma            | Drizzle, raw SQL           | Drizzle is lighter but less familiar; raw SQL gives up type safety.                                                                                 |
+| Better Auth       | Auth.js, hand-rolled       | Auth.js is Next-oriented. Hand-rolling authentication is not a risk worth taking.                                                                   |
+| Docusaurus        | Markdown in the repository | Rejected on the grounds that the brief asks for a publicly accessible site with non-trivial content.                                                |
+| Express           | Fastify, NestJS            | Fastify is faster but the difference is irrelevant at our scale; NestJS imposes a learning curve for structure we can add ourselves.                |
 
 <AiDeclaration
   tools="Claude-Web[Claude Opus 5]"
