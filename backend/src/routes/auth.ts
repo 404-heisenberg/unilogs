@@ -17,11 +17,14 @@ router.post('/signup', async (req, res) => {
     const { email, password, name } = req.body;
     const result = await auth.api.signUpEmail({
       body: { email, password, name },
+      headers: req.headers,
+      asResponse: true,
     });
 
-    res.status(201).json(result);
-  } catch {
-    res.status(400).json({ error: 'Signup failed' });
+    return res.status(result.status).json(await result.json());
+  } catch (err) {
+    console.error('POST /api/auth/signup error:', err);
+    return res.status(400).json({ error: 'Signup failed' });
   }
 });
 

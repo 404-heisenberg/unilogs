@@ -11,6 +11,8 @@ export const SignupPage: React.FC = () => {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showMismatchError, setShowMismatchError] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -47,6 +49,11 @@ export const SignupPage: React.FC = () => {
       timerRef.current = setTimeout(() => {
         setShowValidationError(false);
       }, 3500);
+      return;
+    }
+
+    if (!confirmPassword || confirmPassword !== password) {
+      setShowMismatchError(true);
       return;
     }
 
@@ -125,6 +132,7 @@ export const SignupPage: React.FC = () => {
               onChange={(e) => {
                 setPassword(e.target.value);
                 setShowValidationError(false);
+                setShowMismatchError(false);
               }}
               onFocus={() => setIsPasswordFocused(true)}
               onBlur={() => setIsPasswordFocused(false)}
@@ -179,6 +187,27 @@ export const SignupPage: React.FC = () => {
               )}
             </button>
           </article>
+
+          <label htmlFor="confirm-password" className="text-sm font-semibold">
+            Confirm Password<span className="text-red-600 ml-0.5">*</span>
+          </label>
+          <input
+            id="confirm-password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="••••••••"
+            required
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setShowMismatchError(false);
+            }}
+            className={`w-full rounded-md border bg-white p-3 pr-10 text-slate-900 outline-none focus:ring-2 ${
+              showMismatchError
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-[#d4a373] focus:ring-[#1c0d06]'
+            }`}
+          />
+          {showMismatchError && <p className="text-xs text-red-700">Passwords do not match.</p>}
 
           {shouldShowRequirements && (
             <section className="mt-1 flex flex-col gap-1 text-xs transition-all">
