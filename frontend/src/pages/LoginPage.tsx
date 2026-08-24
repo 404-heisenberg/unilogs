@@ -1,9 +1,26 @@
 import React, { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
 
 export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const signIn = useMutation({
+    mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['session'] });
+      navigate('/dashboard');
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    signIn.mutate({ email, password });
   };
   const handleOAuthSignIn = (provider: string) => {
     console.log(`Signing in with ${provider}`);
@@ -35,6 +52,8 @@ export const LoginPage: React.FC = () => {
             type="email"
             placeholder="name@example.com"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
           />
           <label htmlFor="password" className="text-sm font-semibold">
@@ -46,6 +65,8 @@ export const LoginPage: React.FC = () => {
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-[#d4a373] bg-white p-3 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
             />
             <button
@@ -99,11 +120,13 @@ export const LoginPage: React.FC = () => {
               Reset
             </a>
           </p>
+          {signIn.isError && <p className="text-sm text-red-700">{signIn.error.message}</p>}
           <button
             type="submit"
-            className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer"
+            disabled={signIn.isPending}
+            className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
           >
-            Sign in
+            {signIn.isPending ? 'Signing in…' : 'Sign in'}
           </button>
           <p className="mt-2 text-center text-sm text-[#4a3525]">
             Don't have an account?{' '}
