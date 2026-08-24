@@ -1,11 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
 
 export const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const signIn = useMutation({
+    mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['session'] });
+      navigate('/dashboard');
+    },
+  });
+
+  const signUp = useMutation({
+    mutationFn: (input: { name: string; email: string; password: string }) =>
+      api.post('/api/auth/signup', input),
+    onSuccess: (_result, variables) => {
+      signIn.mutate({ email: variables.email, password: variables.password });
+    },
+  });
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -26,6 +49,8 @@ export const SignupPage: React.FC = () => {
       }, 3500);
       return;
     }
+
+    signUp.mutate({ name, email, password });
   };
 
   useEffect(() => {
@@ -71,6 +96,8 @@ export const SignupPage: React.FC = () => {
             type="text"
             placeholder="John Doe"
             required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
           />
 
@@ -82,6 +109,8 @@ export const SignupPage: React.FC = () => {
             type="email"
             placeholder="name@example.com"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
           />
 
@@ -212,11 +241,15 @@ export const SignupPage: React.FC = () => {
             </label>
           </div>
 
+          {(signUp.isError || signIn.isError) && (
+            <p className="text-sm text-red-700">{(signUp.error ?? signIn.error)?.message}</p>
+          )}
           <button
             type="submit"
-            className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer"
+            disabled={signUp.isPending || signIn.isPending}
+            className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
           >
-            Sign Up
+            {signUp.isPending || signIn.isPending ? 'Creating account…' : 'Sign Up'}
           </button>
 
           {/* Account Login Link */}
