@@ -1,18 +1,31 @@
-const mockProjects = [
-  { id: 1, name: 'COMS3011 Project', description: 'SDP logbook build' },
-  { id: 2, name: 'Gym', description: 'Workout tracking' },
-  { id: 3, name: 'Reading', description: 'Books and papers' },
-];
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import type { Project } from '@/types';
 
 export default function ProjectsPage() {
+  const {
+    data: projects,
+    isPending,
+    isError,
+  } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => api.get<Project[]>('/api/projects'),
+  });
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Projects</h1>
+      {isPending && <p className="text-sm text-slate-500">Loading projects…</p>}
+      {isError && <p className="text-sm text-red-700">Failed to load projects.</p>}
+      {projects?.length === 0 && (
+        <p className="text-sm text-slate-500">
+          No projects yet. Create your first one to start logging.
+        </p>
+      )}
       <ul className="flex flex-col gap-3">
-        {mockProjects.map((project) => (
+        {(projects ?? []).map((project) => (
           <li key={project.id} className="border rounded-lg p-4">
             <p className="font-semibold">{project.name}</p>
-            <p className="text-sm text-gray-500">{project.description}</p>
           </li>
         ))}
       </ul>

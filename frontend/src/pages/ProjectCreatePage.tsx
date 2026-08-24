@@ -1,19 +1,29 @@
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
+import type { Project } from '@/types';
 
 export default function ProjectCreatePage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const createProject = useMutation({
+    mutationFn: (input: { name: string }) => api.post<Project>('/api/projects', input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      navigate('/projects');
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
 
-    //we will  replace with real API call once backend + #21 wrappers are ready
-    console.log('New project:', { name, description });
-
-    setName('');
-    setDescription('');
+    createProject.mutate({ name });
   };
 
   return (
@@ -43,7 +53,13 @@ export default function ProjectCreatePage() {
           />
         </div>
 
-        <Button type="submit">Save project</Button>
+        {createProject.isError && (
+          <p className="text-sm text-red-700">{createProject.error.message}</p>
+        )}
+
+        <Button type="submit" disabled={createProject.isPending}>
+          {createProject.isPending ? 'Saving…' : 'Save project'}
+        </Button>
       </form>
     </div>
   );
