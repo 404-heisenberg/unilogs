@@ -1,10 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom';
-
-function useIsLoggedIn() {
-  return false; // replace with real check once auth exists
-}
+import { useSession } from '@/hooks/useSession';
 
 export default function ProtectedRoute() {
-  const isLoggedIn = useIsLoggedIn();
-  return isLoggedIn ? <Outlet /> : <Navigate to="/login" />;
+  const { data, isPending } = useSession();
+
+  if (isPending) {
+    return <p className="p-8 text-center text-sm text-slate-500">Loading…</p>;
+  }
+
+  return data?.user ? <Outlet /> : <Navigate to="/login" replace />;
 }
