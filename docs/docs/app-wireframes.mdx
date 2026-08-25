@@ -1,0 +1,87 @@
+---
+id: app-wireframes
+sidebar_position: 7
+title: Application Wireframes
+sidebar_label: App Wireframes
+description: Low-fidelity wireframes for UniLogs' core application screens — landing page, dashboard, projects, and entry logging.
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Application Wireframes
+
+Low-fidelity wireframes for UniLogs' core application screens, covering the flow
+from the public landing page through to logging an entry against a project. For
+the sign up, sign in and password reset screens, see
+[Authentication Wireframes](./design.mdx).
+
+The main navigation sidebar is collapsible. Each screen below is shown in both
+its **expanded** state (icons with text labels) and its **collapsed** state
+(icons only), since either may be the default depending on viewport width.
+
+---
+
+## Landing page
+
+The public entry point for signed-out visitors: a short product description, a
+"Getting started" call to action, and sign in / sign up links.
+
+![Landing page wireframe](/img/landing-page.jpg)
+
+---
+
+## Dashboard
+
+The signed-in home screen, giving quick access to analytics, project creation,
+and entry logging.
+
+![Dashboard wireframe, expanded navigation](/img/dashboard-expanded-nav.jpg)
+
+![Dashboard wireframe, collapsed navigation](/img/dashboard-icon-nav.jpg)
+
+---
+
+## Projects
+
+Lists all of a user's projects with their status (in progress, complete) and an
+option to archive.
+
+![Projects list wireframe, expanded navigation](/img/projects-expanded-nav.jpg)
+
+![Projects list wireframe, collapsed navigation](/img/projects-icon-nav.jpg)
+
+---
+
+## New project
+
+A modal for creating a project, capturing its name and description.
+
+![New project modal wireframe, expanded navigation](/img/new-project-modal-expanded-nav.jpg)
+
+![New project modal wireframe, collapsed navigation](/img/new-project-modal-icon-nav.jpg)
+
+---
+
+## Log new entry
+
+A modal for logging an entry against a project, with the entry's fields driven
+by that project's format and a required date.
+
+![Log new entry modal wireframe, expanded navigation](/img/log-entry-modal-expanded-nav.jpg)
+
+![Log new entry modal wireframe, collapsed navigation](/img/log-entry-modal-icon-nav.jpg)
+
+---
+
+## Profile
+
+Account settings: editing the display name and profile picture, and a
+destructive account deletion action.
+
+![Profile page wireframe](/img/profile-page.jpg)
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Sonnet 5]"
+  purpose="captioning and structuring the application wireframe images into this documentation page"
+/>
