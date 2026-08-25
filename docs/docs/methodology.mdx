@@ -1,0 +1,162 @@
+---
+sidebar_position: 3
+title: Project Methodology
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Project Methodology
+
+Team Code of Duty runs this project using **Scrum**, an Agile framework defined by
+Schwaber and Sutherland in *The Scrum Guide* (2020).
+
+This page states what the framework requires, what we actually do, and — where the
+two differ — why we deviated. The deviations are deliberate and recorded rather
+than accidental.
+
+## Why Agile, and why Scrum
+
+The brief for UniLogs is not fixed. Requirements are tiered basic, intermediate
+and advanced, and the client is a tutor we meet weekly rather than a specification
+handed over once. Feature detail arrives progressively over ten weeks.
+
+A plan-driven approach such as Waterfall assumes requirements are known up front
+and stable. Ours are neither. Committing to a full specification in week one would
+mean either building the wrong thing or renegotiating the plan every time the
+client clarified something.
+
+Agile suits this because it plans in short increments and expects requirements to
+change. Within Agile we chose Scrum over Kanban for one specific reason: **the
+course imposes four hard deadlines.** Scrum's fixed-length sprints map directly
+onto those deadlines, and each sprint ends in something demonstrable. Kanban's
+continuous flow has no equivalent forcing function, and with seven students
+balancing other courses, a deadline that arrives on a known date is more useful
+than one that does not.
+
+## Roles
+
+| Scrum role | Who | Notes |
+| --- | --- | --- |
+| Product Owner | Our tutor-client | Sets and prioritises requirements, signs off on what is done |
+| Scrum Master | Mosey | Runs ceremonies and removes blockers |
+| Development Team | All seven members | Everyone writes code, including the Scrum Master |
+
+**The Scrum Master does not assign work.** This is worth stating plainly because
+it is the most commonly misunderstood part of the role. The Scrum Master's job is
+to run ceremonies, remove impediments and protect the process. Deciding who builds
+what is the development team's own responsibility.
+
+Work is **pulled, not pushed.** A team member finishes an issue, returns to the
+board, and takes the next one they can do. Nobody waits to be told.
+
+## Sprints
+
+Our sprints are defined by the course milestone deadlines.
+
+| Sprint | Ends | Focus |
+| --- | --- | --- |
+| Sprint 1 | 25 August 2026 | Project setup, design, development plan, first features |
+| Sprint 2 | 15 September 2026 | Core features, testing, CI/CD, deployment |
+| Sprint 3 | 29 September 2026 | Intermediate features, external API integration |
+| Sprint 4 | 11 October 2026 | Advanced features, polish, final documentation |
+
+Each sprint is tracked as a **GitHub Milestone**, with every issue assigned to
+exactly one. The milestone due date is the sprint end date, which gives us a
+burn-down of remaining work without maintaining a separate tracker.
+
+## Ceremonies
+
+### Sprint Planning
+
+At the start of each sprint the team reviews the product backlog, selects the
+items that fit the available time, and breaks them into issues on the board. Each
+issue is small enough for one person to complete and carries acceptance criteria.
+
+Prioritisation follows the requirement tiers agreed with the client: basic
+requirements are completed before intermediate ones, intermediate before advanced.
+
+### Daily Scrum
+
+We hold standups over Discord voice, in the `#meetings` channel. Each member covers
+what they did, what they are doing next, and what is blocking them.
+
+**Our deviation from the Scrum Guide is frequency, not format.** The Guide
+specifies a 15-minute meeting every day at the same time. Seven students with
+different timetables and course loads cannot hold a daily meeting that everyone
+reliably attends, and a ceremony half the team skips is worse than one honestly
+scheduled less often. We hold standups several times per sprint, and members raise
+blockers in Discord between meetings rather than waiting for the next one.
+
+Each standup is recorded in `#meetings` with the date, who attended, and a written
+summary of what was discussed and what was agreed.
+
+### Sprint Review
+
+At the end of each sprint we demonstrate the working increment to our tutor-client
+and they decide which backlog items are genuinely done. An item is only done when
+it is code complete, merged to `main`, deployed, and tested.
+
+Feedback from the review feeds directly into the next sprint's backlog.
+
+### Sprint Retrospective
+
+After each review the team meets without the client to discuss what went well,
+what did not, and what we will change. Retrospectives are written up and committed
+to the repository.
+
+Retrospectives are explicitly blame-free. The purpose is to improve the process,
+not to attribute fault.
+
+### Backlog Refinement
+
+Ongoing rather than scheduled. Large items are broken down as they approach the
+top of the backlog, estimates are adjusted as we learn how long things actually
+take, and items that are no longer relevant are removed.
+
+## Artefacts
+
+| Scrum artefact | Our implementation |
+| --- | --- |
+| Product Backlog | GitHub Projects board, Todo column |
+| Sprint Backlog | Issues assigned to the current GitHub Milestone |
+| Increment | The deployed application at the end of each sprint |
+
+The board has columns for Todo, In Progress, In Review and Done, plus filtered
+views per sub-team. An issue only reaches Done when its pull request is merged and
+the feature is demonstrable.
+
+## Deviations from the Scrum Guide
+
+Recorded openly, with reasoning.
+
+| Deviation | Why |
+| --- | --- |
+| Standups several times per sprint rather than daily | Seven students with incompatible timetables. A less frequent meeting everyone attends is worth more than a daily one half the team misses. Blockers are raised in Discord between meetings. |
+| Uneven sprint lengths | Sprint boundaries are set by course deadlines, not by us. Sprint 1 runs longer than Sprint 4. The Scrum Guide prefers consistent length; we cannot control this. |
+| The Product Owner is our tutor-client, not a team member | Follows the course structure. It does mean the Product Owner is less available than Scrum assumes, so we prepare specific written questions for each meeting rather than relying on ad-hoc access. |
+| No formal story point estimation | With seven people new to the stack, early estimates would be close to guesswork. We size issues qualitatively — small enough for one person, one branch, one pull request — and refine as we learn our actual velocity. |
+
+Documenting an adaptation and its reasoning is more honest than claiming to run
+textbook Scrum while doing something else.
+
+## Where the evidence lives
+
+| Evidence | Location |
+| --- | --- |
+| Sprint backlogs | GitHub Milestones |
+| Task-level work | GitHub Projects board |
+| Standups | Discord `#meetings` channel, with dated summaries |
+| Sprint planning and retrospectives | Written up in this repository |
+| Client meetings | Discord `#tutor-channel`, with minutes recording dates, attendees, decisions and actions |
+| Delivered increments | Tagged releases, `v0.1.0` through `v1.0.0` |
+
+## Reference
+
+Schwaber, K. and Sutherland, J. (2020) *The Scrum Guide: The Definitive Guide to
+Scrum — The Rules of the Game*. Available at: https://scrumguides.org
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Web[Claude Opus 5]"
+  purpose="drafting and structuring this page from the methodology agreed by the team"
+/>

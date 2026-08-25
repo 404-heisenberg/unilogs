@@ -13,7 +13,7 @@ The UniLogs database is designed to support users, projects, custom field defini
 
 ## Entity Relationship Diagram
 
-The database consists of seven main tables: `user`, `projects`, `field_definitions`, `entries`, `tags`, `entry_tags`, and `audit_logs`.
+The database consists of ten tables: `user`, `session`, `account`, and `verification` (required by Better Auth), plus `projects`, `field_definitions`, `entries`, `tags`, `entry_tags`, and `audit_logs` (the UniLogs domain tables).
 
 The relationships between these tables are shown in the entity diagram below.
 
@@ -34,6 +34,55 @@ The `user` table stores the information required for user accounts. Its structur
 | `image`         | varchar   |             |
 | `createdAt`     | timestamp |             |
 | `updatedAt`     | timestamp |             |
+
+### Session
+
+The `session` table stores active login sessions issued by Better Auth. Each session belongs to one user and carries the token read from the session cookie on every request.
+
+| Column      | Type      | Constraints                        |
+| ----------- | --------- | ----------------------------------- |
+| `id`        | text      | Primary key                        |
+| `expiresAt` | timestamp | Not null                           |
+| `token`     | text      | Not null, unique                   |
+| `createdAt` | timestamp | Not null                           |
+| `updatedAt` | timestamp | Not null                           |
+| `ipAddress` | text      |                                     |
+| `userAgent` | text      |                                     |
+| `userId`    | text      | Not null, foreign key to `user.id` |
+
+### Account
+
+The `account` table stores the credentials and provider tokens Better Auth uses to authenticate a user — a password hash for email/password sign-in, or OAuth tokens for a provider like Google. A user can have more than one linked account.
+
+| Column                  | Type      | Constraints                        |
+| ------------------------ | --------- | ----------------------------------- |
+| `id`                     | text      | Primary key                        |
+| `accountId`              | text      | Not null                           |
+| `providerId`             | text      | Not null                           |
+| `userId`                 | text      | Not null, foreign key to `user.id` |
+| `issuer`                 | text      | Not null                           |
+| `accessToken`            | text      |                                     |
+| `refreshToken`           | text      |                                     |
+| `idToken`                | text      |                                     |
+| `accessTokenExpiresAt`   | timestamp |                                     |
+| `refreshTokenExpiresAt`  | timestamp |                                     |
+| `scope`                  | text      |                                     |
+| `password`               | text      |                                     |
+| `createdAt`              | timestamp | Not null                           |
+| `updatedAt`               | timestamp | Not null                           |
+
+### Verification
+
+The `verification` table stores short-lived tokens used for flows like email verification and password reset.
+
+| Column       | Type      | Constraints |
+| ------------ | --------- | ----------- |
+| `id`         | text      | Primary key |
+| `identifier` | text      | Not null    |
+| `value`      | text      | Not null    |
+| `expiresAt`  | timestamp | Not null    |
+| `createdAt`  | timestamp | Not null    |
+| `updatedAt`  | timestamp | Not null    |
 
 ### Projects
 
@@ -113,6 +162,7 @@ The `audit_action` enum defines the types of changes that can be recorded in the
 
 ## Relationships
 
+- One user can have many sessions, and many accounts (one per linked sign-in method, such as email/password or Google).
 - One user can have many projects.
 - One project can have many field definitions.
 - One project can have many entries.
@@ -123,7 +173,7 @@ The `audit_action` enum defines the types of changes that can be recorded in the
 
 ### Better Auth User Schema
 
-The `user` table follows the schema required by Better Auth so that authentication-related user data is compatible with the authentication system.
+The `user`, `session`, `account` and `verification` tables follow the schema required by Better Auth so that authentication-related data — sessions, linked sign-in providers, and verification tokens — is compatible with the authentication system.
 
 ### Dynamic Entry Content
 

@@ -1,0 +1,165 @@
+---
+sidebar_position: 4
+title: Sprint 1 Standups
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Sprint 1 — Standup Log
+
+Standups are held over Discord voice in `#meetings`. Each member covers what they
+did, what they are doing next, and what is blocking them.
+
+Minutes below were written up from the meetings and cross-checked against the
+commit history. **Team members: please confirm or correct your own lines.**
+
+---
+
+## Standup 1 — 20 August 2026, 19:15
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda
+**Apologies:** Thato
+
+![Standup 1 — Discord voice call, 20 August](/img/standup-1-20-aug.png)
+
+**Updates**
+
+- **Mosey** — Done: repository tooling, git hooks, CI workflow, all three apps
+  scaffolded and building. Next: tech stack and methodology documentation, Prisma
+  setup. Blocked: none.
+- **Lethabo** — Done: app shell, routing and placeholder pages; entry list view.
+  Next: entry create form and project screens. Blocked: none.
+- **Dikeledi** — Next: database schema design. Blocked: waiting on agreement of
+  the data model before writing it.
+- **Ozuko** — Next: backend endpoints, blocked until the schema exists.
+- **Renda** — Next: deployment configuration.
+
+**Blockers raised**
+
+Everyone doing backend work is blocked on the database schema. Nothing can be
+built against a database that does not exist yet.
+
+**Agreed**
+
+Schema is the priority and comes before any further endpoint work. Dikeledi to
+draft it and share for review at the next standup.
+
+---
+
+## Standup 2 — 21 August 2026, 19:12
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 2 — Discord voice call, 21 August](/img/standup-2-21-aug.png)
+
+**Updates**
+
+- **Dikeledi** — Done: full Prisma schema — user, project, field definition, entry
+  and tag models — plus the database design documentation page and ERD. Next:
+  Better Auth integration. Blocked: none.
+- **Mosey** — Done: tech stack page, agent instructions, AI declaration brought in
+  line with the course policy. Next: reviewing incoming pull requests. Blocked:
+  none.
+- **Lethabo** — Next: entry create form and projects screens.
+- **Ozuko** — Next: password reset endpoints, now unblocked by the schema.
+- **Renda** — Next: run the first migration against Neon.
+- **Thato** — Next: authentication forms on the frontend.
+
+**Blockers raised**
+
+Schema blocker from Standup 1 is cleared.
+
+**Agreed**
+
+Work splits by feature rather than by layer, so people own a slice end to end
+instead of everyone editing the same files.
+
+---
+
+## Standup 3 — 22 August 2026, 19:16
+
+**Present:** Dikeledi, Lethabo, Ozuko, Renda
+**Apologies:** Mosey, Thato
+
+![Standup 3 — Discord voice call, 22 August](/img/standup-3-22-aug.png)
+
+**Updates**
+
+- **Renda** — Done: first Prisma migration run against Neon. The database is live
+  and everyone can now connect. Next: deployment configuration for Render and
+  Vercel. Blocked: none.
+- **Dikeledi** — Done: Better Auth configured with Prisma and integrated with
+  Express, auth database models and migration, protected route middleware, Prisma
+  client generated on install. Next: sign-in session handling and project
+  endpoints. Blocked: none.
+- **Ozuko** — Done: forgot-password and reset-password endpoints. Next: entries
+  CRUD. Blocked: repeated trouble getting the branch merged cleanly.
+- **Lethabo** — Done: entry create form, projects list and create form. Next:
+  wiring the forms to the API once endpoints land.
+- **Mosey** (async) — Done: getting started sections in the READMEs, database
+  design documentation tidied, missing tools added to the AI declaration.
+- **Thato** (async) — Done: signup, login and reset forms; wireframes for
+  registration, login and reset password.
+
+**Blockers raised**
+
+Ozuko hit repeated merge problems, visible as duplicated commits on the
+forgot-password branch.
+
+**Agreed**
+
+Everyone merges `main` into their branch daily rather than letting branches drift.
+
+---
+
+## Standup 4 — 23 August 2026, 19:25
+
+**Present:** Dikeledi, Lethabo, Ozuko, Renda, Thato
+**Apologies:** Mosey
+
+![Standup 4 — Discord voice call, 23 August](/img/standup-4-23-aug.png)
+
+**Updates**
+
+- **Ozuko** — Done: entries CRUD endpoints with audit logging, migration for the
+  issuer field, merge conflicts resolved. Also fixed migration file encoding —
+  PowerShell was writing UTF-16, which broke the SQL. Next: testing the endpoints.
+- **Dikeledi** — Done: project list and creation endpoints, account deletion route
+  with password confirmation, sign-in session cookie handling, database connection
+  verified. Next: cascade delete for account deletion.
+- **Renda** — Done: Vercel SPA rewrite, Node version pinned, Better Auth secret
+  configured for Render, tsconfig moved to project references. Next: connecting
+  the frontend to the API. Blocked: none.
+- **Thato** — Done: reset password page, wireframes written up into `design.mdx`,
+  Prisma schema updated, auth pages added. Blocked: confusion over which Prisma
+  version to use — several version changes before settling on 7.9.1.
+- **Lethabo** — Next: frontend work on entries and projects.
+
+**Blockers raised**
+
+Prisma version mismatch across machines caused churn in `package.json` and the
+lockfile.
+
+File encoding on Windows breaks migration files. PowerShell writes UTF-16 by
+default; migrations must be UTF-8.
+
+**Agreed**
+
+Pin the Prisma version and add UTF-8 enforcement via `.editorconfig` so the
+encoding problem cannot recur.
+
+---
+
+## Actions carried into Sprint 2
+
+- Confirm Husky hooks are working on every machine. Two separate "format all
+  files with Prettier" commits suggest the pre-commit hook is not running for
+  everyone.
+- Document the Windows encoding issue in `AGENTS.md`.
+- Continue daily merges from `main` to keep branches short-lived.
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Web[Claude Opus 5]"
+  purpose="writing up standup minutes from the meetings and the commit history"
+/>
