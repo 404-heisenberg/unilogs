@@ -121,12 +121,13 @@ reset password) are documented separately on the
 
 ## Risks & mitigation
 
-| Risk                                       | Mitigation |
-| ------------------------------------------- | ---------- |
-| React learning curve consumes project time | Dedicated… |
+| Risk                                                                  | Mitigation                                                                                                    |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Prisma version mismatch across team members' machines caused churn in `package.json` and the lockfile | Pin the Prisma version across the team rather than letting each machine install independently |
+| Windows writes migration files as UTF-16 by default, which breaks Postgres migrations written on those machines | UTF-8 enforced via `.editorconfig`, agreed at Standup 4 |
 
-The source draft ends mid-sentence at this row. The rest of the risk log should
-be filled in by the team and this page updated to match.
+Both risks materialised in Sprint 1 and are logged in more detail on the
+[Sprint 1 Standups](./sprint-1-standups.mdx) page.
 
 <AiDeclaration
   action="generated"
