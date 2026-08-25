@@ -1,0 +1,186 @@
+---
+sidebar_position: 3
+title: Git Methodology
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Git Methodology
+
+The core principles Team Code of Duty follows for collaborative development.
+Having a consistent structure in place is critical for enhancing communication
+and collaboration across the team.
+
+## GitHub flow
+
+> "The project uses GitHub flow due to its simplicity and suitability for small
+> teams requiring rapid iteration and deployment" — Bit-by-Bit
+
+The team works in an agile environment with an emphasis on CI/CD, tracked through
+GitHub Projects. GitHub flow offers speed and clarity, with fewer long-lived
+branches and fewer merge conflicts than heavier alternatives.
+
+The core loop is:
+
+```
+branch → commit → PR → review → deploy → merge
+```
+
+### Why not Git Flow
+
+Git Flow adds `develop`, `release/` and `hotfix/` branches on top of `main`. That
+structure exists so a team can ship version 2.1 to paying customers while
+patching 2.0 and building 3.0. We have one deployment, one environment and
+seventy days. The extra branches would cost us merge conflicts and coordination
+overhead while solving a problem we do not have.
+
+We also considered trunk-based development, which drops branches almost entirely
+in favour of committing to `main` behind feature flags. It suits teams with
+strong automated test coverage and continuous deployment maturity. With seven
+developers learning the stack at the same time, mandatory peer review before
+anything reaches `main` is worth more to us than merge speed.
+
+## When to commit
+
+- Commit frequently to integrate changes regularly and avoid merge conflicts
+- Keep commits small so it's easy to roll them back
+- Each commit contains an isolated, complete change
+- Test your code before you commit
+- Write short and descriptive commit messages
+- Commit inside branches; nobody commits to `main` directly
+- Link commits to issues with a closing keyword on its own line, after a blank
+  line. `refs #14` only mentions an issue; `Closes #14` actually closes the card
+  when the pull request merges, which is the evidence our work tracker needs
+
+## How to write commits
+
+The project adopts the **Scoped Commits** specification, preferred over
+Conventional Commits for its simplicity and effectiveness.
+
+- Format: `<scope>: <description>`
+- Scope must be one of ten frozen values — no inventing new ones
+- Description starts with a verb, all lowercase, present tense, no full stop
+- No type prefix (`feat:` / `fix:`) — the scope leads, because it's the most
+  useful information for a team member or debugger scanning history
+- If a change genuinely spans two scopes, it becomes two commits. Scopes are
+  never comma-separated
+
+Scoped commits make it easier to scan the log and identify relevant changes,
+because they show the most important part of the message up front.
+
+### The ten scopes, frozen for all four sprints
+
+```
+repo  ci  backend  frontend  auth  entries  projects  tags  stats  docs
+```
+
+**Rule when two scopes both fit:** pick the specific one over the general one. A
+button on the entry form is `entries`, not `frontend`. An endpoint for creating
+entries is `entries`, not `backend`. The `frontend` and `backend` scopes are only
+for work belonging to no single feature.
+
+### Full message shape
+
+```
+entries: add validation to the entry form
+
+Closes #23
+Assisted-by: Claude-Web[Claude Opus 5]
+```
+
+The `Assisted-by:` trailer is required whenever an AI tool wrote or materially
+shaped the change. Multiple tools go on one line, comma separated. In-line
+autocomplete does not need declaring per commit — it is declared once in the
+README.
+
+### Enforcement
+
+The format is checked automatically by a Husky `commit-msg` hook, which rejects
+any message that does not match. The team initially planned to use commitlint
+for this, but its standard configuration enforces Conventional Commits — the
+specification deliberately rejected here. A short custom hook was simpler than
+fighting the tool. This matters because a documented rule nobody enforces
+produces a history that does not match the document.
+
+## When to branch
+
+- Create a branch for each set of unrelated changes — never commit to `main`
+  directly
+- One branch per feature or bugfix; branches should be short-lived
+- A separate branch per task lets reviewers give targeted feedback, and one
+  delayed task does not block others
+- One issue = one branch = one pull request. No work begins without an issue on
+  the board
+
+## How to name a branch
+
+Format: `<prefix>/<issue-number>-<short-description>`
+
+Prefixes: `feature/`, `bugfix/`, `hotfix/`, `design/`, `refactor/`, `test/`,
+`doc/`, `chore/`.
+
+```
+feature/14-password-reset-flow
+bugfix/23-entry-form-validation
+doc/13-tech-stack-page
+```
+
+Branch prefixes and commit scopes are **separate vocabularies** on purpose. A
+prefix describes the *kind* of work (a new feature, a bug fix, a refactor); a
+scope describes *which part of the product* it touches. `feature/14-password-reset`
+is a branch prefix; the commits on it are scoped `auth:`. Do not use a commit
+scope as a branch prefix or vice versa.
+
+## When to merge
+
+There is one reviewer and maintainer per sprint, and the role rotates among team
+members. Pull requests require an approving review from the reviewer; the
+maintainer merges the branch once the review passes.
+
+- Only merge after peer review via pull request
+- Branch is merged back to `main` once the feature is complete and approved
+- Delete the branch after merging — signals the work is done and prevents
+  accidental reuse
+- Merge using **squash merge**, so each pull request becomes one commit on
+  `main`. This keeps the history on `main` readable and makes reverting a whole
+  feature a single operation
+- `main` is protected on GitHub. Direct pushes are blocked, so these rules are
+  enforced by the platform rather than by trust
+
+### Requirements for merging
+
+- Approving review before merge
+- CI checks pass
+- No merge conflicts
+- PR body summarises the changes and links the issue with a closing keyword
+
+## When to version
+
+Versioning at each sprint gives traceability and lets the client track the
+project's progress sprint-to-sprint.
+
+- Tag releases at meaningful points in history — in practice, each sprint
+  deployment means a new version
+- We tag, but we do not use release branches. Release branches belong to Git
+  Flow, which was rejected above — they exist for teams maintaining several
+  versions in production simultaneously, and we have one deployment
+- Tags land at each milestone: `v0.1.0` at Milestone 1, rising to `v1.0.0` at
+  final submission
+
+## How to version
+
+The project uses [Semantic Versioning](https://semver.org/) (SemVer) — `X.Y.Z`
+(Major.Minor.Patch):
+
+| Change                                | Example           |
+| -------------------------------------- | ------------------ |
+| **Patch** — bug fixes, no behaviour change | `1.3.5` → `1.3.6` |
+| **Minor** — backwards-compatible additions | `1.3.5` → `1.4.0` |
+| **Major** — breaking changes               | `1.3.5` → `2.0.0` |
+
+Tags are named with a `v` prefix, e.g. `v0.5.1`.
+
+<AiDeclaration
+  tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Sonnet 5]"
+  purpose="drafting the original Git Methodology document, and adapting it into this documentation page"
+/>
