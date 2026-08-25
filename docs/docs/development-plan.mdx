@@ -1,0 +1,135 @@
+---
+sidebar_position: 5
+title: Development Plan & Roadmap
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Development Plan and Roadmap
+
+## Overview & goals
+
+UniLogs is a customisable digital logbook for university students. Our client
+currently tracks project work in a physical logbook, which is frequently
+unavailable when needed and cannot be searched, summarised or adapted. UniLogs
+replaces it with a web application in which the student defines the structure of
+each log — its fields and formats — captures entries quickly, and receives
+meaningful statistics over their work: time accumulated per project, entry
+frequency, and activity streaks. Above all, UniLogs provides a durable, portable
+record of what was done and when.
+
+The project's goal is to deliver this product across four milestones within the
+semester, meeting the basic, intermediate and advanced requirement tiers defined
+in the project brief while sustaining evidence-based engineering practice:
+version control, automated testing, continuous integration and public
+documentation.
+
+## Scope & requirements
+
+Requirements were discussed with our tutor-client and recorded in a tiered
+requirements log, signed off in writing. The scope is organised as follows:
+
+- **Basic tier** — authentication (sign up, sign in, password reset, account
+  deletion), project management, entry capture against user-defined formats,
+  core statistics (time accumulation, entry frequency, streaks), search, and an
+  external Google Calendar integration.
+- **Intermediate tier** — extended field types (tags, checklists, computed
+  fields), format migration without breaking historical entries, offline
+  capture with synchronisation, progressive web app support, and
+  import/export.
+- **Advanced tier** — user-defined statistical expressions (e.g. weight × reps)
+  rendered as persistent dashboard panels, and point-in-time entry history with
+  restore.
+
+Scope discipline follows one rule: features are cut, without exception, when the
+schedule demands it — the intermediate tier was deliberately narrowed around
+academic overlap, and feature freeze occurs on 5 October regardless of
+completion state.
+
+## Roadmap
+
+The roadmap plans backwards from the 5 October feature freeze; work not merged
+by that date does not exist in the product.
+
+| Sprint | Milestone | Ends   | Focus                                                                       |
+| ------ | --------- | ------ | ---------------------------------------------------------------------------- |
+| 1      | M1        | 25 Aug | Foundations: repository, database schema, auth, one end-to-end slice, documentation site live |
+| 2      | M2        | 15 Sep | Basic tier complete, tested (UI + API), first user-testing round             |
+| 3      | M3        | 29 Sep | Intermediate tier, scoped around academic overlap; second user-testing round |
+| 4      | M4        | 11 Oct | Two advanced features (custom statistics, entry history), then polish until freeze |
+
+Each sprint has a written exit condition agreed before work begins, so progress
+is measured against evidence rather than impression.
+
+![UniLogs sprint roadmap](/img/development-roadmap.png)
+
+## Development plan
+
+The team of six works in three pairs plus shared duties. The backend pair owns
+the critical path — the data model precedes everything, since no endpoint or
+screen functions without the schema — covering Prisma modelling, Better Auth
+integration (email/password, reset, deletion), protected routes, project and
+entry endpoints, and deployment to Render. The frontend pair builds the
+application shell, auth screens against the agreed API contract, project and
+entry screens, and deploys to Vercel. The DevOps/Docs pair owns the monorepo
+skeleton, linting/formatting hooks, CI, branch protection, the project board,
+the public documentation site, wireframes, stakeholder records and process
+evidence. All members contribute commits, report AI tool usage, and participate
+in standups, sprint planning and retrospectives.
+
+Sprints 2–4 follow the same pattern: work items are taken from the board by
+owners, every issue links to its commit, and each sprint closes with testing,
+user-testing findings, and a retrospective whose actions feed the next plan.
+
+## System design
+
+The brief requires a non-monolithic architecture and a hand-written API, so
+UniLogs comprises two independent applications communicating over REST: a React
+single-page application (Vite, TypeScript, Tailwind CSS) and an Express back end
+written in TypeScript with Zod-validated request/response shapes. Data persists
+in PostgreSQL hosted on Neon, accessed through Prisma, which supplies type-safe
+queries and generated migrations. Authentication uses Better Auth — the brief
+prohibits a bespoke system — providing email/password credentials, session
+management, password reset and account deletion. The front end deploys to
+Vercel; the back end to Render, with a health endpoint monitored by UptimeRobot
+to mitigate free-tier idle timeouts.
+
+The data model centres on four entities: a User owns many Projects; a Project
+has a user-defined format and contains many Entries; an Entry stores its payload
+in a JSONB `content` field conforming to that format, with relational Tags
+attached many-to-many. Corrections to entries are preserved through an
+append-only audit log, chosen over full event sourcing as proportionate to the
+product's scale. Format changes are applied through versioned migrations with
+backfill, so historical entries remain readable after any schema change. The
+full schema is documented on the [Database Design](./database-design.mdx) page.
+
+**Figure 1 — Runtime view.** How a request travels from the student's browser,
+through the deployed applications, to the database.
+
+![UniLogs runtime view](/img/runtime-view.png)
+
+**Figure 2 — Delivery pipeline.** How a change moves from a branch to a
+deployed environment.
+
+![UniLogs delivery pipeline](/img/delivery-pipeline.png)
+
+## UI design
+
+Low-fidelity wireframes for the authentication flows (registration, sign in,
+reset password) are documented separately on the
+[Authentication Wireframes](./design.mdx) page.
+
+## Risks & mitigation
+
+| Risk                                       | Mitigation |
+| ------------------------------------------- | ---------- |
+| React learning curve consumes project time | Dedicated… |
+
+The source draft ends mid-sentence at this row. The rest of the risk log should
+be filled in by the team and this page updated to match.
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Sonnet 5]"
+  purpose="converting the team's Development Plan & Roadmap draft document into this documentation page, and captioning the accompanying architecture and roadmap diagrams"
+/>
