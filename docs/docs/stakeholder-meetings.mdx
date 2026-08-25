@@ -1,0 +1,161 @@
+---
+sidebar_position: 8
+title: Client Meetings
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Client Meetings — Sprint 1
+
+Our tutor-client acts as Product Owner. Meetings are held over Discord voice, with
+questions prepared in advance and minutes recorded afterwards.
+
+:::note
+
+Lines marked **[CONFIRM]** are to be verified by the team before submission.
+
+:::
+
+---
+
+## Meeting 1 — 13 August 2026, 18:14–18:55
+
+**Present:** Dikeledi Mokoatle, Lethabo Sekgobela, Mosey (McAtaaji Andongndou),
+Ozuko Mabongo, Renda Mudau, Thato Chuene
+**Client:** Tutor-client
+**Duration:** 41 minutes
+
+![Meeting 1 — Discord voice call, 13 August](/img/client-meeting-1-13-aug.png)
+
+### Agenda
+
+We came prepared with a written question list covering three areas: repository and
+marking logistics, project requirements, and process. The full list is in
+*UniLogs — Questions for the Tutor / Client*, prepared 13 August 2026.
+
+### Questions raised
+
+**Repository and marking**
+
+1. Where does marking actually happen — GitHub or the Gitea mirror? Our work
+   tracker, pull request history and review discussion exist only on GitHub, and a
+   mirror syncs code but not issues or pull requests.
+2. Should the client and marking tutor be added to the GitHub repository directly?
+3. Given the 8-hour Gitea sync, what is the effective cut-off before the deadline?
+4. Is a single repository containing `frontend/` and `backend/` acceptable under
+   the non-monolithic requirement?
+5. Are Gitea Actions runners available, or should CI run on GitHub Actions?
+6. Any constraint on where the documentation site is hosted?
+
+**Requirements**
+
+7. Can the client sign off on our tiered requirements list?
+8. How customisable should the entry format be — fully user-defined fields, or
+   templates the user adjusts? This drives the entire database design.
+9. Which statistics matter most?
+10. Should past entries be editable, and should there be a record of prior versions?
+11. How much should the logbook behave like a to-do list versus a record of the past?
+12. Which external integration would be most useful? We proposed Google Calendar.
+13. How important is offline capture at the basic tier?
+14. What does "complete" look like for Milestone 1 specifically?
+
+**Process**
+
+15. Can we set a recurring weekly meeting slot?
+16. Preferred contact method between meetings?
+17. Would the client like to review our minutes?
+
+### Outcome
+
+**The client was not able to answer the requirements questions in this meeting.**
+At the time of the meeting the tutor had not yet been briefed by the course
+convenor and did not have the marking rubrics available, so was not in a position
+to confirm requirements or sign off on our tiered feature list.
+
+Answered:
+
+- **[CONFIRM]** Repository and marking logistics
+- **[CONFIRM]** Effective cut-off before the deadline
+
+Deferred pending the client's own briefing:
+
+- Requirements sign-off (question 7)
+- Entry customisation model (question 8)
+- Statistics priorities (question 9)
+- Entry history and editability (question 10)
+- Offline capture expectations (question 13)
+- Milestone 1 scope expectations (question 14)
+
+### Actions
+
+| Action | Owner | Status |
+| --- | --- | --- |
+| Client to confirm requirements once briefed by the convenor | Tutor-client | Carried to Meeting 2 |
+| Team to proceed on documented assumptions rather than wait | Team | Done |
+| Re-raise deferred questions at the next meeting | Mosey | Done |
+
+---
+
+## Meeting 2 — 19 August 2026, 19:42
+
+**Present:** Dikeledi Mokoatle, Lethabo Sekgobela, Mosey (McAtaaji Andongndou),
+Ozuko Mabongo, Thato Chuene
+**Apologies:** Renda Mudau
+**Client:** Tutor-client
+
+![Meeting 2 — Discord voice call, 19 August](/img/client-meeting-2-19-aug.png)
+
+### Agenda
+
+Follow-up on the requirements questions deferred from Meeting 1, and a progress
+update on Sprint 1.
+
+### Questions raised
+
+- **[CONFIRM]** Requirements deferred from Meeting 1, re-raised
+- **[CONFIRM]** Progress update given on the database schema and authentication work
+
+### Outcome
+
+**[CONFIRM — record here what the client was and was not able to confirm in this
+meeting.]**
+
+### Actions
+
+| Action | Owner | Status |
+| --- | --- | --- |
+| **[CONFIRM]** | | |
+
+---
+
+## Decisions taken in the absence of client direction
+
+Waiting for requirements that had not yet been briefed would have stalled Sprint 1
+entirely. Instead we proceeded on explicit assumptions, recorded them, and flagged
+them for confirmation. Each is reversible.
+
+| Open question | Our assumption | Why | Where it is implemented |
+| --- | --- | --- | --- |
+| How customisable should entries be? | Fully user-defined fields, not fixed templates | The brief states the student wants to "customise the format". Templates would be a narrower reading. This is the harder option, so building it now avoids a rewrite if the client confirms it later. | `FieldDefinition` and `Entry` models in the Prisma schema |
+| Should there be a record of what an entry said before it changed? | Yes — entry changes are audited | The brief emphasises "a record of what they do". A record that can be silently rewritten is a weaker record. | Audit logging on the entries CRUD endpoints |
+| Which external integration? | Google Calendar | The core problem in the brief is forgetting to log. Reading yesterday's calendar events and offering them as entry suggestions attacks that directly, rather than adding an unrelated capability. | Planned for Sprint 3 |
+| Is a single repository acceptable? | Yes, with `frontend/` and `backend/` as separate applications deployed to separate URLs | The requirement is that the applications are not monolithic, not that they live in separate repositories. Deployed separately to Vercel and Render. | Repository structure |
+
+Each assumption remains open and will be re-raised at the next meeting. If the
+client confirms something different, the affected work is scoped to a single area
+of the codebase in each case.
+
+## Next meeting
+
+Agenda carried forward:
+
+- Requirements sign-off, now that briefing material should be available
+- Confirmation or correction of the four assumptions above
+- Statistics priorities, which block the Sprint 2 statistics work
+- Agreement on a recurring weekly slot
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Web[Claude Opus 5]"
+  purpose="structuring meeting minutes from the team's prepared question list and meeting records"
+/>
