@@ -1,0 +1,54 @@
+name: Route bugs to Bugs column
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  route-bug:
+    if: github.event.label.name == 'bug'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Bugs status on the project board
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          PROJECT_ID: 'PVT_kwHOBms7gc4BgeEQ'
+          STATUS_FIELD_ID: 'PVTSSF_lAHOBms7gc4BgeEQzhet8p4'
+          BUGS_OPTION_ID: '7943bcf9'
+          ISSUE_ID: ${{ github.event.issue.node_id }}
+        run: |
+          # Find the project item (card) for this issue on project 5.
+          item_id="$(gh api graphql -f query='
+            query($issue: ID!) {
+              node(id: $issue) {
+                ... on Issue {
+                  projectItems(first: 10) {
+                    nodes {
+                      id
+                      project { number }
+                    }
+                  }
+                }
+              }
+            }' -F issue="$ISSUE_ID" --jq '.data.node.projectItems.nodes[] | select(.project.number == 5) | .id')"
+
+          if [ -z "$item_id" ]; then
+            echo "issue is not on project 5; skipping"
+            exit 0
+          fi
+
+          # Set its Status field to Bugs.
+          gh api graphql -f query='
+            mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(
+                input: {
+                  projectId: $project
+                  itemId: $item
+                  fieldId: $field
+                  value: { singleSelectOptionId: $value }
+                }
+              ) { projectV2Item { id } }
+            }' -F project="$PROJECT_ID" -F item="$item_id" -F field="$STATUS_FIELD_ID" -F value="$BUGS_OPTION_ID"
