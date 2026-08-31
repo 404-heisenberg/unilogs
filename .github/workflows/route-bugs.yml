@@ -1,0 +1,70 @@
+name: Route bugs to Bugs column
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  route-bug:
+    if: github.event.label.name == 'bug'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Bugs status on the project board
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          OWNER: 404-heisenberg
+          PROJECT_NUMBER: '5'
+          STATUS_FIELD_ID: PVTSSF_lAHOBms7gc4BgeEQzhet8p4
+          BUGS_OPTION_ID: '7943bcf9'
+          ISSUE_ID: ${{ github.event.issue.node_id }}
+        run: |
+          # Find the project id for project 5.
+          project_id="$(gh api graphql -f query='
+            query($owner: String!, $number: Int!) {
+              user(login: $owner) {
+                projectV2(number: $number) {
+                  id
+                }
+              }
+            }' -f owner="$OWNER" -F number="$PROJECT_NUMBER" --jq '.data.user.projectV2.id')"
+
+          # Find the existing item for this issue, if it is already on the board.
+          item_id="$(gh api graphql -f query='
+            query($issue: ID!) {
+              node(id: $issue) {
+                ... on Issue {
+                  projectItems(first: 10) {
+                    nodes {
+                      id
+                      project { id }
+                    }
+                  }
+                }
+              }
+            }' -f issue="$ISSUE_ID" --jq --arg pid "$project_id" '.data.node.projectItems.nodes[] | select(.project.id == $pid) | .id' | head -n 1)"
+
+          # Add the issue to the board if it is not already there.
+          if [ -z "$item_id" ]; then
+            item_id="$(gh api graphql -f query='
+              mutation($project: ID!, $issue: ID!) {
+                addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                  item { id }
+                }
+              }' -f project="$project_id" -f issue="$ISSUE_ID" --jq '.data.addProjectV2ItemById.item.id')"
+          fi
+
+          # Set its Status field to Bugs.
+          gh api graphql -f query='
+            mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(
+                input: {
+                  projectId: $project
+                  itemId: $item
+                  fieldId: $field
+                  value: { singleSelectOptionId: $value }
+                }
+              ) { projectV2Item { id } }
+            }' -f project="$project_id" -f item="$item_id" -f field="$STATUS_FIELD_ID" -f value="$BUGS_OPTION_ID"

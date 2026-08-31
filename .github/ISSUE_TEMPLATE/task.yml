@@ -1,0 +1,85 @@
+name: Task
+description: A unit of work for the board
+title: '[Task] '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill in the board fields after creating the issue. Effort, Start date and
+        Target date render in the Roadmap view on the project board.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the issue is about.
+    validations:
+      required: true
+  - type: input
+    id: team
+    attributes:
+      label: Team
+      description: Which team-pair label to apply — backend pair / frontend pair / devops/docs pair.
+      placeholder: backend pair
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Set on the project board (Urgent / High / Medium / Low).
+      options:
+        - Urgent
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: input
+    id: effort
+    attributes:
+      label: Effort
+      description: Story points (1, 2, 3, 5, 8). Set on the project board.
+      placeholder: '3'
+  - type: input
+    id: start-date
+    attributes:
+      label: Start date
+      description: Set on the project board.
+      placeholder: YYYY-MM-DD
+  - type: input
+    id: target-date
+    attributes:
+      label: Target date
+      description: Set on the project board.
+      placeholder: YYYY-MM-DD
+  - type: input
+    id: blocks
+    attributes:
+      label: Blocks
+      description: Issue number(s) this issue blocks, e.g. #5 #6.
+      placeholder: '#5 #6'
+  - type: input
+    id: blocked-by
+    attributes:
+      label: Blocked by
+      description: Issue number(s) this issue depends on, e.g. #4.
+      placeholder: '#4'
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Specific tasks in the order they need to be done. Link to the relevant file or function.
+      value: |
+        - [ ] Task 1
+        - [ ] Task 2
+        - [ ] Task 3
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How we know this task is done. Make each verifiable.
+      value: |
+        - [ ] Criterion 1
