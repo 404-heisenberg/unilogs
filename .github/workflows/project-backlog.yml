@@ -122,14 +122,13 @@ jobs:
                 ) { projectV2Item { id } }
               }' -f project="$1" -f item="$2" -f field="$3" -f value="$4" >/dev/null
           }
+          # gh api -F only converts integers to JSON numbers, so a decimal
+          # effort such as 0.5 is sent as a string and rejected against
+          # Float!. Build the request as JSON instead, with the value
+          # interpolated as a bare number.
           set_field_number() { # project_id item_id field_id value
-            gh api graphql -f query='
-              mutation($project: ID!, $item: ID!, $field: ID!, $value: Float!) {
-                updateProjectV2ItemFieldValue(
-                  input: { projectId: $project, itemId: $item, fieldId: $field,
-                           value: { number: $value } }
-                ) { projectV2Item { id } }
-              }' -f project="$1" -f item="$2" -f field="$3" -F value="$4" >/dev/null
+            printf '{"query": "mutation($project: ID!, $item: ID!, $field: ID!, $value: Float!) { updateProjectV2ItemFieldValue(input: {projectId: $project, itemId: $item, fieldId: $field, value: {number: $value}}) {projectV2Item {id}}}", "variables": {"project": "%s", "item": "%s", "field": "%s", "value": %s}}' \
+              "$1" "$2" "$3" "$4" | gh api graphql --input - >/dev/null
           }
           set_field_date() { # project_id item_id field_id YYYY-MM-DD
             gh api graphql -f query='
