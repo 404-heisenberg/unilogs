@@ -98,12 +98,14 @@ jobs:
             }' -f owner="$OWNER" -F number="$PROJECT_NUMBER" --jq '.data.user.projectV2.id')"
 
           # Find existing item, otherwise add the issue to the board.
-          item_id="$(gh api graphql -f query='
+          # Recent gh versions treat --jq as a single-argument flag, so pass
+          # the project id to jq via env.pid instead of --arg.
+          item_id="$(pid="$project_id" gh api graphql -f query='
             query($issue: ID!) {
               node(id: $issue) {
                 ... on Issue { projectItems(first: 10) { nodes { id project { id } } } }
               }
-            }' -f issue="$ISSUE_ID" --jq --arg pid "$project_id" '.data.node.projectItems.nodes[] | select(.project.id == $pid) | .id' | head -n 1)"
+            }' -f issue="$ISSUE_ID" --jq '.data.node.projectItems.nodes[] | select(.project.id == env.pid) | .id' | head -n 1)"
           if [ -z "$item_id" ]; then
             item_id="$(gh api graphql -f query='
               mutation($project: ID!, $issue: ID!) {
