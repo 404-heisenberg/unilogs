@@ -6,7 +6,7 @@ name: Add new issues to project backlog
 #
 # NOTE: `issues` events only fire for workflows that live in the DEFAULT branch
 # (main). The values in the issue body are plain text written by the YAML form,
-# so we parse the `**Label:**` markers to turn them back into board fields.
+# so we parse the `### Label` headings to turn them back into board fields.
 #
 # Required secret: PROJECT_TOKEN (classic PAT with `repo` + `project` scopes).
 
@@ -68,14 +68,19 @@ jobs:
           START="$(val 'Start date')"        # YYYY-MM-DD
           TARGET="$(val 'Target date')"      # YYYY-MM-DD
 
+          echo "Extracted — Priority: '$PRIORITY', Team: '$TEAM', Effort: '$EFFORT', Start: '$START', Target: '$TARGET'"
+
           # Normalise team label: strip punctuation, then map.
           TEAM_KEY="$(printf '%s' "$TEAM" | sed -E 's/[^a-zA-Z/ ]//g' | tr -s ' ')"
           TEAM_LABEL=""
           case "$TEAM_KEY" in
-            *backend*|*backend/pair*|* backend *) TEAM_LABEL="backend pair" ;;
-            *frontend*|*frontend/pair*|* frontend *) TEAM_LABEL="frontend pair" ;;
-            *devops*|*devops/docs*|*devops docs*) TEAM_LABEL="devops/docs pair" ;;
+            *backend*) TEAM_LABEL="backend pair" ;;
+            *frontend*) TEAM_LABEL="frontend pair" ;;
+            *devops*) TEAM_LABEL="devops/docs pair" ;;
           esac
+
+          # Validate YYYY-MM-DD dates before sending them to the project API.
+          is_date() { [[ "$1" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; }
 
           # Priority select option id lookup.
           PRIO_OPTION=""
@@ -147,10 +152,10 @@ jobs:
               set_field_number "$project_id" "$item_id" "$EFFORT_FIELD_ID" "$EFF_NUM"
             fi
           fi
-          if [ -n "$START" ]; then
+          if [ -n "$START" ] && is_date "$START"; then
             set_field_date "$project_id" "$item_id" "$START_FIELD_ID" "$START"
           fi
-          if [ -n "$TARGET" ]; then
+          if [ -n "$TARGET" ] && is_date "$TARGET"; then
             set_field_date "$project_id" "$item_id" "$TARGET_FIELD_ID" "$TARGET"
           fi
 
