@@ -1,0 +1,142 @@
+name: Add new issues to project backlog
+
+# When a team member creates an issue from the Task template, route it onto the
+# project board as Backlog, populate the board fields (Priority, Effort, Start
+# date, Target date) from the values typed in the form, and apply the team label.
+#
+# NOTE: `issues` events only fire for workflows that live in the DEFAULT branch
+# (main). The values in the issue body are plain text written by the YAML form,
+# so we parse the `**Label:**` markers to turn them back into board fields.
+#
+# Required secret: PROJECT_TOKEN (classic PAT with `repo` + `project` scopes).
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  backlog:
+    if: github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+    steps:
+      - name: Route issue to project Backlog with fields + team label
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          OWNER: 404-heisenberg
+          PROJECT_NUMBER: '5'
+          STATUS_FIELD_ID: PVTSSF_lAHOBms7gc4BgeEQzhet8p4
+          BACKLOG_OPTION_ID: 'c25701bc'
+          PRIORITY_FIELD_ID: PVTSSF_lAHOBms7gc4BgeEQzheySC0
+          EFFORT_FIELD_ID: PVTF_lAHOBms7gc4BgeEQzhg5Ioo
+          START_FIELD_ID: PVTF_lAHOBms7gc4BgeEQzhg5Ios
+          TARGET_FIELD_ID: PVTF_lAHOBms7gc4BgeEQzhg5Iow
+          ISSUE_ID: ${{ github.event.issue.node_id }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+
+          # --- Extract values typed into the Task form -----------------------
+          val() { printf '%s' "$BODY" | grep -iF "$1" | head -n1 | sed -E 's/.*\*\*[^*]*\*\*:[[:space:]]*//' | tr -d '\r'; }
+
+          PRIORITY="$(val 'Priority:')"      # Urgent / High / Medium / Low
+          TEAM="$(val 'Team:')"              # backend pair / frontend pair / devops docs pair
+          EFFORT="$(val 'Effort:')"           # e.g. "2 days"
+          START="$(val 'Start date:')"        # YYYY-MM-DD
+          TARGET="$(val 'Target date:')"      # YYYY-MM-DD
+
+          # Normalise team label: strip punctuation, then map.
+          TEAM_KEY="$(printf '%s' "$TEAM" | sed -E 's/[^a-zA-Z/ ]//g' | tr -s ' ')"
+          TEAM_LABEL=""
+          case "$TEAM_KEY" in
+            *backend*|*backend/pair*|* backend *) TEAM_LABEL="backend pair" ;;
+            *frontend*|*frontend/pair*|* frontend *) TEAM_LABEL="frontend pair" ;;
+            *devops*|*devops/docs*|*devops docs*) TEAM_LABEL="devops/docs pair" ;;
+          esac
+
+          # Priority select option id lookup.
+          PRIO_OPTION=""
+          case "$PRIORITY" in
+            Urgent) PRIO_OPTION="c239deab" ;;
+            High)   PRIO_OPTION="bd6f479b" ;;
+            Medium) PRIO_OPTION="f3cd2b8b" ;;
+            Low)    PRIO_OPTION="41a077ab" ;;
+          esac
+
+          # Project id.
+          project_id="$(gh api graphql -f query='
+            query($owner: String!, $number: Int!) {
+              user(login: $owner) { projectV2(number: $number) { id } }
+            }' -f owner="$OWNER" -F number="$PROJECT_NUMBER" --jq '.data.user.projectV2.id')"
+
+          # Find existing item, otherwise add the issue to the board.
+          item_id="$(gh api graphql -f query='
+            query($issue: ID!) {
+              node(id: $issue) {
+                ... on Issue { projectItems(first: 10) { nodes { id project { id } } } }
+              }
+            }' -f issue="$ISSUE_ID" --jq --arg pid "$project_id" '.data.node.projectItems.nodes[] | select(.project.id == $pid) | .id' | head -n 1)"
+          if [ -z "$item_id" ]; then
+            item_id="$(gh api graphql -f query='
+              mutation($project: ID!, $issue: ID!) {
+                addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) { item { id } }
+              }' -f project="$project_id" -f issue="$ISSUE_ID" --jq '.data.addProjectV2ItemById.item.id')"
+          fi
+
+          set_field_single() { # project_id item_id field_id option_id
+            gh api graphql -f query='
+              mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+                updateProjectV2ItemFieldValue(
+                  input: { projectId: $project, itemId: $item, fieldId: $field,
+                           value: { singleSelectOptionId: $value } }
+                ) { projectV2Item { id } }
+              }' -f project="$1" -f item="$2" -f field="$3" -f value="$4" >/dev/null
+          }
+          set_field_number() { # project_id item_id field_id value
+            gh api graphql -f query='
+              mutation($project: ID!, $item: ID!, $field: ID!, $value: Float!) {
+                updateProjectV2ItemFieldValue(
+                  input: { projectId: $project, itemId: $item, fieldId: $field,
+                           value: { number: $value } }
+                ) { projectV2Item { id } }
+              }' -f project="$1" -f item="$2" -f field="$3" -F value="$4" >/dev/null
+          }
+          set_field_date() { # project_id item_id field_id YYYY-MM-DD
+            gh api graphql -f query='
+              mutation($project: ID!, $item: ID!, $field: ID!, $value: Date!) {
+                updateProjectV2ItemFieldValue(
+                  input: { projectId: $project, itemId: $item, fieldId: $field,
+                           value: { date: $value } }
+                ) { projectV2Item { id } }
+              }' -f project="$1" -f item="$2" -f field="$3" -F value="$4" >/dev/null
+          }
+
+          # Canonical Status for a fresh issue: Backlog.
+          set_field_single "$project_id" "$item_id" "$STATUS_FIELD_ID" "$BACKLOG_OPTION_ID"
+
+          if [ -n "$PRIO_OPTION" ]; then
+            set_field_single "$project_id" "$item_id" "$PRIORITY_FIELD_ID" "$PRIO_OPTION"
+          fi
+          if [ -n "$EFFORT" ]; then
+            # "2 days" -> 2 ; "1.5 days" -> 1.5
+            EFF_NUM="$(printf '%s' "$EFFORT" | grep -Eo '[0-9]+([.][0-9]+)?' | head -n1)"
+            if [ -n "$EFF_NUM" ]; then
+              set_field_number "$project_id" "$item_id" "$EFFORT_FIELD_ID" "$EFF_NUM"
+            fi
+          fi
+          if [ -n "$START" ]; then
+            set_field_date "$project_id" "$item_id" "$START_FIELD_ID" "$START"
+          fi
+          if [ -n "$TARGET" ]; then
+            set_field_date "$project_id" "$item_id" "$TARGET_FIELD_ID" "$TARGET"
+          fi
+
+          # Apply the team label to the issue itself (shows under the board's
+          # "Labels" column). Uses the issue node id directly.
+          if [ -n "$TEAM_LABEL" ]; then
+            gh issue edit "$REPO#$ISSUE_NUMBER" --add-label "$TEAM_LABEL" || true
+          fi
