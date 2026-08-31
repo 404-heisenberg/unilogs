@@ -41,13 +41,32 @@ jobs:
           set -euo pipefail
 
           # --- Extract values typed into the Task form -----------------------
-          val() { printf '%s' "$BODY" | grep -iF "$1" | head -n1 | sed -E 's/.*\*\*[^*]*\*\*:[[:space:]]*//' | tr -d '\r'; }
+          # Issue forms render each answered field as a "### Label" heading with
+          # the value on the following (non-empty) line:
+          #
+          #   ### Priority
+          #
+          #   High
+          #
+          # We locate the heading by fixed-string match, then grab the next
+          # non-blank line as the value.
+          val() {
+            local label="$1"  # e.g. "Priority"
+            local heading_line
+            heading_line="$(printf '%s\n' "$BODY" | grep -niF "### $label" | head -n1 | cut -d: -f1)"
+            if [ -z "$heading_line" ]; then return; fi
+            printf '%s\n' "$BODY" | sed -n "$((heading_line + 1)),\$p" \
+              | sed -e '/^[[:space:]]*$/d' \
+                    -e '1{s/^[[:space:]]*//;s/[[:space:]]*$//;p;}' \
+                    -e '1d' -e 'q' \
+              | tr -d '\r'
+          }
 
-          PRIORITY="$(val 'Priority:')"      # Urgent / High / Medium / Low
-          TEAM="$(val 'Team:')"              # backend pair / frontend pair / devops docs pair
-          EFFORT="$(val 'Effort:')"           # e.g. "2 days"
-          START="$(val 'Start date:')"        # YYYY-MM-DD
-          TARGET="$(val 'Target date:')"      # YYYY-MM-DD
+          PRIORITY="$(val 'Priority')"      # Urgent / High / Medium / Low
+          TEAM="$(val 'Team')"              # backend pair / frontend pair / devops docs pair
+          EFFORT="$(val 'Effort')"           # e.g. "2 days"
+          START="$(val 'Start date')"        # YYYY-MM-DD
+          TARGET="$(val 'Target date')"      # YYYY-MM-DD
 
           # Normalise team label: strip punctuation, then map.
           TEAM_KEY="$(printf '%s' "$TEAM" | sed -E 's/[^a-zA-Z/ ]//g' | tr -s ' ')"
