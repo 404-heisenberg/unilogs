@@ -164,5 +164,5 @@ jobs:
           # Apply the team label to the issue itself (shows under the board's
           # "Labels" column). Uses the issue node id directly.
           if [ -n "$TEAM_LABEL" ]; then
-            gh issue edit "$REPO#$ISSUE_NUMBER" --add-label "$TEAM_LABEL" || true
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label "$TEAM_LABEL" || true
           fi
