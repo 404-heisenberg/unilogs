@@ -1,13 +1,198 @@
 import React, { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { api } from '@/lib/api';
 
-export const ResetPasswordPage: React.FC = () => {
+const RequestResetForm: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const forgotPassword = useMutation({
+    mutationFn: (input: { email: string }) =>
+      api.post<{ message: string; token?: string; url?: string }>(
+        '/api/auth/forgot-password',
+        input,
+      ),
+  });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    forgotPassword.mutate({ email });
   };
+
+  if (forgotPassword.isSuccess) {
+    const resetUrl = forgotPassword.data.url;
+    return (
+      <section className="flex flex-col gap-4 text-center md:text-left">
+        <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Request received</h2>
+        <p className="text-sm text-[#7a5230]">
+          If an account exists for <span className="font-semibold text-[#1c0d06]">{email}</span>, a
+          password reset link has been generated.
+        </p>
+        {resetUrl && (
+          <p className="text-sm text-[#7a5230]">
+            This environment doesn&apos;t send real emails, so here&apos;s the link directly:{' '}
+            <a
+              href={resetUrl}
+              className="break-all font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+            >
+              {resetUrl}
+            </a>
+          </p>
+        )}
+        <a
+          href="/login"
+          className="mt-4 block w-full rounded-md bg-[#1c0d06] p-3 text-center font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90"
+        >
+          Return to Sign In
+        </a>
+      </section>
+    );
+  }
+
+  return (
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
+        Reset password
+      </h2>
+      <p className="text-sm text-[#7a5230]">
+        Enter the email address associated with your account and we&apos;ll send you a link to reset
+        your password.
+      </p>
+
+      <label htmlFor="reset-email" className="text-sm font-semibold mt-2">
+        Email address<span className="text-red-600 ml-0.5">*</span>
+      </label>
+      <input
+        id="reset-email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="name@example.com"
+        required
+        className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+      />
+
+      {forgotPassword.isError && (
+        <p className="text-sm text-red-700">{forgotPassword.error.message}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={forgotPassword.isPending}
+        className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+      >
+        {forgotPassword.isPending ? 'Sending…' : 'Send Reset Link'}
+      </button>
+
+      <p className="mt-2 text-center text-sm text-[#4a3525]">
+        Return back to sign in{' '}
+        <a href="/login" className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]">
+          Sign In
+        </a>
+      </p>
+    </form>
+  );
+};
+
+const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mismatchError, setMismatchError] = useState<string | null>(null);
+
+  const resetPassword = useMutation({
+    mutationFn: (input: { token: string; newPassword: string }) =>
+      api.post<{ message: string }>('/api/auth/reset-password', input),
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setMismatchError('Passwords do not match.');
+      return;
+    }
+    setMismatchError(null);
+    resetPassword.mutate({ token, newPassword });
+  };
+
+  if (resetPassword.isSuccess) {
+    return (
+      <section className="flex flex-col gap-4 text-center md:text-left">
+        <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Password updated</h2>
+        <p className="text-sm text-[#7a5230]">
+          Your password has been reset. You can now sign in with your new password.
+        </p>
+        <a
+          href="/login"
+          className="mt-4 block w-full rounded-md bg-[#1c0d06] p-3 text-center font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90"
+        >
+          Return to Sign In
+        </a>
+      </section>
+    );
+  }
+
+  return (
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
+        Set a new password
+      </h2>
+      <p className="text-sm text-[#7a5230]">Choose a new password for your account.</p>
+
+      <label htmlFor="new-password" className="text-sm font-semibold mt-2">
+        New password<span className="text-red-600 ml-0.5">*</span>
+      </label>
+      <input
+        id="new-password"
+        type="password"
+        placeholder="••••••••"
+        required
+        value={newPassword}
+        onChange={(e) => {
+          setNewPassword(e.target.value);
+          setMismatchError(null);
+        }}
+        className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+      />
+
+      <label htmlFor="confirm-new-password" className="text-sm font-semibold">
+        Confirm new password<span className="text-red-600 ml-0.5">*</span>
+      </label>
+      <input
+        id="confirm-new-password"
+        type="password"
+        placeholder="••••••••"
+        required
+        value={confirmPassword}
+        onChange={(e) => {
+          setConfirmPassword(e.target.value);
+          setMismatchError(null);
+        }}
+        className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
+          mismatchError
+            ? 'border-red-500 focus:ring-red-500'
+            : 'border-[#d4a373] focus:ring-[#1c0d06]'
+        }`}
+      />
+      {mismatchError && <p className="text-xs text-red-700">{mismatchError}</p>}
+
+      {resetPassword.isError && (
+        <p className="text-sm text-red-700">{resetPassword.error.message}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={resetPassword.isPending}
+        className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+      >
+        {resetPassword.isPending ? 'Resetting…' : 'Reset Password'}
+      </button>
+    </form>
+  );
+};
+
+export const ResetPasswordPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
 
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
@@ -27,61 +212,7 @@ export const ResetPasswordPage: React.FC = () => {
 
       <section className="flex flex-1 flex-col items-center justify-center bg-[#f5ebe0] p-6 text-[#1c0d06] md:w-[65%] md:p-12">
         <article className="w-full max-w-sm">
-          {!isSubmitted ? (
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
-                Reset password
-              </h2>
-              <p className="text-sm text-[#7a5230]">
-                Enter the email address associated with your account and we&apos;ll send you a link
-                to reset your password.
-              </p>
-
-              <label htmlFor="reset-email" className="text-sm font-semibold mt-2">
-                Email address<span className="text-red-600 ml-0.5">*</span>
-              </label>
-              <input
-                id="reset-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                required
-                className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
-              />
-
-              <button
-                type="submit"
-                className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer"
-              >
-                Send Reset Link
-              </button>
-
-              <p className="mt-2 text-center text-sm text-[#4a3525]">
-                Return back to sign in{' '}
-                <a
-                  href="/login"
-                  className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
-                >
-                  Sign In
-                </a>
-              </p>
-            </form>
-          ) : (
-            <section className="flex flex-col gap-4 text-center md:text-left">
-              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Check your email</h2>
-              <p className="text-sm text-[#7a5230]">
-                We sent a password reset link to{' '}
-                <span className="font-semibold text-[#1c0d06]">{email}</span>.
-              </p>
-              <a
-                href="/login"
-                className="mt-4 block w-full rounded-md bg-[#1c0d06] p-3 text-center font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90"
-              >
-                Return to Sign In
-              </a>
-            </section>
-          )}
+          {token ? <SetNewPasswordForm token={token} /> : <RequestResetForm />}
         </article>
       </section>
     </main>
