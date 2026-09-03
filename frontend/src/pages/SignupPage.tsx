@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { getEmailError } from '@/lib/validation';
 
 export const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -42,6 +44,10 @@ export const SignupPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const emailValidationError = getEmailError(email);
+    setEmailError(emailValidationError);
+    if (emailValidationError) return;
 
     if (!isPasswordValid) {
       setShowValidationError(true);
@@ -117,9 +123,18 @@ export const SignupPage: React.FC = () => {
             placeholder="name@example.com"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(null);
+            }}
+            onBlur={() => setEmailError(getEmailError(email))}
+            className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
+              emailError
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-[#d4a373] focus:ring-[#1c0d06]'
+            }`}
           />
+          {emailError && <p className="text-xs text-red-700">{emailError}</p>}
 
           <label htmlFor="password" className="text-sm font-semibold">
             Password<span className="text-red-600 ml-0.5">*</span>
