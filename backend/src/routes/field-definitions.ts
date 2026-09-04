@@ -4,6 +4,8 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { authenticate } from '../middleware/authenticate.js';
 import { FIELD_TYPES } from '../types/field-types.js';
+import { z } from 'zod';
+const fieldTypeSchema = z.enum(FIELD_TYPES);
 
 const router = Router();
 
@@ -60,7 +62,9 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'projectId, name, and fieldType are required' });
     }
 
-    if (!FIELD_TYPES.includes(fieldType)) {
+    const fieldTypeResult = fieldTypeSchema.safeParse(fieldType);
+
+    if (!fieldTypeResult.success) {
       return res.status(400).json({
         error: `Invalid field type. Valid options are: ${FIELD_TYPES.join(', ')}`,
       });
@@ -137,10 +141,14 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
 
     const { name, fieldType } = req.body;
 
-    if (fieldType && !FIELD_TYPES.includes(fieldType)) {
-      return res.status(400).json({
-        error: `Invalid field type. Valid options are: ${FIELD_TYPES.join(',')}`,
-      });
+    if (fieldType !== undefined) {
+      const fieldTypeResult = fieldTypeSchema.safeParse(fieldType);
+
+      if (!fieldTypeResult.success) {
+        return res.status(400).json({
+          error: `Invalid field type. Valid options are: ${FIELD_TYPES.join(', ')}`,
+        });
+      }
     }
 
     const existing = await prisma.fieldDefinition.findUnique({
