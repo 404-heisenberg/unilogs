@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { authenticate } from '../middleware/authenticate.js';
+import { FIELD_TYPES } from '../types/field-types.js';
 
 const router = Router();
 
@@ -57,6 +58,12 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 
     if (!projectId || !name || !fieldType) {
       return res.status(400).json({ error: 'projectId, name, and fieldType are required' });
+    }
+
+    if (!FIELD_TYPES.includes(fieldType)) {
+      return res.status(400).json({
+        error: `Invalid field type. Valid options are: ${FIELD_TYPES.join(', ')}`,
+      });
     }
 
     const projectIdInt = parseInt(projectId, 10);
@@ -129,6 +136,12 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
     }
 
     const { name, fieldType } = req.body;
+
+    if (fieldType && !FIELD_TYPES.includes(fieldType)) {
+      return res.status(400).json({
+        error: `Invalid field type. Valid options are: ${FIELD_TYPES.join(',')}`,
+      });
+    }
 
     const existing = await prisma.fieldDefinition.findUnique({
       where: { id },
