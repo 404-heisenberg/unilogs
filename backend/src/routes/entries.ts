@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { authenticate } from '../middleware/authenticate.js';
+import { validateEntryContent } from '../lib/validateEntry.js';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -12,6 +13,7 @@ const router = Router();
 async function getOwnedProject(projectId: number, userId: string) {
   return prisma.project.findFirst({
     where: { id: projectId, userId },
+    include: { fields: true },
   });
 }
 
@@ -60,6 +62,11 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     const project = await getOwnedProject(projectIdInt, userId);
     if (!project) {
       return res.status(403).json({ error: 'You do not have access to this project' });
+    }
+
+    const contentErrors = validateEntryContent(content, project.fields);
+    if (contentErrors.length > 0) {
+      return res.status(400).json({ errors: contentErrors });
     }
 
     const entry = await prisma.entry.create({
@@ -142,7 +149,7 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
 
     const existing = await prisma.entry.findUnique({
       where: { id },
-      include: { project: true },
+      include: { project: { include: { fields: true } } },
     });
 
     if (!existing) {
@@ -151,6 +158,13 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
 
     if (existing.project.userId !== userId) {
       return res.status(403).json({ error: 'You do not have access to this entry' });
+    }
+
+    if (content !== undefined) {
+      const contentErrors = validateEntryContent(content, existing.project.fields);
+      if (contentErrors.length > 0) {
+        return res.status(400).json({ errors: contentErrors });
+      }
     }
 
     const updated = await prisma.entry.update({

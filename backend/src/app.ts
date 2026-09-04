@@ -6,6 +6,7 @@ import { auth } from './auth.js';
 import authRoutes from './routes/auth.js';
 import entriesRoutes from './routes/entries.js';
 import projectRouter from './routes/projects.js';
+import fieldDefinitionsRoutes from './routes/field-definitions.js';
 
 export function createApp() {
   const app = express();
@@ -23,6 +24,7 @@ export function createApp() {
   app.use('/api/projects', projectRouter);
   app.all('/api/auth/*splat', toNodeHandler(auth));
 
+  app.use('/api/field-definitions', fieldDefinitionsRoutes);
   app.use('/api/entries', entriesRoutes);
   app.use('/api/health', healthRouter);
 
