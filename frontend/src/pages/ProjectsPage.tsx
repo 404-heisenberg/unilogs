@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
 
@@ -25,7 +26,9 @@ export default function ProjectsPage() {
       <ul className="flex flex-col gap-3">
         {(projects ?? []).map((project) => (
           <li key={project.id} className="border rounded-lg p-4">
-            <p className="font-semibold">{project.name}</p>
+            <Link to={`/projects/${project.id}`} className="font-semibold hover:underline">
+              {project.name}
+            </Link>
           </li>
         ))}
       </ul>
