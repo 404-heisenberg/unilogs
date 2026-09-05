@@ -5,7 +5,7 @@ import { prisma } from '../auth.js';
 const router = Router();
 
 router.post('/', authenticate, async (req, res) => {
-  const { name } = req.body;
+  const { name, description } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: 'Project name is required!' });
@@ -15,6 +15,7 @@ router.post('/', authenticate, async (req, res) => {
     const project = await prisma.project.create({
       data: {
         name: name,
+        description: description ?? null,
         userId: req.userId,
       },
     });

@@ -12,7 +12,8 @@ export default function ProjectCreatePage() {
   const queryClient = useQueryClient();
 
   const createProject = useMutation({
-    mutationFn: (input: { name: string }) => api.post<Project>('/api/projects', input),
+    mutationFn: (input: { name: string; description?: string }) =>
+      api.post<Project>('/api/projects', input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       navigate('/projects');
@@ -23,7 +24,7 @@ export default function ProjectCreatePage() {
     e.preventDefault();
     if (!name) return;
 
-    createProject.mutate({ name });
+    createProject.mutate({ name, description: description || undefined });
   };
 
   return (
