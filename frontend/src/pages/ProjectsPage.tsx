@@ -26,6 +26,7 @@ export default function ProjectsPage() {
         {(projects ?? []).map((project) => (
           <li key={project.id} className="border rounded-lg p-4">
             <p className="font-semibold">{project.name}</p>
+            {project.description && <p className="text-sm text-slate-500">{project.description}</p>}
           </li>
         ))}
       </ul>
