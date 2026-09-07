@@ -1,4 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
@@ -21,6 +22,21 @@ export default function AppShell() {
     queryClient.removeQueries({ queryKey: ['session'] });
     navigate('/login');
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isTyping =
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+
+      if (e.key === 'n' && !isTyping) {
+        e.preventDefault();
+        navigate('/entries/new');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   return (
     <div className="flex h-screen bg-[#f5ebe0]">
