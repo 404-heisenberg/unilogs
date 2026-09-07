@@ -27,6 +27,7 @@ curl http://localhost:3000/api/health
 | `npm run typecheck`  | Type check without emitting            |
 | `npm test`           | Run tests and enforce coverage         |
 | `npm run test:watch` | Run tests in watch mode                |
+| `npm run test:db:up` | Start the integration-test PostgreSQL  |
 
 Run `typecheck`, `lint`, `build`, and `test` before opening a pull request. Coverage
 reports are written to `coverage/` as HTML and LCOV output.
@@ -38,7 +39,7 @@ start the local service before running the suite:
 
 ```bash
 cp .env.test.example .env.test
-docker compose -f docker-compose.test.yml up -d --wait
+npm run test:db:up
 npm test
 ```
 
