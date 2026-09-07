@@ -31,6 +31,25 @@ curl http://localhost:3000/api/health
 Run `typecheck`, `lint`, `build`, and `test` before opening a pull request. Coverage
 reports are written to `coverage/` as HTML and LCOV output.
 
+## Integration tests
+
+API tests use an isolated PostgreSQL database. Copy the test environment template, then
+start the local service before running the suite:
+
+```bash
+cp .env.test.example .env.test
+docker compose -f docker-compose.test.yml up -d --wait
+npm test
+```
+
+The runner migrates `TEST_DATABASE_URL` and uses it as `DATABASE_URL`. It rejects URLs
+whose database name does not contain `test`, preventing tests from using development data.
+Stop and remove the disposable test data when finished:
+
+```bash
+docker compose -f docker-compose.test.yml down -v
+```
+
 ## Environment
 
 | Variable       | Purpose                                 |
