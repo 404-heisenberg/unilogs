@@ -50,6 +50,29 @@ async function getOwnedProject(id: number, userId: string) {
   });
 }
 
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const project = await getOwnedProject(id, userId);
+    if (!project) {
+      return res.status(404).json({ error: 'project not found' });
+    }
+
+    return res.status(200).json(project);
+  } catch {
+    return res.status(500).json({ error: 'Failed to fetch project' });
+  }
+});
+
 router.patch('/:id', authenticate, async (req, res) => {
   try {
     const userId = req.userId;
@@ -87,6 +110,30 @@ router.patch('/:id', authenticate, async (req, res) => {
   } catch (err) {
     console.error('PATCH /api/projects/:id error:', err);
     return res.status(500).json({ error: 'Failed to update project' });
+  }
+});
+
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const project = await getOwnedProject(id, userId);
+    if (!project) {
+      return res.status(404).json({ error: 'project not found' });
+    }
+
+    await prisma.project.delete({ where: { id } });
+    return res.status(204).send();
+  } catch {
+    return res.status(500).json({ error: 'Failed to delete project' });
   }
 });
 
