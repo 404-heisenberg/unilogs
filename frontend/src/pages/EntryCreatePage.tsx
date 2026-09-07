@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ export default function EntryCreatePage() {
   const [timeSpent, setTimeSpent] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const firstFieldRef = useRef<HTMLSelectElement>(null);
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
@@ -41,6 +42,20 @@ export default function EntryCreatePage() {
     });
   };
 
+  useEffect(() => {
+    firstFieldRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        navigate('/entries');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">New Entry</h1>
@@ -48,6 +63,7 @@ export default function EntryCreatePage() {
         <div>
           <label className="block text-sm mb-1">Project</label>
           <select
+            ref={firstFieldRef}
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
             className="border rounded px-3 py-2 w-full bg-white"
