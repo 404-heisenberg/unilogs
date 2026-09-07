@@ -18,15 +18,18 @@ curl http://localhost:3000/api/health
 
 ## Scripts
 
-| Command             | Does                                   |
-| ------------------- | -------------------------------------- |
-| `npm run dev`       | Development server, restarts on change |
-| `npm run build`     | Compile TypeScript into `dist/`        |
-| `npm start`         | Run the compiled build                 |
-| `npm run lint`      | ESLint                                 |
-| `npm run typecheck` | Type check without emitting            |
+| Command              | Does                                   |
+| -------------------- | -------------------------------------- |
+| `npm run dev`        | Development server, restarts on change |
+| `npm run build`      | Compile TypeScript into `dist/`        |
+| `npm start`          | Run the compiled build                 |
+| `npm run lint`       | ESLint                                 |
+| `npm run typecheck`  | Type check without emitting            |
+| `npm test`           | Run tests and enforce coverage         |
+| `npm run test:watch` | Run tests in watch mode                |
 
-Run all of `typecheck`, `lint` and `build` before opening a pull request.
+Run `typecheck`, `lint`, `build`, and `test` before opening a pull request. Coverage
+reports are written to `coverage/` as HTML and LCOV output.
 
 ## Environment
 
