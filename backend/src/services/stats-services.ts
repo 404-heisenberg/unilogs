@@ -6,8 +6,6 @@ const adapter = new PrismaPg({
 });
 const prisma = new PrismaClient({ adapter });
 
-const TIMEZONE = 'UTC';
-
 async function getDistinctEntryDates(userId: string): Promise<string[]> {
   const entries = await prisma.entry.findMany({
     where: {
