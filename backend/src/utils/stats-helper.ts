@@ -50,7 +50,7 @@ export async function getWeeklyEntryCounts(
     dateCountMap.set(dateStr, (dateCountMap.get(dateStr) || 0) + 1);
   }
 
-  let current = new Date(start);
+  const current = new Date(start);
   while (current <= end) {
     const weekStart = new Date(current);
     const weekStartStr = weekStart.toISOString().split('T')[0];
