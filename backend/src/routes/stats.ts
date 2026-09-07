@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { authenticate } from '../middleware/authenticate.js';
+import { getWeeklyEntryCounts, getTermTotals } from '../utils/stats-helper.js';
 
 const router = Router();
 
@@ -115,6 +116,26 @@ router.get('/project/:projectId', authenticate, async (req: Request, res: Respon
   } catch (err) {
     console.error('GET /api/stats/project/:projectId error:', err);
     return res.status(500).json({ error: 'Failed to fetch project stats' });
+  }
+});
+
+router.get('/frequency', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const weeklyCounts = await getWeeklyEntryCounts(userId);
+    const termTotals = getTermTotals(weeklyCounts);
+
+    return res.status(200).json({
+      weekly: weeklyCounts,
+      terms: termTotals,
+    });
+  } catch (err) {
+    console.error('GET /api/stats/frequency error:', err);
+    return res.status(500).json({ error: 'Failed to fetch frequency stats' });
   }
 });
 
