@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import type { Entry, Project } from '@/types';
 
+const LAST_PROJECT_KEY = 'unilogs:last-project-id';
+
 export default function EntryCreatePage() {
-  const [projectId, setProjectId] = useState('');
+  const [projectId, setProjectId] = useState(() => localStorage.getItem(LAST_PROJECT_KEY) ?? '');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState('');
   const [timeSpent, setTimeSpent] = useState('');
@@ -25,7 +27,8 @@ export default function EntryCreatePage() {
       date: string;
       content: { description: string; timeSpent: string };
     }) => api.post<Entry>('/api/entries', input),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      localStorage.setItem(LAST_PROJECT_KEY, String(variables.projectId));
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       navigate('/entries');
     },
