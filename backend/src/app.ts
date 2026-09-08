@@ -8,6 +8,7 @@ import entriesRoutes from './routes/entries.js';
 import projectRouter from './routes/projects.js';
 import fieldDefinitionsRoutes from './routes/field-definitions.js';
 import statsRoutes from './routes/stats.js';
+import calendarRoutes from './routes/calendar.js';
 
 export function createApp() {
   const app = express();
@@ -23,6 +24,7 @@ export function createApp() {
   app.use(express.json());
   app.use('/api/auth', authRoutes);
   app.use('/api/projects', projectRouter);
+  app.use('api/calendar', calendarRoutes);
   app.all('/api/auth/*splat', toNodeHandler(auth));
 
   app.use('/api/field-definitions', fieldDefinitionsRoutes);
