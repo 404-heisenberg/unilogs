@@ -137,11 +137,6 @@ export const LoginPage: React.FC = () => {
               Sign up
             </a>
           </p>
-          <section className="relative my-4 flex items-center justify-center border-t border-[#d4a373]/50">
-            <span className="absolute bg-[#f5ebe0] px-3 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
-              OR Sign in with :
-            </span>
-          </section>
           <section className="flex gap-3"></section>
         </form>
       </section>
