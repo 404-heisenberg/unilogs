@@ -1,41 +1,40 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/authenticate.js';
+import type { Request, Response } from 'express';
 import { prisma } from '../auth.js';
+import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
 
-router.post('/', authenticate, async (req, res) => {
-  const { name } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: 'Project name is required!' });
-  }
-
+// GET /api/projects - Include entries array and count aggregation
+router.get('/', authenticate, async (req: Request, res: Response) => {
   try {
-    const project = await prisma.project.create({
-      data: {
-        name: name,
-        userId: req.userId,
-      },
-    });
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-    return res.status(201).json(project);
-  } catch {
-    return res.status(500).json({ error: 'Failed to create project' });
-  }
-});
-
-router.get('/', authenticate, async (req, res) => {
-  try {
     const projects = await prisma.project.findMany({
-      where: {
-        userId: req.userId,
+      where: { userId },
+      include: {
+        entries: {
+          select: { id: true },
+        },
+        _count: {
+          select: { entries: true },
+        },
       },
+      orderBy: { id: 'desc' },
     });
 
     return res.status(200).json(projects);
-  } catch {
-    return res.status(500).json({ error: 'Failed to fetch projects' });
+  } catch (err) {
+    console.error('GET /api/projects primary query failed, running fallback:', err);
+    try {
+      const projects = await prisma.project.findMany({ where: { userId: req.userId } });
+      return res.status(200).json(projects);
+    } catch (fallbackErr) {
+      return res.status(500).json({ error: 'Failed to fetch projects' });
+    }
   }
 });
 
