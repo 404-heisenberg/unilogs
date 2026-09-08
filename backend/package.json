@@ -27,7 +27,8 @@
     "better-auth": "^1.7.1",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "resend": "^6.26.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
