@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import entriesRoutes from './routes/entries.js';
 import projectRouter from './routes/projects.js';
 import fieldDefinitionsRoutes from './routes/field-definitions.js';
+import statsRoutes from './routes/stats.js';
 
 export function createApp() {
   const app = express();
@@ -26,6 +27,7 @@ export function createApp() {
 
   app.use('/api/field-definitions', fieldDefinitionsRoutes);
   app.use('/api/entries', entriesRoutes);
+  app.use('/api/stats', statsRoutes);
   app.use('/api/health', healthRouter);
 
   app.get('/', (_req, res) => {

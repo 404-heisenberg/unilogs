@@ -31,6 +31,8 @@ model User {
 model Project {
   id     Int    @id @default(autoincrement())
   name   String
+  description String?
+  archived Boolean @default(false)
   userId String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
