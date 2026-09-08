@@ -6,6 +6,7 @@ import {
   disconnectTestDatabase,
   getApiClient,
 } from './helpers/api.js';
+import { auth } from '../src/auth.js';
 
 afterEach(deleteTestUsers);
 afterAll(disconnectTestDatabase);
@@ -31,7 +32,7 @@ describe('auth routes', () => {
       expect(response.status).toBeLessThan(400);
     });
 
-    it('rejects duplicate email signup', async () => {
+    it('does not create a second account for a duplicate email', async () => {
       const api = await getApiClient();
       const email = uniqueEmail();
 
@@ -47,7 +48,28 @@ describe('auth routes', () => {
         name: 'Second User',
       });
 
-      expect(duplicate.status).toBeGreaterThanOrEqual(400);
+      // Email verification is required, so better-auth responds with a
+      // generic (synthetic, not persisted) success instead of an error -
+      // otherwise the response would leak whether an email is registered.
+      expect(duplicate.status).toBe(200);
+      expect(duplicate.body.token).toBeNull();
+
+      // The original account - and only that one - must still exist.
+      const { otp } = await auth.api.getVerificationOTP({
+        query: { email, type: 'email-verification' },
+      });
+      expect(otp).toBeTruthy();
+      await api.post('/api/auth/email-otp/verify-email').send({ email, otp });
+
+      const signInAsFirstUser = await api
+        .post('/api/auth/signin')
+        .send({ email, password: 'test-password-123' });
+      expect(signInAsFirstUser.status).toBe(200);
+
+      const signInAsSecondUser = await api
+        .post('/api/auth/signin')
+        .send({ email, password: 'test-password-456' });
+      expect(signInAsSecondUser.status).toBeGreaterThanOrEqual(400);
     });
   });
 
@@ -58,6 +80,10 @@ describe('auth routes', () => {
       const password = 'test-password-123';
 
       await api.post('/api/auth/signup').send({ email, password, name: 'Test User' });
+      const { otp } = await auth.api.getVerificationOTP({
+        query: { email, type: 'email-verification' },
+      });
+      await api.post('/api/auth/email-otp/verify-email').send({ email, otp });
 
       const response = await api.post('/api/auth/signin').send({ email, password });
 
