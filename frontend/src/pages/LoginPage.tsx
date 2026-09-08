@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getEmailError } from '@/lib/validation';
 
@@ -134,7 +134,20 @@ export const LoginPage: React.FC = () => {
               Reset
             </a>
           </p>
-          {signIn.isError && <p className="text-sm text-red-700">{signIn.error.message}</p>}
+          {signIn.isError &&
+            (signIn.error.message === 'Email not verified' ? (
+              <p className="text-sm text-red-700">
+                Your email isn&apos;t verified yet.{' '}
+                <Link
+                  to={`/verify-email?email=${encodeURIComponent(email)}`}
+                  className="font-semibold underline"
+                >
+                  Verify it now
+                </Link>
+              </p>
+            ) : (
+              <p className="text-sm text-red-700">{signIn.error.message}</p>
+            ))}
           <button
             type="submit"
             disabled={signIn.isPending}

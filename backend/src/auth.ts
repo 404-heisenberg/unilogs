@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { emailOTP } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from './generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -19,12 +20,27 @@ export const auth = betterAuth({
     provider: 'postgresql',
   }),
 
-  emailAndPassword: { enabled: true },
+  emailAndPassword: { enabled: true, requireEmailVerification: true },
+  emailVerification: {
+    autoSignInAfterVerification: true,
+  },
   email: {
     sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
       console.log(`Password reset for ${user.email}: ${url}`);
     },
   },
+  plugins: [
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 300,
+      sendVerificationOnSignUp: true,
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (type === 'email-verification') {
+          console.log(`Email verification code for ${email}: ${otp} (expires in 5 minutes)`);
+        }
+      },
+    }),
+  ],
   user: {
     deleteUser: {
       enabled: true,

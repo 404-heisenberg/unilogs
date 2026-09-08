@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getEmailError } from '@/lib/validation';
@@ -16,21 +16,12 @@ export const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showMismatchError, setShowMismatchError] = useState(false);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const signIn = useMutation({
-    mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['session'] });
-      navigate('/dashboard');
-    },
-  });
 
   const signUp = useMutation({
     mutationFn: (input: { name: string; email: string; password: string }) =>
       api.post('/api/auth/signup', input),
     onSuccess: (_result, variables) => {
-      signIn.mutate({ email: variables.email, password: variables.password });
+      navigate(`/verify-email?email=${encodeURIComponent(variables.email)}`);
     },
   });
 
@@ -285,15 +276,13 @@ export const SignupPage: React.FC = () => {
             </label>
           </div>
 
-          {(signUp.isError || signIn.isError) && (
-            <p className="text-sm text-red-700">{(signUp.error ?? signIn.error)?.message}</p>
-          )}
+          {signUp.isError && <p className="text-sm text-red-700">{signUp.error.message}</p>}
           <button
             type="submit"
-            disabled={signUp.isPending || signIn.isPending}
+            disabled={signUp.isPending}
             className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
           >
-            {signUp.isPending || signIn.isPending ? 'Creating account…' : 'Sign Up'}
+            {signUp.isPending ? 'Creating account…' : 'Sign Up'}
           </button>
 
           {/* Account Login Link */}
