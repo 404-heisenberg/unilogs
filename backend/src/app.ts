@@ -24,7 +24,7 @@ export function createApp() {
   app.use(express.json());
   app.use('/api/auth', authRoutes);
   app.use('/api/projects', projectRouter);
-  app.use('api/calendar', calendarRoutes);
+  app.use('/api/calendar', calendarRoutes);
   app.all('/api/auth/*splat', toNodeHandler(auth));
 
   app.use('/api/field-definitions', fieldDefinitionsRoutes);
