@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client.js';
 import request from 'supertest';
+import { auth } from '../../src/auth.js';
 
 const testEmailPrefix = 'test-api-';
 
@@ -55,9 +56,19 @@ export async function createAuthenticatedUser(): Promise<AuthenticatedUser> {
     throw new Error(`Test signup failed with status ${signup.status}`);
   }
 
-  const signin = await agent.post('/api/auth/signin').send({ email, password });
-  if (signin.status !== 200) {
-    throw new Error(`Test signin failed with status ${signin.status}`);
+  // Signup no longer creates a session (email verification is required before
+  // sign-in) - complete the same OTP flow a real user would, using the
+  // server-only lookup to read the code without going through email.
+  const { otp } = await auth.api.getVerificationOTP({
+    query: { email, type: 'email-verification' },
+  });
+  if (!otp) {
+    throw new Error('Test signup did not produce a verification OTP');
+  }
+
+  const verify = await agent.post('/api/auth/email-otp/verify-email').send({ email, otp });
+  if (verify.status !== 200) {
+    throw new Error(`Test email verification failed with status ${verify.status}`);
   }
 
   return { agent, email, password };
