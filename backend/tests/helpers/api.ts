@@ -87,6 +87,48 @@ export async function createProject(agent: TestAgent, input: ProjectInput = {}) 
   return response.body;
 }
 
+type FieldDefinitionInput = {
+  name?: string;
+  fieldType?: string;
+};
+
+export async function createFieldDefinition(
+  agent: TestAgent,
+  projectId: number,
+  input: FieldDefinitionInput = {},
+) {
+  const response = await agent.post('/api/field-definitions').send({
+    projectId,
+    name: input.name ?? 'Hours',
+    fieldType: input.fieldType ?? 'number',
+  });
+
+  if (response.status !== 201) {
+    throw new Error(`Test field definition creation failed with status ${response.status}`);
+  }
+
+  return response.body;
+}
+
+type EntryInput = {
+  date?: string;
+  content?: Record<string, unknown>;
+};
+
+export async function createEntry(agent: TestAgent, projectId: number, input: EntryInput = {}) {
+  const response = await agent.post('/api/entries').send({
+    projectId,
+    date: input.date ?? new Date().toISOString().slice(0, 10),
+    content: input.content ?? {},
+  });
+
+  if (response.status !== 201) {
+    throw new Error(`Test entry creation failed with status ${response.status}`);
+  }
+
+  return response.body;
+}
+
 export async function deleteTestUsers() {
   await getCleanupPrisma().user.deleteMany({
     where: {
