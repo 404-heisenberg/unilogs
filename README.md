@@ -1,5 +1,7 @@
 # UniLogs
 
+[![CI](https://github.com/404-heisenberg/unilogs/actions/workflows/ci.yml/badge.svg)](https://github.com/404-heisenberg/unilogs/actions/workflows/ci.yml)
+
 A customisable digital logbook for university students. Students record what they
 work on, define what a log entry looks like rather than accepting a fixed template,
 group entries into projects, tag them, and see where their time goes.
