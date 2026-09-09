@@ -542,5 +542,254 @@ export const openapiSpec = {
         },
       },
     },
+
+    '/api/entries': {
+      get: {
+        summary: 'Get entries',
+        description: 'Returns all entries belonging to the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Entries retrieved successfully.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch entries.',
+          },
+        },
+      },
+
+      post: {
+        summary: 'Create a new entry',
+        description: 'Creates a new entry for a project belonging to the authenticated user.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['projectId', 'content'],
+                properties: {
+                  projectId: {
+                    type: 'integer',
+                    example: 1,
+                  },
+                  content: {
+                    type: 'object',
+                    example: {
+                      mood: 'Sad',
+                      notes: 'Had an unproductive study session.',
+                    },
+                  },
+                  date: {
+                    type: 'string',
+                    format: 'date-time',
+                    example: '2026-09-08T13:52:00.000Z',
+                  },
+                  tagIds: {
+                    type: 'array',
+                    items: {
+                      type: 'integer',
+                    },
+                    example: [1, 2, 4],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Entry created successfully.',
+          },
+
+          '400': {
+            description:
+              'Required fields are missing, the project ID is invalid, or the entry content is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this project.',
+          },
+
+          '500': {
+            description: 'Failed to create entry.',
+          },
+        },
+      },
+    },
+
+    '/api/entries/{id}': {
+      get: {
+        summary: 'Get an entry',
+        description: 'Returns an entry belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Entry retrieved successfully.',
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this entry.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch entry.',
+          },
+        },
+      },
+
+      put: {
+        summary: 'Update an entry',
+        description: 'Updates an entry belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  content: {
+                    type: 'object',
+                    example: {
+                      mood: 'Happy',
+                      notes: 'Had a productive study session.',
+                    },
+                  },
+                  date: {
+                    type: 'string',
+                    format: 'date-time',
+                    example: '2026-09-09T13:52:00.000Z',
+                  },
+                  tagIds: {
+                    type: 'array',
+                    items: {
+                      type: 'integer',
+                    },
+                    example: [1, 2, 4],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Entry updated successfully.',
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer or the entry content is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized',
+          },
+
+          '403': {
+            description: 'You do not have access to this entry.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '500': {
+            description: 'Failed to update entry.',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Delete an entry',
+        description: 'Deletes an entry belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Entry deleted successfully.',
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this entry.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '500': {
+            description: 'Failed to delete entry.',
+          },
+        },
+      },
+    },
   },
 };
