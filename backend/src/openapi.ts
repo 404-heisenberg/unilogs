@@ -271,6 +271,36 @@ export const openapiSpec = {
         responses: {
           '201': {
             description: 'Project created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    id: {
+                      type: 'integer',
+                      example: 1,
+                    },
+                    name: {
+                      type: 'string',
+                      example: 'My First University Project',
+                    },
+                    description: {
+                      type: 'string',
+                      nullable: true,
+                      example: 'A project for tracking my first university workflow.',
+                    },
+                    archived: {
+                      type: 'boolean',
+                      example: false,
+                    },
+                    userId: {
+                      type: 'string',
+                      example: 'userId-example123',
+                    },
+                  },
+                },
+              },
+            },
           },
 
           '400': {
@@ -307,6 +337,39 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Projects retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: {
+                        type: 'integer',
+                        example: 1,
+                      },
+                      name: {
+                        type: 'string',
+                        example: 'My First University Project',
+                      },
+                      description: {
+                        type: 'string',
+                        nullable: true,
+                        example: 'A project for tracking my first university workflow.',
+                      },
+                      archived: {
+                        type: 'boolean',
+                        example: false,
+                      },
+                      userId: {
+                        type: 'string',
+                        example: 'userId-example123',
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
 
           '401': {
@@ -340,6 +403,36 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Project retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    id: {
+                      type: 'integer',
+                      example: 1,
+                    },
+                    name: {
+                      type: 'string',
+                      example: 'My First University Project',
+                    },
+                    description: {
+                      type: 'string',
+                      nullable: true,
+                      example: 'A project for tracking my first university workflow.',
+                    },
+                    archived: {
+                      type: 'boolean',
+                      example: false,
+                    },
+                    userId: {
+                      type: 'string',
+                      example: 'userId-example123',
+                    },
+                  },
+                },
+              },
+            },
           },
 
           '401': {
@@ -401,6 +494,36 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Project updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    id: {
+                      type: 'integer',
+                      example: 1,
+                    },
+                    name: {
+                      type: 'string',
+                      example: 'Updated University Project',
+                    },
+                    description: {
+                      type: 'string',
+                      nullable: true,
+                      example: 'Updated project description.',
+                    },
+                    archived: {
+                      type: 'boolean',
+                      example: false,
+                    },
+                    userId: {
+                      type: 'string',
+                      example: 'userId-example123',
+                    },
+                  },
+                },
+              },
+            },
           },
 
           '400': {
@@ -481,6 +604,36 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Project archived successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    id: {
+                      type: 'integer',
+                      example: 1,
+                    },
+                    name: {
+                      type: 'string',
+                      example: 'My First University Project',
+                    },
+                    description: {
+                      type: 'string',
+                      nullable: true,
+                      example: 'A project for tracking my first university workflow.',
+                    },
+                    archived: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                    userId: {
+                      type: 'string',
+                      example: 'userId-example123',
+                    },
+                  },
+                },
+              },
+            },
           },
 
           '400': {
@@ -488,7 +641,7 @@ export const openapiSpec = {
           },
 
           '401': {
-            description: 'Not authenticated',
+            description: 'Not authenticated.',
           },
 
           '404': {
@@ -522,6 +675,36 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Project unarchived successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    id: {
+                      type: 'integer',
+                      example: 1,
+                    },
+                    name: {
+                      type: 'string',
+                      example: 'My First University Project',
+                    },
+                    description: {
+                      type: 'string',
+                      nullable: true,
+                      example: 'A project for tracking my first university workflow.',
+                    },
+                    archived: {
+                      type: 'boolean',
+                      example: false,
+                    },
+                    userId: {
+                      type: 'string',
+                      example: 'userId-example123',
+                    },
+                  },
+                },
+              },
+            },
           },
 
           '400': {
