@@ -1,19 +1,23 @@
-import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const emailFrom = process.env.RESEND_FROM_EMAIL ?? 'UniLogs <onboarding@resend.dev>';
+const apiKey = process.env.SENDGRID_API_KEY;
+const emailFrom = process.env.SENDGRID_FROM_EMAIL;
+
+if (apiKey) {
+  sgMail.setApiKey(apiKey);
+}
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
-  if (!resend) {
-    console.log(`[email not sent - RESEND_API_KEY not set] To: ${to} | Subject: ${subject}`);
+  if (!apiKey || !emailFrom) {
+    console.log(`[email not sent - SendGrid not configured] To: ${to} | Subject: ${subject}`);
     return false;
   }
 
-  const { error } = await resend.emails.send({ from: emailFrom, to, subject, html });
-  if (error) {
-    console.error('Failed to send email via Resend:', error);
+  try {
+    await sgMail.send({ to, from: { email: emailFrom, name: 'UniLogs' }, subject, html });
+    return true;
+  } catch (error) {
+    console.error('Failed to send email via SendGrid:', error);
     return false;
   }
-
-  return true;
 }
