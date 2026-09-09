@@ -54,11 +54,15 @@ export default function EntriesPage() {
             key={entry.id}
             className="rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
           >
-            <div className="flex justify-between text-sm text-[#7a5230]">
-              <span>{entry.date.slice(0, 10)}</span>
-              <span className="font-medium text-[#b8860b]">{entry.content.timeSpent}</span>
-            </div>
-            <p className="mt-1 text-[#1c0d06]">{entry.content.description}</p>
+            <p className="text-sm text-[#7a5230]">{entry.date.slice(0, 10)}</p>
+            <dl className="mt-1 flex flex-col gap-0.5">
+              {Object.entries(entry.content).map(([name, value]) => (
+                <div key={name} className="flex gap-2 text-sm">
+                  <dt className="font-medium text-[#1c0d06]">{name}:</dt>
+                  <dd className="text-[#4a3525]">{String(value)}</dd>
+                </div>
+              ))}
+            </dl>
           </li>
         ))}
       </ul>

@@ -5,10 +5,14 @@ export type Project = {
   userId: string;
 };
 
-export type EntryContent = {
-  description?: string;
-  timeSpent?: string;
+export type FieldDefinition = {
+  id: number;
+  projectId: number;
+  name: string;
+  fieldType: string;
 };
+
+export type EntryContent = Record<string, unknown>;
 
 export type Entry = {
   id: number;
