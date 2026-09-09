@@ -12,10 +12,7 @@ export type FieldDefinition = {
   fieldType: string;
 };
 
-export type EntryContent = {
-  description?: string;
-  timeSpent?: string;
-};
+export type EntryContent = Record<string, unknown>;
 
 export type Entry = {
   id: number;
