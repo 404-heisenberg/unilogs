@@ -4,6 +4,7 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
 
@@ -142,7 +143,7 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-router.delete('/account', async (req, res) => {
+router.delete('/account', authenticate, async (req, res) => {
   try {
     const { password } = req.body;
 
