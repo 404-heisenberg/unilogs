@@ -19,6 +19,37 @@ export const openapiSpec = {
     },
   ],
 
+  components: {
+    schemas: {
+      Project: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'My first University Project',
+          },
+          description: {
+            type: 'string',
+            nullable: true,
+            example: 'A project for tracking my university workflow.',
+          },
+          archived: {
+            type: 'boolean',
+            example: false,
+          },
+          userId: {
+            type: 'string',
+            example: 'userId-example123',
+          },
+        },
+      },
+    },
+  },
+
   paths: {
     '/api/auth/signup': {
       post: {
@@ -274,30 +305,7 @@ export const openapiSpec = {
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'integer',
-                      example: 1,
-                    },
-                    name: {
-                      type: 'string',
-                      example: 'My First University Project',
-                    },
-                    description: {
-                      type: 'string',
-                      nullable: true,
-                      example: 'A project for tracking my first university workflow.',
-                    },
-                    archived: {
-                      type: 'boolean',
-                      example: false,
-                    },
-                    userId: {
-                      type: 'string',
-                      example: 'userId-example123',
-                    },
-                  },
+                  $ref: '#/components/schemas/Project',
                 },
               },
             },
@@ -342,30 +350,7 @@ export const openapiSpec = {
                 schema: {
                   type: 'array',
                   items: {
-                    type: 'object',
-                    properties: {
-                      id: {
-                        type: 'integer',
-                        example: 1,
-                      },
-                      name: {
-                        type: 'string',
-                        example: 'My First University Project',
-                      },
-                      description: {
-                        type: 'string',
-                        nullable: true,
-                        example: 'A project for tracking my first university workflow.',
-                      },
-                      archived: {
-                        type: 'boolean',
-                        example: false,
-                      },
-                      userId: {
-                        type: 'string',
-                        example: 'userId-example123',
-                      },
-                    },
+                    $ref: '#/components/schemas/Project',
                   },
                 },
               },
@@ -406,30 +391,7 @@ export const openapiSpec = {
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'integer',
-                      example: 1,
-                    },
-                    name: {
-                      type: 'string',
-                      example: 'My First University Project',
-                    },
-                    description: {
-                      type: 'string',
-                      nullable: true,
-                      example: 'A project for tracking my first university workflow.',
-                    },
-                    archived: {
-                      type: 'boolean',
-                      example: false,
-                    },
-                    userId: {
-                      type: 'string',
-                      example: 'userId-example123',
-                    },
-                  },
+                  $ref: '#/components/schemas/Project',
                 },
               },
             },
@@ -497,30 +459,7 @@ export const openapiSpec = {
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'integer',
-                      example: 1,
-                    },
-                    name: {
-                      type: 'string',
-                      example: 'Updated University Project',
-                    },
-                    description: {
-                      type: 'string',
-                      nullable: true,
-                      example: 'Updated project description.',
-                    },
-                    archived: {
-                      type: 'boolean',
-                      example: false,
-                    },
-                    userId: {
-                      type: 'string',
-                      example: 'userId-example123',
-                    },
-                  },
+                  $ref: '#/components/schemas/Project',
                 },
               },
             },
@@ -607,30 +546,7 @@ export const openapiSpec = {
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'integer',
-                      example: 1,
-                    },
-                    name: {
-                      type: 'string',
-                      example: 'My First University Project',
-                    },
-                    description: {
-                      type: 'string',
-                      nullable: true,
-                      example: 'A project for tracking my first university workflow.',
-                    },
-                    archived: {
-                      type: 'boolean',
-                      example: true,
-                    },
-                    userId: {
-                      type: 'string',
-                      example: 'userId-example123',
-                    },
-                  },
+                  $ref: '#/components/schemas/Project',
                 },
               },
             },
@@ -678,30 +594,7 @@ export const openapiSpec = {
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'integer',
-                      example: 1,
-                    },
-                    name: {
-                      type: 'string',
-                      example: 'My First University Project',
-                    },
-                    description: {
-                      type: 'string',
-                      nullable: true,
-                      example: 'A project for tracking my first university workflow.',
-                    },
-                    archived: {
-                      type: 'boolean',
-                      example: false,
-                    },
-                    userId: {
-                      type: 'string',
-                      example: 'userId-example123',
-                    },
-                  },
+                  $ref: '#/components/schemas/Project',
                 },
               },
             },
