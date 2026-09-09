@@ -47,6 +47,130 @@ export const openapiSpec = {
           },
         },
       },
+
+      Tag: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'University',
+          },
+        },
+      },
+
+      EntryTag: {
+        type: 'object',
+        properties: {
+          entryId: {
+            type: 'integer',
+            example: 1,
+          },
+          tagId: {
+            type: 'integer',
+            example: 1,
+          },
+          tag: {
+            $ref: '#/components/schemas/Tag',
+          },
+        },
+      },
+
+      Entry: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          projectId: {
+            type: 'integer',
+            example: 1,
+          },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            example: '2026-09-09T13:52:00.000Z',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time',
+            example: '2026-09-09T14:00:00.000Z',
+          },
+          content: {
+            type: 'object',
+            additionalProperties: true,
+            example: {
+              mood: 'Sad',
+              notes: 'Had an unproductive study session.',
+            },
+          },
+          tags: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/EntryTag',
+            },
+          },
+        },
+      },
+
+      FieldDefinition: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          projectId: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'Mood',
+          },
+          fieldType: {
+            type: 'string',
+            enum: ['text', 'number', 'date', 'duration', 'boolean'],
+            example: 'text',
+          },
+        },
+      },
+
+      FieldDefinitionWithProject: {
+        allOf: [
+          {
+            $ref: '#/components/schemas/FieldDefinition',
+          },
+          {
+            type: 'object',
+            properties: {
+              project: {
+                $ref: '#/components/schemas/Project',
+              },
+            },
+          },
+        ],
+      },
+
+      EntryWithProject: {
+        allOf: [
+          {
+            $ref: '#/components/schemas/Entry',
+          },
+          {
+            type: 'object',
+            properties: {
+              project: {
+                $ref: '#/components/schemas/Project',
+              },
+            },
+          },
+        ],
+      },
     },
   },
 
@@ -627,6 +751,16 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Entries retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Entry',
+                  },
+                },
+              },
+            },
           },
 
           '401': {
@@ -683,6 +817,13 @@ export const openapiSpec = {
         responses: {
           '201': {
             description: 'Entry created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Entry',
+                },
+              },
+            },
           },
 
           '400': {
@@ -725,6 +866,13 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Entry retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/EntryWithProject',
+                },
+              },
+            },
           },
 
           '400': {
@@ -800,6 +948,13 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Entry updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Entry',
+                },
+              },
+            },
           },
 
           '400': {
@@ -863,6 +1018,289 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete entry.',
+          },
+        },
+      },
+    },
+
+    '/api/field-definitions': {
+      get: {
+        summary: 'Get field definitions',
+        description:
+          'Returns all field definitions for a project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'projectId',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Field definitions retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/FieldDefinition',
+                  },
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch field definitions.',
+          },
+        },
+      },
+
+      post: {
+        summary: 'Create a field definition',
+        description:
+          'Creates a new field definition for a project belonging to the authenticated user.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['projectId', 'name', 'fieldType'],
+                properties: {
+                  projectId: {
+                    type: 'integer',
+                    example: 1,
+                  },
+                  name: {
+                    type: 'string',
+                    example: 'Mood',
+                  },
+                  fieldType: {
+                    type: 'string',
+                    enum: ['text', 'number', 'date', 'duration', 'boolean'],
+                    example: 'text',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Field definition created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/FieldDefinition',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'Required fields are missing, the field type is invalid, or the project ID is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to create field definition.',
+          },
+        },
+      },
+    },
+
+    '/api/field-definitions/{id}': {
+      get: {
+        summary: 'Get a field definition',
+        description: 'Returns a field definition belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The field definition ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Field definition retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/FieldDefinitionWithProject',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Field definition ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this field definition.',
+          },
+
+          '404': {
+            description: 'Field definition not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch field definition.',
+          },
+        },
+      },
+
+      put: {
+        summary: 'Update a field definition',
+        description: 'Updates a field definition belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The field definition ID.',
+          },
+        ],
+
+        requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'Updated Mood',
+                  },
+                  fieldType: {
+                    type: 'string',
+                    enum: ['text', 'number', 'date', 'duration', 'boolean'],
+                    example: 'text',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Field definition updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/FieldDefinition',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'Field definition ID must be a valid integer or the field type is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this field definition.',
+          },
+
+          '404': {
+            description: 'Field definition not found.',
+          },
+
+          '500': {
+            description: 'Failed to update field definition.',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Delete a field definition',
+        description: 'Deletes a field definition belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The field definition ID.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Field definition deleted successfully.',
+          },
+
+          '400': {
+            description: 'Field definition ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this field definition.',
+          },
+
+          '404': {
+            description: 'Field definition not found.',
+          },
+
+          '500': {
+            description: 'Failed to delete field definition.',
           },
         },
       },
