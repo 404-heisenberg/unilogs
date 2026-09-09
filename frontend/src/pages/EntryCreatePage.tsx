@@ -77,8 +77,10 @@ function FieldInput({
   );
 }
 
+const LAST_PROJECT_KEY = 'unilogs:last-project-id';
+
 export default function EntryCreatePage() {
-  const [projectId, setProjectId] = useState('');
+  const [projectId, setProjectId] = useState(() => localStorage.getItem(LAST_PROJECT_KEY) ?? '');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [values, setValues] = useState<Record<string, FieldValue>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -120,6 +122,13 @@ export default function EntryCreatePage() {
     mutationFn: (input: { projectId: number; date: string; content: Record<string, unknown> }) =>
       api.post<Entry>('/api/entries', input),
     onSuccess: () => {
+    mutationFn: (input: {
+      projectId: number;
+      date: string;
+      content: { description: string; timeSpent: string };
+    }) => api.post<Entry>('/api/entries', input),
+    onSuccess: (_, variables) => {
+      localStorage.setItem(LAST_PROJECT_KEY, String(variables.projectId));
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       navigate('/entries');
     },
