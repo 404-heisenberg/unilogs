@@ -8,6 +8,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectCreatePage from './pages/ProjectCreatePage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
 import EntriesPage from './pages/EntriesPage';
 import EntryCreatePage from './pages/EntryCreatePage';
 import DashboardPage from './pages/DashboardPage';
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/new" element={<ProjectCreatePage />} />
+            <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
             <Route path="/entries" element={<EntriesPage />} />
             <Route path="/entries/new" element={<EntryCreatePage />} />
           </Route>

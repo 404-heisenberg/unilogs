@@ -1,0 +1,1309 @@
+export const openapiSpec = {
+  openapi: '3.0.3',
+
+  info: {
+    title: 'UniLogs API',
+    version: '0.1.0',
+    description: 'API documentation for the UniLogs digital logbook',
+  },
+
+  servers: [
+    {
+      url: 'https://unilogs.onrender.com',
+      description: 'Production server',
+    },
+
+    {
+      url: 'http://localhost:3000',
+      description: 'Local development server',
+    },
+  ],
+
+  components: {
+    schemas: {
+      Project: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'My first University Project',
+          },
+          description: {
+            type: 'string',
+            nullable: true,
+            example: 'A project for tracking my university workflow.',
+          },
+          archived: {
+            type: 'boolean',
+            example: false,
+          },
+          userId: {
+            type: 'string',
+            example: 'userId-example123',
+          },
+        },
+      },
+
+      Tag: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'University',
+          },
+        },
+      },
+
+      EntryTag: {
+        type: 'object',
+        properties: {
+          entryId: {
+            type: 'integer',
+            example: 1,
+          },
+          tagId: {
+            type: 'integer',
+            example: 1,
+          },
+          tag: {
+            $ref: '#/components/schemas/Tag',
+          },
+        },
+      },
+
+      Entry: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          projectId: {
+            type: 'integer',
+            example: 1,
+          },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            example: '2026-09-09T13:52:00.000Z',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time',
+            example: '2026-09-09T14:00:00.000Z',
+          },
+          content: {
+            type: 'object',
+            additionalProperties: true,
+            example: {
+              mood: 'Sad',
+              notes: 'Had an unproductive study session.',
+            },
+          },
+          tags: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/EntryTag',
+            },
+          },
+        },
+      },
+
+      FieldDefinition: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          projectId: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'Mood',
+          },
+          fieldType: {
+            type: 'string',
+            enum: ['text', 'number', 'date', 'duration', 'boolean'],
+            example: 'text',
+          },
+        },
+      },
+
+      FieldDefinitionWithProject: {
+        allOf: [
+          {
+            $ref: '#/components/schemas/FieldDefinition',
+          },
+          {
+            type: 'object',
+            properties: {
+              project: {
+                $ref: '#/components/schemas/Project',
+              },
+            },
+          },
+        ],
+      },
+
+      EntryWithProject: {
+        allOf: [
+          {
+            $ref: '#/components/schemas/Entry',
+          },
+          {
+            type: 'object',
+            properties: {
+              project: {
+                $ref: '#/components/schemas/Project',
+              },
+            },
+          },
+        ],
+      },
+    },
+  },
+
+  paths: {
+    '/api/auth/signup': {
+      post: {
+        summary: 'Create a new user account',
+        description: 'Creates a new UniLogs user account using email, password and name.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password', 'name'],
+                properties: {
+                  email: {
+                    type: 'string',
+                    format: 'email',
+                    example: 'user@example.com',
+                  },
+                  password: {
+                    type: 'string',
+                    format: 'password',
+                    example: 'passwordExample123***',
+                  },
+                  name: {
+                    type: 'string',
+                    example: 'Jane Doe',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'User account created successfully.',
+          },
+          '400': {
+            description: 'Signup failed.',
+          },
+        },
+      },
+    },
+
+    '/api/auth/signin': {
+      post: {
+        summary: 'Sign in to an account',
+        description: 'Signs in a UniLogs user using email and password.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password'],
+                properties: {
+                  email: {
+                    type: 'string',
+                    format: 'email',
+                    example: 'user@example.com',
+                  },
+                  password: {
+                    type: 'string',
+                    format: 'password',
+                    example: 'passwordExample123***',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'User signed in successfully.',
+          },
+          '400': {
+            description: 'Signin failed.',
+          },
+        },
+      },
+    },
+
+    '/api/auth/reset-password': {
+      post: {
+        summary: 'Reset account password',
+        description: 'Resets a user password using a valid reset token.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['token', 'newPassword'],
+                properties: {
+                  token: {
+                    type: 'string',
+                    example: 'reset-token-example',
+                  },
+                  newPassword: {
+                    type: 'string',
+                    format: 'password',
+                    example: 'newPassword123***',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Password reset successfully.',
+          },
+          '400': {
+            description: 'Password reset failed, or the token is invalid or expired.',
+          },
+        },
+      },
+    },
+
+    '/api/auth/forgot-password': {
+      post: {
+        summary: 'Request a password reset',
+        description: 'Generates a password reset token for a user account.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email'],
+                properties: {
+                  email: {
+                    type: 'string',
+                    format: 'email',
+                    example: 'user@example.com',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Password reset request processed successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    message: {
+                      type: 'string',
+                      example: 'Reset link sent if account exists',
+                    },
+                    token: {
+                      type: 'string',
+                      example: 'reset-token-example',
+                    },
+                    url: {
+                      type: 'string',
+                      example: 'http://localhost:3000/reset-password?token=reset-token-example',
+                    },
+                  },
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Failed to send the reset link.',
+          },
+        },
+      },
+    },
+
+    '/api/auth/account': {
+      delete: {
+        summary: 'Delete user account',
+        description: 'Deletes the authenticated user account after verifying the account password.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['password'],
+                properties: {
+                  password: {
+                    type: 'string',
+                    format: 'password',
+                    example: 'passwordExample123***',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Account deleted successfully.',
+          },
+
+          '400': {
+            description: 'Password is missing or account deletion failed.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+        },
+      },
+    },
+
+    '/api/projects': {
+      post: {
+        summary: 'Create a new project',
+        description: 'Creates a new project for the authenticated user.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'My First University Project',
+                  },
+                  description: {
+                    type: 'string',
+                    nullable: true,
+                    example: 'A project for tracking my first university project workflow.',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Project created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Project',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Project name is required.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to create project.',
+          },
+        },
+      },
+
+      get: {
+        summary: 'Get projects',
+        description: "Returns the authenticated user's projects.",
+
+        parameters: [
+          {
+            name: 'archived',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'boolean',
+              default: false,
+            },
+            description: 'Set to true to return archived projects.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Projects retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Project',
+                  },
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch projects.',
+          },
+        },
+      },
+    },
+
+    '/api/projects/{id}': {
+      get: {
+        summary: 'Get a project',
+        description: 'Returns a project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Project retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Project',
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch project.',
+          },
+        },
+      },
+
+      patch: {
+        summary: 'Update a project',
+        description: 'Updates a project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'Updated University Project',
+                  },
+                  description: {
+                    type: 'string',
+                    nullable: true,
+                    example: 'Updated project description.',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Project updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Project',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Project ID, name, or description is invalid',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to update project.',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Delete a project',
+        description: 'Deletes a project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Project deleted successfully.',
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to delete project.',
+          },
+        },
+      },
+    },
+
+    '/api/projects/{id}/archive': {
+      post: {
+        summary: 'Archive a project',
+        description: 'Archives a project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Project archived successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Project',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'The project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Not authenticated.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to update archive status of project.',
+          },
+        },
+      },
+    },
+
+    '/api/projects/{id}/unarchive': {
+      post: {
+        summary: 'Unarchive a project',
+        description: 'Unarchives a project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Project unarchived successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Project',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'The project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Not authenticated.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to update archive status of project.',
+          },
+        },
+      },
+    },
+
+    '/api/entries': {
+      get: {
+        summary: 'Get entries',
+        description: 'Returns all entries belonging to the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Entries retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Entry',
+                  },
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch entries.',
+          },
+        },
+      },
+
+      post: {
+        summary: 'Create a new entry',
+        description: 'Creates a new entry for a project belonging to the authenticated user.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['projectId', 'content'],
+                properties: {
+                  projectId: {
+                    type: 'integer',
+                    example: 1,
+                  },
+                  content: {
+                    type: 'object',
+                    example: {
+                      mood: 'Sad',
+                      notes: 'Had an unproductive study session.',
+                    },
+                  },
+                  date: {
+                    type: 'string',
+                    format: 'date-time',
+                    example: '2026-09-08T13:52:00.000Z',
+                  },
+                  tagIds: {
+                    type: 'array',
+                    items: {
+                      type: 'integer',
+                    },
+                    example: [1, 2, 4],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Entry created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Entry',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'Required fields are missing, the project ID is invalid, or the entry content is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this project.',
+          },
+
+          '500': {
+            description: 'Failed to create entry.',
+          },
+        },
+      },
+    },
+
+    '/api/entries/{id}': {
+      get: {
+        summary: 'Get an entry',
+        description: 'Returns an entry belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Entry retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/EntryWithProject',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this entry.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch entry.',
+          },
+        },
+      },
+
+      put: {
+        summary: 'Update an entry',
+        description: 'Updates an entry belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  content: {
+                    type: 'object',
+                    example: {
+                      mood: 'Happy',
+                      notes: 'Had a productive study session.',
+                    },
+                  },
+                  date: {
+                    type: 'string',
+                    format: 'date-time',
+                    example: '2026-09-09T13:52:00.000Z',
+                  },
+                  tagIds: {
+                    type: 'array',
+                    items: {
+                      type: 'integer',
+                    },
+                    example: [1, 2, 4],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Entry updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Entry',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer or the entry content is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized',
+          },
+
+          '403': {
+            description: 'You do not have access to this entry.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '500': {
+            description: 'Failed to update entry.',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Delete an entry',
+        description: 'Deletes an entry belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Entry deleted successfully.',
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this entry.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '500': {
+            description: 'Failed to delete entry.',
+          },
+        },
+      },
+    },
+
+    '/api/field-definitions': {
+      get: {
+        summary: 'Get field definitions',
+        description:
+          'Returns all field definitions for a project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'projectId',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Field definitions retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/FieldDefinition',
+                  },
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch field definitions.',
+          },
+        },
+      },
+
+      post: {
+        summary: 'Create a field definition',
+        description:
+          'Creates a new field definition for a project belonging to the authenticated user.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['projectId', 'name', 'fieldType'],
+                properties: {
+                  projectId: {
+                    type: 'integer',
+                    example: 1,
+                  },
+                  name: {
+                    type: 'string',
+                    example: 'Mood',
+                  },
+                  fieldType: {
+                    type: 'string',
+                    enum: ['text', 'number', 'date', 'duration', 'boolean'],
+                    example: 'text',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Field definition created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/FieldDefinition',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'Required fields are missing, the field type is invalid, or the project ID is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to create field definition.',
+          },
+        },
+      },
+    },
+
+    '/api/field-definitions/{id}': {
+      get: {
+        summary: 'Get a field definition',
+        description: 'Returns a field definition belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The field definition ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Field definition retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/FieldDefinitionWithProject',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Field definition ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this field definition.',
+          },
+
+          '404': {
+            description: 'Field definition not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch field definition.',
+          },
+        },
+      },
+
+      put: {
+        summary: 'Update a field definition',
+        description: 'Updates a field definition belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The field definition ID.',
+          },
+        ],
+
+        requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'Updated Mood',
+                  },
+                  fieldType: {
+                    type: 'string',
+                    enum: ['text', 'number', 'date', 'duration', 'boolean'],
+                    example: 'text',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Field definition updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/FieldDefinition',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'Field definition ID must be a valid integer or the field type is invalid.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this field definition.',
+          },
+
+          '404': {
+            description: 'Field definition not found.',
+          },
+
+          '500': {
+            description: 'Failed to update field definition.',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Delete a field definition',
+        description: 'Deletes a field definition belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The field definition ID.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Field definition deleted successfully.',
+          },
+
+          '400': {
+            description: 'Field definition ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this field definition.',
+          },
+
+          '404': {
+            description: 'Field definition not found.',
+          },
+
+          '500': {
+            description: 'Failed to delete field definition.',
+          },
+        },
+      },
+    },
+  },
+};

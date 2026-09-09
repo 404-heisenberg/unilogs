@@ -50,14 +50,16 @@ export default function ProjectsPage() {
 
       <ul className="flex flex-col gap-3">
         {(projects ?? []).map((project) => (
-          <li
-            key={project.id}
-            className="rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-          >
-            <p className="font-semibold text-[#1c0d06]">{project.name}</p>
-            {project.description && (
-              <p className="mt-1 text-sm text-[#7a5230]">{project.description}</p>
-            )}
+          <li key={project.id}>
+            <Link
+              to={`/projects/${project.id}`}
+              className="block rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+            >
+              <p className="font-semibold text-[#1c0d06]">{project.name}</p>
+              {project.description && (
+                <p className="mt-1 text-sm text-[#7a5230]">{project.description}</p>
+              )}
+            </Link>
           </li>
         ))}
       </ul>
