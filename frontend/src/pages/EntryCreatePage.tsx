@@ -121,12 +121,6 @@ export default function EntryCreatePage() {
   const createEntry = useMutation({
     mutationFn: (input: { projectId: number; date: string; content: Record<string, unknown> }) =>
       api.post<Entry>('/api/entries', input),
-    onSuccess: () => {
-    mutationFn: (input: {
-      projectId: number;
-      date: string;
-      content: { description: string; timeSpent: string };
-    }) => api.post<Entry>('/api/entries', input),
     onSuccess: (_, variables) => {
       localStorage.setItem(LAST_PROJECT_KEY, String(variables.projectId));
       queryClient.invalidateQueries({ queryKey: ['entries'] });
