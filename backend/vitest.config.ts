@@ -33,7 +33,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/lib/validateEntry.ts'],
+      include: ['src/routes/**/*.ts', 'src/lib/**/*.ts', 'src/middleware/**/*.ts'],
       reporter: ['text', 'html', 'lcov', 'json-summary'],
       thresholds: {
         statements: 50,

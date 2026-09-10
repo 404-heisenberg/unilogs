@@ -9,6 +9,8 @@ import projectRouter from './routes/projects.js';
 import fieldDefinitionsRoutes from './routes/field-definitions.js';
 import statsRoutes from './routes/stats.js';
 import calendarRoutes from './routes/calendar.js';
+import { apiReference } from '@scalar/express-api-reference';
+import { openapiSpec } from './openapi.js';
 
 export function createApp() {
   const app = express();
@@ -39,6 +41,17 @@ export function createApp() {
       health: '/api/health',
     });
   });
+  app.get('/openapi.json', (_req, res) => {
+    res.json(openapiSpec);
+  });
+
+  app.use(
+    '/api/docs',
+    apiReference({
+      url: '/openapi.json',
+    }),
+  );
+
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not found' });
   });
