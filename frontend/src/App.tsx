@@ -10,6 +10,7 @@ import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import EntriesPage from './pages/EntriesPage';
 import EntryCreatePage from './pages/EntryCreatePage';
+import EntryDetailPage from './pages/EntryDetailPage';
 import DashboardPage from './pages/DashboardPage';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
             <Route path="/entries" element={<EntriesPage />} />
             <Route path="/entries/new" element={<EntryCreatePage />} />
+            <Route path="/entries/:entryId" element={<EntryDetailPage />} />
           </Route>
         </Route>
       </Routes>

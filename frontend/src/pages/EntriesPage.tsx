@@ -121,24 +121,26 @@ export default function EntriesPage() {
 
       <ul className="flex flex-col gap-3">
         {filteredEntries.map((entry) => (
-          <li
-            key={entry.id}
-            className="rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="text-sm font-medium text-[#1c0d06]">
-                {projectNames.get(entry.projectId) ?? 'Unknown project'}
-              </p>
-              <p className="text-sm text-[#7a5230]">{entry.date.slice(0, 10)}</p>
-            </div>
-            <dl className="mt-1 flex flex-col gap-0.5">
-              {Object.entries(entry.content).map(([name, value]) => (
-                <div key={name} className="flex gap-2 text-sm">
-                  <dt className="font-medium text-[#1c0d06]">{name}:</dt>
-                  <dd className="text-[#4a3525]">{String(value)}</dd>
-                </div>
-              ))}
-            </dl>
+          <li key={entry.id}>
+            <Link
+              to={`/entries/${entry.id}`}
+              className="block rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-sm font-medium text-[#1c0d06]">
+                  {projectNames.get(entry.projectId) ?? 'Unknown project'}
+                </p>
+                <p className="text-sm text-[#7a5230]">{entry.date.slice(0, 10)}</p>
+              </div>
+              <dl className="mt-1 flex flex-col gap-0.5">
+                {Object.entries(entry.content).map(([name, value]) => (
+                  <div key={name} className="flex gap-2 text-sm">
+                    <dt className="font-medium text-[#1c0d06]">{name}:</dt>
+                    <dd className="text-[#4a3525]">{String(value)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Link>
           </li>
         ))}
       </ul>
