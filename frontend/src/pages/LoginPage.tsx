@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 
 export const LoginPage: React.FC = () => {
@@ -11,7 +11,8 @@ export const LoginPage: React.FC = () => {
   const queryClient = useQueryClient();
 
   const signIn = useMutation({
-    mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
+    mutationFn: (input: { email: string; password: string }) =>
+      api.post('/api/auth/sign-in/email', input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['session'] });
       navigate('/dashboard');
@@ -22,12 +23,14 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     signIn.mutate({ email, password });
   };
+
   const handleOAuthSignIn = (provider: string) => {
     console.log(`Signing in with ${provider}`);
   };
+
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
-      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1c0d06] p=8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
+      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1c0d06] p-8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
         <span className="absolute left-3 right-3 top-6 border-t-2 border-[#d4af37] md:left-4 md:right-4 md:top-8" />
         <span className="absolute left-3 right-3 bottom-6 border-b-2 border-[#d4af37] md:left-4 md:right-4 md:bottom-8" />
         <span className="absolute top-3 bottom-3 left-6 border-l-2 border-[#d4af37] md:top-4 md:bottom-4 md:left-8" />
@@ -39,11 +42,13 @@ export const LoginPage: React.FC = () => {
           </p>
         </article>
       </header>
+
       <section className="flex flex-1 flex-col items-center justify-center bg-[#f5ebe0] p-6 text-[#1c0d06] md:w-[65%] md:p-12">
         <form className="flex w-full max-w-sm flex-col gap-4" onSubmit={handleSubmit}>
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Sign in
           </h2>
+
           <label htmlFor="email" className="text-sm font-semibold">
             Email<span className="text-red-600 ml-0.5">*</span>
           </label>
@@ -56,6 +61,7 @@ export const LoginPage: React.FC = () => {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
           />
+
           <label htmlFor="password" className="text-sm font-semibold">
             Password<span className="text-red-600 ml-0.5">*</span>
           </label>
@@ -111,16 +117,23 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </article>
-          <p className="mt-2 text-sm text-[#4a3525] ">
+
+          <p className="mt-2 text-sm text-[#4a3525]">
             Forgot password?{' '}
-            <a
-              href="/reset-password"
+            <Link
+              to="/reset-password"
               className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
             >
               Reset
-            </a>
+            </Link>
           </p>
-          {signIn.isError && <p className="text-sm text-red-700">{signIn.error.message}</p>}
+
+          {signIn.isError && (
+            <p className="text-sm text-red-700">
+              {signIn.error instanceof Error ? signIn.error.message : 'Sign in failed'}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={signIn.isPending}
@@ -128,20 +141,23 @@ export const LoginPage: React.FC = () => {
           >
             {signIn.isPending ? 'Signing in…' : 'Sign in'}
           </button>
+
           <p className="mt-2 text-center text-sm text-[#4a3525]">
             Don't have an account?{' '}
-            <a
-              href="/signup"
+            <Link
+              to="/signup"
               className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
             >
               Sign up
-            </a>
+            </Link>
           </p>
+
           <section className="relative my-4 flex items-center justify-center border-t border-[#d4a373]/50">
             <span className="absolute bg-[#f5ebe0] px-3 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
               OR Sign in with :
             </span>
           </section>
+
           <section className="flex gap-3">
             <button
               type="button"
@@ -174,4 +190,5 @@ export const LoginPage: React.FC = () => {
     </main>
   );
 };
+
 export default LoginPage;
