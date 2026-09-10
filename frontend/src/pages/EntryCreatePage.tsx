@@ -32,25 +32,27 @@ function FieldInput({
   error?: string;
   onChange: (value: FieldValue) => void;
 }) {
+  const inputId = `field-${field.id}`;
   const inputClassName = `w-full rounded-md border px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 ${
     error ? 'border-red-500 focus:ring-red-500' : 'border-[#d4a373]/60 focus:ring-[#1c0d06]'
   }`;
 
   return (
     <div>
-      <label className="mb-1 block text-sm text-[#4a3525]">{field.name}</label>
+      <label htmlFor={inputId} className="mb-1 block text-sm text-[#4a3525]">
+        {field.name}
+      </label>
       {field.fieldType === 'boolean' ? (
-        <label className="flex items-center gap-2 text-sm text-[#1c0d06]">
-          <input
-            type="checkbox"
-            checked={Boolean(value)}
-            onChange={(e) => onChange(e.target.checked)}
-            className="h-4 w-4 rounded border-[#d4a373] accent-[#1c0d06]"
-          />
-          Yes
-        </label>
+        <input
+          id={inputId}
+          type="checkbox"
+          checked={Boolean(value)}
+          onChange={(e) => onChange(e.target.checked)}
+          className="h-4 w-4 rounded border-[#d4a373] accent-[#1c0d06]"
+        />
       ) : field.fieldType === 'date' ? (
         <input
+          id={inputId}
           type="date"
           value={value as string}
           onChange={(e) => onChange(e.target.value)}
@@ -58,6 +60,7 @@ function FieldInput({
         />
       ) : field.fieldType === 'number' || field.fieldType === 'duration' ? (
         <input
+          id={inputId}
           type="number"
           value={value as string | number}
           onChange={(e) => onChange(e.target.value)}
@@ -66,6 +69,7 @@ function FieldInput({
         />
       ) : (
         <input
+          id={inputId}
           type="text"
           value={value as string}
           onChange={(e) => onChange(e.target.value)}
@@ -149,11 +153,28 @@ export default function EntryCreatePage() {
     e.preventDefault();
     if (!projectId || fields.length === 0) return;
 
+    // Client-side check so an incomplete entry never reaches the API. Every
+    // field except boolean (where `false` is a valid answer) must be filled in.
+    const nextFieldErrors: Record<string, string> = {};
+    for (const field of fields) {
+      if (field.fieldType === 'boolean') continue;
+      const raw = values[field.name];
+      if (raw === undefined || String(raw).trim() === '') {
+        nextFieldErrors[field.name] = `${field.name} is required`;
+      }
+    }
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setFormError(null);
+      return;
+    }
+
     const content: Record<string, unknown> = {};
     for (const field of fields) {
       content[field.name] = toContentValue(field.fieldType, values[field.name] ?? '');
     }
 
+    setFieldErrors({});
     createEntry.mutate({ projectId: Number(projectId), date, content });
   };
 
