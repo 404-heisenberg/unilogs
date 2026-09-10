@@ -7,6 +7,5 @@ export default function ProtectedRoute() {
   if (isPending) {
     return <p className="p-8 text-center text-sm text-slate-500">Loading…</p>;
   }
-   return data ? <Outlet /> : <Navigate to="/login" replace />;
-
+  return data ? <Outlet /> : <Navigate to="/login" replace />;
 }

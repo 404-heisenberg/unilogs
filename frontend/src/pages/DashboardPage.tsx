@@ -57,6 +57,16 @@ export default function DashboardPage() {
     queryFn: getFrequencyStats,
   });
 
+  const summary = summaryQuery.data;
+  const hasEntries = !!summary && summary.totalHours > 0 && summary.perProject.length > 0;
+  const topProject = hasEntries
+    ? [...summary!.perProject].sort((a, b) => b.totalHours - a.totalHours)[0]
+    : null;
+
+  const streakCount = useCountUp(summary?.streak ?? 0);
+  const totalHoursCount = useCountUp(summary?.totalHours ?? 0);
+  const topHoursCount = useCountUp(topProject?.totalHours ?? 0);
+
   if (summaryQuery.isLoading || frequencyQuery.isLoading) {
     return (
       <div className="-m-8 min-h-screen bg-[#241407] p-8 text-[#f5ebe0]">
@@ -85,24 +95,12 @@ export default function DashboardPage() {
     );
   }
 
-  const summary = summaryQuery.data!;
   const frequency = frequencyQuery.data!;
-
-  const hasEntries = summary.totalHours > 0 && summary.perProject.length > 0;
-
-  const streakCount = useCountUp(summary.streak);
-  const totalHoursCount = useCountUp(summary.totalHours);
-
-  const topProject = hasEntries
-    ? [...summary.perProject].sort((a, b) => b.totalHours - a.totalHours)[0]
-    : null;
-  const topHoursCount = useCountUp(topProject?.totalHours ?? 0);
-
   const maxWeekCount = Math.max(1, ...frequency.weekly.map((w) => w.count));
 
   const RADIUS = 54;
   const CIRC = 2 * Math.PI * RADIUS;
-  const ringProgress = Math.min(summary.streak / 30, 1);
+  const ringProgress = Math.min((summary?.streak ?? 0) / 30, 1);
 
   if (!hasEntries) {
     return (
@@ -145,7 +143,15 @@ export default function DashboardPage() {
             <div className="flex flex-col items-center">
               <div className="relative flex h-32 w-32 items-center justify-center">
                 <svg className="h-32 w-32 -rotate-90" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="#f5ebe0" strokeOpacity={0.1} strokeWidth="8" />
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r={RADIUS}
+                    fill="none"
+                    stroke="#f5ebe0"
+                    strokeOpacity={0.1}
+                    strokeWidth="8"
+                  />
                   <circle
                     cx="60"
                     cy="60"
@@ -160,7 +166,10 @@ export default function DashboardPage() {
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center">
-                  <Flame className="mb-1 h-5 w-5 text-[#e8a33d] transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5} />
+                  <Flame
+                    className="mb-1 h-5 w-5 text-[#e8a33d] transition-transform duration-300 group-hover:scale-110"
+                    strokeWidth={1.5}
+                  />
                   <span className="text-3xl font-bold text-white">{streakCount}</span>
                 </div>
               </div>
@@ -179,7 +188,7 @@ export default function DashboardPage() {
             <p className="mt-2 text-4xl font-bold text-white">{totalHoursCount}h</p>
             <div className="mt-4 flex items-center gap-1 text-xs text-[#e0b37e]">
               <Award className="h-3.5 w-3.5" strokeWidth={1.5} />
-              <span>{summary.perProject.length} projects</span>
+              <span>{summary!.perProject.length} projects</span>
             </div>
           </div>
 
@@ -193,7 +202,7 @@ export default function DashboardPage() {
             <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-[#e8a33d] transition-all duration-1000"
-                style={{ width: `${(topProject!.totalHours / summary.totalHours) * 100}%` }}
+                style={{ width: `${(topProject!.totalHours / summary!.totalHours) * 100}%` }}
               />
             </div>
           </div>
@@ -239,16 +248,26 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-[#e8a33d]/15 bg-[#2e1a0c]/70 p-6 shadow-lg transition-colors duration-300 hover:border-[#e8a33d]/30">
           <h2 className="mb-4 text-lg font-semibold text-white">Hours per project</h2>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={summary.perProject}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#7a5230" opacity={0.15} vertical={false} />
+            <BarChart data={summary!.perProject}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#7a5230"
+                opacity={0.15}
+                vertical={false}
+              />
               <XAxis dataKey="projectName" stroke="#c2a480" fontSize={12} tickLine={false} />
               <YAxis stroke="#c2a480" fontSize={12} tickLine={false} axisLine={false} />
               <Tooltip
-                contentStyle={{ borderRadius: 12, border: '1px solid #e8a33d', background: '#2e1a0c', color: '#f5ebe0' }}
+                contentStyle={{
+                  borderRadius: 12,
+                  border: '1px solid #e8a33d',
+                  background: '#2e1a0c',
+                  color: '#f5ebe0',
+                }}
                 cursor={{ fill: '#e8a33d', opacity: 0.1 }}
               />
               <Bar dataKey="totalHours" radius={[8, 8, 0, 0]}>
-                {summary.perProject.map((_, i) => (
+                {summary!.perProject.map((_, i) => (
                   <Cell
                     key={i}
                     fill={BAR_COLORS[i % BAR_COLORS.length]}
