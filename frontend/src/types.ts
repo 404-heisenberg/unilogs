@@ -2,6 +2,7 @@ export type Project = {
   id: number;
   name: string;
   description?: string;
+  archived: boolean;
   userId: string;
 };
 
