@@ -15,10 +15,16 @@ export type FieldDefinition = {
 
 export type EntryContent = Record<string, unknown>;
 
+export type EntryTag = {
+  tag: { id: number; name: string };
+};
+
 export type Entry = {
   id: number;
   projectId: number;
   date: string;
   createdAt: string;
   content: EntryContent;
+  tags?: EntryTag[];
+  project?: Project;
 };
