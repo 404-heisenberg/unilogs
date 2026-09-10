@@ -34,3 +34,22 @@ export const api = {
   post: <T>(path: string, data?: unknown) =>
     request<T>(path, { method: 'POST', body: data ? JSON.stringify(data) : undefined }),
 };
+
+export type StatsSummary = {
+  perProject: { projectId: number; projectName: string; totalHours: number }[];
+  totalHours: number;
+  streak: number;
+};
+
+export type FrequencyStats = {
+  weekly: { weekStart: string; count: number }[];
+  terms: { termName: string; total: number }[];
+};
+
+export function getStatsSummary() {
+  return api.get<StatsSummary>('/api/stats');
+}
+
+export function getFrequencyStats() {
+  return api.get<FrequencyStats>('/api/stats/frequency');
+}
