@@ -12,6 +12,7 @@ import EntriesPage from './pages/EntriesPage';
 import EntryCreatePage from './pages/EntryCreatePage';
 import EntryDetailPage from './pages/EntryDetailPage';
 import DashboardPage from './pages/DashboardPage';
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/entries" element={<EntriesPage />} />
             <Route path="/entries/new" element={<EntryCreatePage />} />
             <Route path="/entries/:entryId" element={<EntryDetailPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
       </Routes>
