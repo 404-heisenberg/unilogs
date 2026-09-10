@@ -67,17 +67,6 @@ export default function EntriesPage() {
     setProjectFilter('all');
   };
 
-  const filteredEntries = useMemo(() => {
-    if (!term) return entries ?? [];
-    return (entries ?? []).filter((entry) => {
-      const projectName = projectNames.get(entry.projectId)?.toLowerCase() ?? '';
-      return projectName.includes(term) || contentMatches(entry.content, term);
-    });
-  }, [entries, projectNames, term]);
-
-  const hasEntries = (entries?.length ?? 0) > 0;
-  const noResults = hasEntries && term.length > 0 && filteredEntries.length === 0;
-
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
