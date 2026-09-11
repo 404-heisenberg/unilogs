@@ -65,11 +65,17 @@ router.post('/connect', authenticate, async (req, res) => {
         errorCallbackURL: SETTINGS_URL,
       },
       headers: req.headers,
+      asResponse: true,
     });
 
-    return res.status(200).json({
-      url: result.url,
-    });
+    const setCookies = result.headers.getSetCookie();
+    if (setCookies.length > 0) {
+      res.setHeader('Set-Cookie', setCookies);
+    }
+
+    const data = await result.json();
+
+    return res.status(result.status).json(data);
   } catch (error) {
     console.error('Google Calendar connect error:', error);
 
