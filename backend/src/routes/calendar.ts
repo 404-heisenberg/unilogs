@@ -146,7 +146,13 @@ router.get('/events', authenticate, async (req, res) => {
 
     const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
 
-    url.searchParams.set('timeMin', new Date().toISOString());
+    const now = new Date();
+    const timeMax = new Date();
+
+    timeMax.setDate(timeMax.getDate() + 30);
+
+    url.searchParams.set('timeMin', now.toISOString());
+    url.searchParams.set('timeMax', timeMax.toISOString());
     url.searchParams.set('singleEvents', 'true');
     url.searchParams.set('orderBy', 'startTime');
     url.searchParams.set('maxResults', '20');
