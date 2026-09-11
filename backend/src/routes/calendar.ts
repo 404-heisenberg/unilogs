@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Request } from 'express';
 import { auth, prisma } from '../auth.js';
 import { authenticate } from '../middleware/authenticate.js';
 
@@ -12,8 +13,68 @@ type GoogleCalendarResponse = {
   items?: unknown[];
 };
 
+type GoogleCalendarEvent = {
+  id?: string;
+  summary?: string;
+  start?: {
+    dateTime?: string;
+    date?: string;
+  };
+  end?: {
+    dateTime?: string;
+    date?: string;
+  };
+};
+
 function hasCalendarScope(account: { scope?: string | null } | null): boolean {
   return Boolean(account?.scope?.includes(GOOGLE_CALENDAR_SCOPE));
+}
+
+async function getCalendarEvents(req: Request) {
+  const account = await prisma.account.findFirst({
+    where: {
+      userId: req.userId,
+      providerId: 'google',
+    },
+  });
+
+  if (!account) {
+    return null;
+  }
+
+  const tokenResult = await auth.api.getAccessToken({
+    body: {
+      accountId: account.id,
+    },
+    headers: req.headers,
+  });
+
+  const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+
+  const now = new Date();
+  const timeMax = new Date();
+
+  timeMax.setDate(timeMax.getDate() + 30);
+
+  url.searchParams.set('timeMin', now.toISOString());
+  url.searchParams.set('timeMax', timeMax.toISOString());
+  url.searchParams.set('singleEvents', 'true');
+  url.searchParams.set('orderBy', 'startTime');
+  url.searchParams.set('maxResults', '20');
+
+  const googleResponse = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${tokenResult.accessToken}`,
+    },
+  });
+
+  if (!googleResponse.ok) {
+    throw new Error('Failed to fecth Google Calendar events');
+  }
+
+  const data = (await googleResponse.json()) as GoogleCalendarResponse;
+
+  return data.items ?? [];
 }
 
 // A DB-only check so Settings can show connection status without calling
@@ -123,55 +184,14 @@ router.delete('/disconnect', authenticate, async (req, res) => {
 
 router.get('/events', authenticate, async (req, res) => {
   try {
-    const account = await prisma.account.findFirst({
-      where: {
-        userId: req.userId,
-        providerId: 'google',
-      },
-    });
+    const events = await getCalendarEvents(req);
 
-    if (!account) {
+    if (events === null) {
       return res.status(200).json({
         connected: false,
         message: 'Google Calendar is not connected',
       });
     }
-
-    const tokenResult = await auth.api.getAccessToken({
-      body: {
-        accountId: account.id,
-      },
-      headers: req.headers,
-    });
-
-    const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
-
-    const now = new Date();
-    const timeMax = new Date();
-
-    timeMax.setDate(timeMax.getDate() + 30);
-
-    url.searchParams.set('timeMin', now.toISOString());
-    url.searchParams.set('timeMax', timeMax.toISOString());
-    url.searchParams.set('singleEvents', 'true');
-    url.searchParams.set('orderBy', 'startTime');
-    url.searchParams.set('maxResults', '20');
-
-    const googleResponse = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${tokenResult.accessToken}`,
-      },
-    });
-
-    if (!googleResponse.ok) {
-      return res.status(502).json({
-        error: 'Failed to fetch Google Calendar events',
-      });
-    }
-
-    const data = (await googleResponse.json()) as GoogleCalendarResponse;
-
-    const events = data.items ?? [];
 
     return res.status(200).json({
       connected: true,
@@ -181,7 +201,38 @@ router.get('/events', authenticate, async (req, res) => {
     console.error('Google Calendar events error:', error);
 
     return res.status(500).json({
-      error: 'Failed to fetch Google Calendar events',
+      error: 'Failed to fetch the Google Calendar events',
+    });
+  }
+});
+
+router.get('/events/suggestions', authenticate, async (req, res) => {
+  try {
+    const events = await getCalendarEvents(req);
+
+    if (events === null) {
+      return res.status(200).json({
+        connected: false,
+        suggestions: [],
+      });
+    }
+
+    const suggestions = (events as GoogleCalendarEvent[]).map((event) => ({
+      id: event.id,
+      title: event.summary ?? 'Untitled event',
+      start: event.start?.dateTime ?? event.start?.date,
+      end: event.end?.dateTime ?? event.end?.date,
+    }));
+
+    return res.status(200).json({
+      connected: true,
+      suggestions,
+    });
+  } catch (error) {
+    console.error('Google Calendar suggestions error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to fetch calendar suggestions',
     });
   }
 });
