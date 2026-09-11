@@ -5,10 +5,39 @@ import { authenticate } from '../middleware/authenticate.js';
 const router = Router();
 
 const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+const FRONTEND_URL = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+const SETTINGS_URL = `${FRONTEND_URL}/settings`;
 
 type GoogleCalendarResponse = {
   items?: unknown[];
 };
+
+function hasCalendarScope(account: { scope?: string | null } | null): boolean {
+  return Boolean(account?.scope?.includes(GOOGLE_CALENDAR_SCOPE));
+}
+
+// A DB-only check so Settings can show connection status without calling
+// Google or touching the link/unlink flow (see issue #160).
+router.get('/status', authenticate, async (req, res) => {
+  try {
+    const account = await prisma.account.findFirst({
+      where: {
+        userId: req.userId,
+        providerId: 'google',
+      },
+    });
+
+    return res.status(200).json({
+      connected: hasCalendarScope(account),
+    });
+  } catch (error) {
+    console.error('Google Calendar status error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to fetch Google Calendar status',
+    });
+  }
+});
 
 router.post('/connect', authenticate, async (req, res) => {
   try {
@@ -19,7 +48,9 @@ router.post('/connect', authenticate, async (req, res) => {
       },
     });
 
-    if (account) {
+    // A plain Google sign-in links a 'google' account without the Calendar
+    // scope; only treat it as already connected once that scope is present.
+    if (hasCalendarScope(account)) {
       return res.status(200).json({
         connected: true,
         message: 'Google Calendar is already connected',
@@ -30,6 +61,8 @@ router.post('/connect', authenticate, async (req, res) => {
         provider: 'google',
         scopes: [GOOGLE_CALENDAR_SCOPE],
         disableRedirect: true,
+        callbackURL: SETTINGS_URL,
+        errorCallbackURL: SETTINGS_URL,
       },
       headers: req.headers,
     });
