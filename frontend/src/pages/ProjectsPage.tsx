@@ -20,6 +20,83 @@ import {
 
 type SaveInput = { name: string; description: string | null };
 
+// --- Sub-Component: Edit Form (Mounted only during edit mode) ---
+function ProjectEditForm({
+  project,
+  onSave,
+  onCancel,
+  isSaving,
+}: {
+  project: Project;
+  onSave: (input: SaveInput, onSuccess: () => void) => void;
+  onCancel: () => void;
+  isSaving: boolean;
+}) {
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description ?? '');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName || isSaving) return;
+
+    onSave({ name: trimmedName, description: description.trim() || null }, onCancel);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
+  return (
+    <li className="rounded-xl border border-[#d4af37]/40 bg-white p-4 shadow-sm transition-all">
+      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-label="Project name"
+            placeholder="Project name"
+            autoFocus
+            required
+            className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+          />
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (optional)"
+            aria-label="Project description"
+            className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSaving}
+            className="border-[#d4a373]/60 text-[#1c0d06] hover:bg-[#f5ebe0]"
+          >
+            <X className="mr-1 h-3.5 w-3.5" />
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isSaving || !name.trim()}
+            className="border border-[#d4af37]/30 bg-[#1c0d06] text-[#f5ebe0] hover:bg-[#1c0d06]/90"
+          >
+            <Check className="mr-1 h-3.5 w-3.5" />
+            {isSaving ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      </form>
+    </li>
+  );
+}
+
 // --- Sub-Component: Inline Editable Project Row ---
 function ProjectRow({
   project,
@@ -37,88 +114,15 @@ function ProjectRow({
   isTogglingArchive: boolean;
 }) {
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description ?? '');
-
-  // Track the previous props so we know when the server data changes
-  const [prevProjectName, setPrevProjectName] = useState(project.name);
-  const [prevProjectDesc, setPrevProjectDesc] = useState(project.description);
-
-  // If the props change (e.g. server update), sync our local state *during* the render phase.
-  // React will immediately throw away the stale render and re-render with the new state safely.
-  if (project.name !== prevProjectName || project.description !== prevProjectDesc) {
-    setPrevProjectName(project.name);
-    setPrevProjectDesc(project.description);
-    setName(project.name);
-    setDescription(project.description ?? '');
-  }
-
-  const cancel = () => {
-    setEditing(false);
-    setName(project.name);
-    setDescription(project.description ?? '');
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedName = name.trim();
-    if (!trimmedName || isSaving) return;
-
-    onSave({ name: trimmedName, description: description.trim() || null }, () => setEditing(false));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      cancel();
-    }
-  };
 
   if (editing) {
     return (
-      <li className="rounded-xl border border-[#d4af37]/40 bg-white p-4 shadow-sm transition-all">
-        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              aria-label="Project name"
-              placeholder="Project name"
-              autoFocus
-              required
-              className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
-            />
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (optional)"
-              aria-label="Project description"
-              className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={cancel}
-              disabled={isSaving}
-              className="border-[#d4a373]/60 text-[#1c0d06] hover:bg-[#f5ebe0]"
-            >
-              <X className="mr-1 h-3.5 w-3.5" />
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={isSaving || !name.trim()}
-              className="border border-[#d4af37]/30 bg-[#1c0d06] text-[#f5ebe0] hover:bg-[#1c0d06]/90"
-            >
-              <Check className="mr-1 h-3.5 w-3.5" />
-              {isSaving ? 'Saving…' : 'Save'}
-            </Button>
-          </div>
-        </form>
-      </li>
+      <ProjectEditForm
+        project={project}
+        onSave={onSave}
+        onCancel={() => setEditing(false)}
+        isSaving={isSaving}
+      />
     );
   }
 
