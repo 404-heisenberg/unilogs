@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Request } from 'express';
 import { auth, prisma } from '../auth.js';
 import { authenticate } from '../middleware/authenticate.js';
+import { validateEntryContent } from '../lib/validateEntry.js';
 
 const router = Router();
 
@@ -233,6 +234,71 @@ router.get('/events/suggestions', authenticate, async (req, res) => {
 
     return res.status(500).json({
       error: 'Failed to fetch calendar suggestions',
+    });
+  }
+});
+
+router.post('/events/suggestions/:eventId/accept', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { projectId, content, date } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!projectId || !content) {
+      return res.status(400).json({
+        error: 'projectId and content are required',
+      });
+    }
+
+    const projectIdInt = parseInt(projectId, 10);
+
+    if (Number.isNaN(projectIdInt)) {
+      return res.status(400).json({
+        error: 'projectId must be a valid integer',
+      });
+    }
+
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectIdInt,
+        userId,
+      },
+      include: {
+        fields: true,
+      },
+    });
+
+    if (!project) {
+      return res.status(403).json({
+        error: 'You do not have access to this project',
+      });
+    }
+
+    const contentErrors = validateEntryContent(content, project.fields);
+
+    if (contentErrors.length > 0) {
+      return res.status(400).json({
+        errors: contentErrors,
+      });
+    }
+
+    const entry = await prisma.entry.create({
+      data: {
+        projectId: projectIdInt,
+        content,
+        date: date ? new Date(date) : new Date(),
+      },
+    });
+
+    return res.status(201).json(entry);
+  } catch (error) {
+    console.error('Google Calendar suggestion accept error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to accept calendar suggestion',
     });
   }
 });
