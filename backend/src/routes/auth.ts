@@ -13,6 +13,8 @@ const adapter = new PrismaPg({
 });
 const prisma = new PrismaClient({ adapter });
 
+const FRONTEND_URL = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+
 router.post('/signup', async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -49,6 +51,31 @@ router.post('/signin', async (req, res) => {
     return res.status(result.status).json(data);
   } catch {
     res.status(400).json({ error: 'Signin failed' });
+  }
+});
+
+// Starts a Google OAuth sign-in/sign-up. Deliberately requests no scopes
+// beyond the provider defaults, so a plain Google sign-in never implies
+// Google Calendar access was granted (that's a separate, explicit flow —
+// see /api/calendar/connect).
+router.post('/social/google', async (req, res) => {
+  try {
+    const from = req.body?.from === 'signup' ? 'signup' : 'login';
+
+    const result = await auth.api.signInSocial({
+      body: {
+        provider: 'google',
+        disableRedirect: true,
+        callbackURL: `${FRONTEND_URL}/dashboard`,
+        errorCallbackURL: `${FRONTEND_URL}/${from}?oauthError=1`,
+      },
+      headers: req.headers,
+    });
+
+    return res.status(200).json({ url: result.url });
+  } catch (error) {
+    console.error('Google sign-in start error:', error);
+    return res.status(400).json({ error: 'Failed to start Google sign-in' });
   }
 });
 
