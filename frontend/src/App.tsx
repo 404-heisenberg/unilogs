@@ -6,13 +6,11 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProjectsPage from './pages/ProjectsPage';
-import ProjectCreatePage from './pages/ProjectCreatePage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import EntriesPage from './pages/EntriesPage';
-import EntryCreatePage from './pages/EntryCreatePage';
 import EntryDetailPage from './pages/EntryDetailPage';
 import DashboardPage from './pages/DashboardPage';
-import SettingsPage from './pages/SettingsPage';
+import ProfileInformation from './pages/ProfileInformation';
 
 export default function App() {
   return (
@@ -27,12 +25,10 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/new" element={<ProjectCreatePage />} />
             <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
             <Route path="/entries" element={<EntriesPage />} />
-            <Route path="/entries/new" element={<EntryCreatePage />} />
             <Route path="/entries/:entryId" element={<EntryDetailPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfileInformation />} />
           </Route>
         </Route>
       </Routes>

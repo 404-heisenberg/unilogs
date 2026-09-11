@@ -60,34 +60,57 @@ export default function EntryDetailPage() {
             <h1 className="text-2xl font-bold tracking-tight text-[#1c0d06]">
               {entry.project?.name ?? 'Entry'}
             </h1>
-            <p className="text-sm text-[#7a5230]">{entry.date.slice(0, 10)}</p>
+            <p className="text-sm text-[#7a5230]">{entry.date ? entry.date.slice(0, 10) : ''}</p>
           </div>
 
           <dl className="flex flex-col gap-2 rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm">
-            {Object.entries(entry.content).map(([name, value]) => (
-              <div key={name} className="flex flex-wrap gap-2 text-sm">
-                <dt className="font-medium text-[#1c0d06]">{name}:</dt>
-                <dd className="text-[#4a3525]">{String(value)}</dd>
-              </div>
-            ))}
+            {entry.content && typeof entry.content === 'object' && !Array.isArray(entry.content) ? (
+              Object.entries(entry.content as Record<string, unknown>).map(([name, value]) => (
+                <div key={name} className="flex flex-wrap gap-2 text-sm">
+                  <dt className="font-medium text-[#1c0d06]">{name}:</dt>
+                  <dd className="text-[#4a3525]">{String(value)}</dd>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm italic text-[#7a5230]/60">No content logged</p>
+            )}
           </dl>
 
           {entry.tags && entry.tags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
-              {entry.tags.map(({ tag }) => (
-                <span
-                  key={tag.id}
-                  className="rounded-full bg-[#d4a373]/20 px-3 py-1 text-xs font-medium text-[#7a5230]"
-                >
-                  {tag.name}
-                </span>
-              ))}
+              {entry.tags.map((item, idx) => {
+                const tagObj =
+                  typeof item === 'object' && item !== null && 'tag' in item
+                    ? (item as { tag: { id?: string | number; name?: string } }).tag
+                    : item;
+
+                const tagKey =
+                  typeof tagObj === 'object' && tagObj !== null && 'id' in tagObj && tagObj.id
+                    ? tagObj.id
+                    : idx;
+
+                const tagName =
+                  typeof tagObj === 'object' && tagObj !== null && 'name' in tagObj
+                    ? tagObj.name
+                    : String(tagObj);
+
+                return (
+                  <span
+                    key={tagKey}
+                    className="rounded-full bg-[#d4a373]/20 px-3 py-1 text-xs font-medium text-[#7a5230]"
+                  >
+                    {tagName}
+                  </span>
+                );
+              })}
             </div>
           )}
 
-          <p className="mt-4 text-xs text-[#7a5230]">
-            Logged {new Date(entry.createdAt).toLocaleString()}
-          </p>
+          {entry.createdAt && (
+            <p className="mt-4 text-xs text-[#7a5230]">
+              Logged {new Date(entry.createdAt).toLocaleString()}
+            </p>
+          )}
         </article>
       )}
     </div>

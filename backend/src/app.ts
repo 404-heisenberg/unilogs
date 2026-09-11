@@ -14,19 +14,30 @@ import { openapiSpec } from './openapi.js';
 export function createApp() {
   const app = express();
 
-  app.use(express.json());
+  // 1. Sanitize CORS Origin (strips trailing slashes)
+  const rawOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+  const allowedOrigin = rawOrigin.replace(/\/$/, '');
 
   app.use(
     cors({
-      origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+      origin: allowedOrigin,
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     }),
   );
+
+  // 2. Body Parser
   app.use(express.json());
+
+  // 3. Custom Authentication Routes (Mount under /api/auth for test suite compatibility)
   app.use('/api/auth', authRoutes);
-  app.use('/api/projects', projectRouter);
+
+  // 4. Better-Auth Handler (Fallback for native Better-Auth endpoints)
   app.all('/api/auth/*splat', toNodeHandler(auth));
 
+  // 5. Application Feature Routers
+  app.use('/api/projects', projectRouter);
   app.use('/api/field-definitions', fieldDefinitionsRoutes);
   app.use('/api/entries', entriesRoutes);
   app.use('/api/stats', statsRoutes);
@@ -39,6 +50,7 @@ export function createApp() {
       health: '/api/health',
     });
   });
+
   app.get('/openapi.json', (_req, res) => {
     res.json(openapiSpec);
   });
