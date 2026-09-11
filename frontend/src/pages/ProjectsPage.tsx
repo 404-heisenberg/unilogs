@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -40,11 +40,18 @@ function ProjectRow({
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
 
-  // Keep local state in sync if project prop updates from server
-  useEffect(() => {
+  // Track the previous props so we know when the server data changes
+  const [prevProjectName, setPrevProjectName] = useState(project.name);
+  const [prevProjectDesc, setPrevProjectDesc] = useState(project.description);
+
+  // If the props change (e.g. server update), sync our local state *during* the render phase.
+  // React will immediately throw away the stale render and re-render with the new state safely.
+  if (project.name !== prevProjectName || project.description !== prevProjectDesc) {
+    setPrevProjectName(project.name);
+    setPrevProjectDesc(project.description);
     setName(project.name);
     setDescription(project.description ?? '');
-  }, [project.name, project.description]);
+  }
 
   const cancel = () => {
     setEditing(false);
