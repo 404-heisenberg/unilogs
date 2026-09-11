@@ -10,7 +10,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -b",
     "start": "node dist/index.js",
-    "lint": "eslint .",
+    "lint": "eslint . --ignore-pattern src/generated",
     "typecheck": "tsc -b",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

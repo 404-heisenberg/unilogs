@@ -52,14 +52,14 @@ export const DashboardPage: React.FC = () => {
 
   // Session & User Resolution
   const { data: sessionData } = useSession();
-  const userObj = sessionData?.user || (sessionData as any);
+  const userObj = sessionData?.user || (sessionData as Record<string, unknown>);
 
   const userName =
-    userObj?.name ||
-    userObj?.fullName ||
-    userObj?.full_name ||
-    userObj?.username ||
-    (userObj?.email ? userObj.email.split('@')[0] : 'User');
+    (typeof userObj?.name === 'string' && userObj.name) ||
+    (typeof userObj?.fullName === 'string' && userObj.fullName) ||
+    (typeof userObj?.full_name === 'string' && userObj.full_name) ||
+    (typeof userObj?.username === 'string' && userObj.username) ||
+    (typeof userObj?.email === 'string' ? userObj.email.split('@')[0] : 'User');
 
   const userInitial = userName.charAt(0).toUpperCase();
 
@@ -112,7 +112,6 @@ export const DashboardPage: React.FC = () => {
   // Fetch Projects & Entries from backend
   const fetchData = useCallback(async () => {
     try {
-      setIsLoading(true);
       const [projectsData, entriesData] = await Promise.all([
         api.get<Project[]>('/api/projects').catch(() => []),
         api.get<Entry[]>('/api/entries').catch(() => []),
