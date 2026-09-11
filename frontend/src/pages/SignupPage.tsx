@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 
 export const SignupPage: React.FC = () => {
@@ -15,6 +15,8 @@ export const SignupPage: React.FC = () => {
   const [showMismatchError, setShowMismatchError] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const oauthError = searchParams.get('oauthError') === '1';
 
   const signIn = useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
@@ -66,9 +68,12 @@ export const SignupPage: React.FC = () => {
     };
   }, []);
 
-  const handleOAuthSignUp = (provider: string) => {
-    console.log(`Signing up with ${provider}`);
-  };
+  const googleSignUp = useMutation({
+    mutationFn: () => api.post<{ url: string }>('/api/auth/social/google', { from: 'signup' }),
+    onSuccess: (result) => {
+      window.location.href = result.url;
+    },
+  });
 
   const shouldShowRequirements = isPasswordFocused || showValidationError;
 
@@ -94,6 +99,11 @@ export const SignupPage: React.FC = () => {
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Create an account
           </h2>
+          {oauthError && (
+            <p className="text-sm text-red-700">
+              Google sign-up was cancelled or didn&apos;t complete. Please try again.
+            </p>
+          )}
 
           <label htmlFor="name" className="text-sm font-semibold">
             Name<span className="text-red-600 ml-0.5">*</span>
@@ -303,8 +313,9 @@ export const SignupPage: React.FC = () => {
           <section className="flex gap-3">
             <button
               type="button"
-              onClick={() => handleOAuthSignUp('Google')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer"
+              onClick={() => googleSignUp.mutate()}
+              disabled={googleSignUp.isPending}
+              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -324,9 +335,12 @@ export const SignupPage: React.FC = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              Google
+              {googleSignUp.isPending ? 'Connecting…' : 'Google'}
             </button>
           </section>
+          {googleSignUp.isError && (
+            <p className="text-sm text-red-700">{googleSignUp.error.message}</p>
+          )}
         </form>
       </section>
     </main>
