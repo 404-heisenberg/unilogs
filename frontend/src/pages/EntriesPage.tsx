@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,19 +16,40 @@ import {
   Plus,
   Search,
   Calendar,
+  X,
+  Tag,
 } from 'lucide-react';
 
-// Safely extract a printable string from string, number, or { id, type, label, value } objects
+// Safely extract printable text from strings, numbers, objects, or custom field arrays
 const getDisplayText = (val: unknown): string => {
   if (typeof val === 'string') return val;
   if (typeof val === 'number') return String(val);
+
+  if (Array.isArray(val)) {
+    return val
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') {
+          const obj = item as Record<string, unknown>;
+          if (typeof obj.value === 'string' && obj.value.trim()) {
+            return obj.label ? `${obj.label}: ${obj.value}` : obj.value;
+          }
+          return getDisplayText(item);
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .join(' • ');
+  }
+
   if (val && typeof val === 'object') {
     const obj = val as Record<string, unknown>;
-    if (typeof obj.label === 'string') return obj.label;
     if (typeof obj.name === 'string') return obj.name;
     if (typeof obj.title === 'string') return obj.title;
+    if (typeof obj.label === 'string') return obj.label;
     if (typeof obj.value === 'string') return obj.value;
   }
+
   return '';
 };
 
@@ -41,7 +62,7 @@ export default function EntriesPage() {
 
   // Session & User Resolution
   const { data: sessionData } = useSession();
-  const userObj = sessionData?.user || (sessionData as Record<string, unknown>);
+  const userObj = (sessionData?.user ?? sessionData ?? {}) as Record<string, unknown>;
 
   const userName =
     (typeof userObj?.name === 'string' && userObj.name) ||
@@ -67,31 +88,34 @@ export default function EntriesPage() {
   const {
     data: rawEntries,
     isPending,
-    isLoading,
     isError,
   } = useQuery({
     queryKey: ['entries'],
     queryFn: () => api.get<LogEntry[]>('/api/entries'),
   });
 
-  const entriesList: LogEntry[] = Array.isArray(rawEntries)
-    ? rawEntries
-    : Array.isArray((rawEntries as unknown as { data: LogEntry[] })?.data)
-      ? (rawEntries as unknown as { data: LogEntry[] }).data
-      : [];
+  const entriesList: LogEntry[] = useMemo(() => {
+    if (Array.isArray(rawEntries)) return rawEntries;
+    if (Array.isArray((rawEntries as unknown as { data: LogEntry[] })?.data)) {
+      return (rawEntries as unknown as { data: LogEntry[] }).data;
+    }
+    return [];
+  }, [rawEntries]);
 
-  const filteredEntries = entriesList.filter((entry) => {
-    if (!entry) return false;
+  const filteredEntries = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
-    if (!term) return true;
+    if (!term) return entriesList;
 
-    const titleText = getDisplayText(entry.title).toLowerCase();
-    const contentText = getDisplayText(entry.content).toLowerCase();
+    return entriesList.filter((entry) => {
+      if (!entry) return false;
 
-    return titleText.includes(term) || contentText.includes(term);
-  });
+      const titleText = getDisplayText(entry.title).toLowerCase();
+      const contentText = getDisplayText(entry.content).toLowerCase();
+      const projectText = getDisplayText(entry.project).toLowerCase();
 
-  const loadingState = isPending || isLoading;
+      return titleText.includes(term) || contentText.includes(term) || projectText.includes(term);
+    });
+  }, [entriesList, searchTerm]);
 
   return (
     <div className="flex min-h-screen bg-[#f5ebe0] text-[#1c0d06]">
@@ -172,7 +196,7 @@ export default function EntriesPage() {
       </aside>
 
       {/* 2. MAIN WORKSPACE */}
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Top Header Bar */}
         <header className="flex h-20 items-center justify-between border-b-2 border-[#d4af37] bg-[#1c0d06] px-8 text-[#f5ebe0] shadow-md">
           <h2 className="text-2xl font-bold tracking-tight text-[#e6c687]">ALL ENTRIES</h2>
@@ -187,11 +211,12 @@ export default function EntriesPage() {
         {/* Main Workspace Content */}
         <main className="flex-1 overflow-y-auto p-8">
           <div className="mx-auto w-full max-w-5xl">
-            <div className="mb-6 flex items-center justify-between">
+            {/* Page Header */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-[#1c0d06]">Log Entries</h1>
-                <p className="mt-1 text-sm text-[#7a5230]">
-                  Browse and filter all daily work and milestones.
+                <p className="mt-1 text-sm font-medium text-[#7a5230]">
+                  Browse and filter all daily work, study logs, and milestones.
                 </p>
               </div>
               <Link to="/entries/new">
@@ -201,46 +226,99 @@ export default function EntriesPage() {
               </Link>
             </div>
 
+            {/* Search Bar */}
             <div className="relative mb-6">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a5230]" />
               <input
                 type="text"
-                placeholder="Search entries..."
+                placeholder="Search entries by title, content, custom fields, or project..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl border border-[#d4a373]/50 bg-white py-2.5 pl-10 pr-4 text-sm text-[#1c0d06] outline-none transition-all focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]"
+                className="w-full rounded-xl border border-[#d4a373]/50 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-[#1c0d06] outline-none transition-all focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7a5230] hover:text-[#1c0d06]"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
-            {loadingState && (
+            {/* Loading Skeletons */}
+            {isPending && (
               <div className="flex flex-col gap-3">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-24 animate-pulse rounded-xl border border-[#d4a373]/30 bg-[#d4a373]/20"
+                    className="h-28 animate-pulse rounded-xl border border-[#d4a373]/30 bg-[#d4a373]/20"
                   />
                 ))}
               </div>
             )}
 
+            {/* Query Error State */}
             {isError && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                Failed to load log entries.
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 shadow-sm">
+                Failed to load log entries. Please verify network connection or try refreshing.
               </div>
             )}
 
-            {!loadingState && !isError && filteredEntries.length === 0 && (
-              <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/50 p-12 text-center">
+            {/* Empty States */}
+            {!isPending && !isError && entriesList.length === 0 && (
+              <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/50 p-12 text-center shadow-sm">
                 <p className="text-base font-medium text-[#1c0d06]">No log entries found.</p>
+                <p className="mt-1 text-sm text-[#7a5230]">
+                  Document your progress by creating your first entry.
+                </p>
+                <Link to="/entries/new">
+                  <Button className="mt-4 border border-[#d4af37]/30 bg-[#1c0d06] text-[#f5ebe0] shadow-sm hover:bg-[#1c0d06]/90">
+                    Create your first entry
+                  </Button>
+                </Link>
               </div>
             )}
 
-            {!loadingState && filteredEntries.length > 0 && (
+            {!isPending && !isError && entriesList.length > 0 && filteredEntries.length === 0 && (
+              <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/50 p-12 text-center shadow-sm">
+                <p className="text-base font-medium text-[#1c0d06]">
+                  No matching log entries found.
+                </p>
+                <p className="mt-1 text-sm text-[#7a5230]">
+                  Try adjusting your search query or clear the filter.
+                </p>
+                <Button
+                  onClick={() => setSearchTerm('')}
+                  variant="outline"
+                  className="mt-4 border-[#d4a373]/60 text-[#1c0d06] hover:bg-[#f5ebe0]"
+                >
+                  Clear search filter
+                </Button>
+              </div>
+            )}
+
+            {/* Entry List */}
+            {!isPending && !isError && filteredEntries.length > 0 && (
               <ul className="flex flex-col gap-4">
-                {filteredEntries.map((entry) => {
-                  const displayTitle = getDisplayText(entry.title) || 'Untitled Entry';
-                  const displayContent = getDisplayText(entry.content);
+                {filteredEntries.map((entry: LogEntry) => {
                   const displayProject = getDisplayText(entry.project);
+                  const displayTitle =
+                    getDisplayText(entry.title) ||
+                    (displayProject ? `${displayProject} Entry` : 'Untitled Entry');
+                  const displayContent = getDisplayText(entry.content);
+                  const rawDate = entry.date || entry.createdAt || entry.updatedAt;
+
+                  const formattedDate =
+                    rawDate && !isNaN(Date.parse(String(rawDate)))
+                      ? new Date(rawDate).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      : null;
 
                   return (
                     <li
@@ -248,26 +326,40 @@ export default function EntriesPage() {
                       className="rounded-xl border border-[#d4af37]/30 bg-white p-5 shadow-sm transition-all hover:border-[#d4af37]/60 hover:shadow-md"
                     >
                       <Link to={`/entries/${entry.id}`} className="group block">
-                        <h3 className="font-semibold text-[#1c0d06] transition-colors group-hover:text-[#7a5230]">
-                          {displayTitle}
-                        </h3>
-                        {displayContent && (
-                          <p className="mt-1 line-clamp-2 text-sm text-[#7a5230]">
+                        <div className="flex items-start justify-between gap-4">
+                          <h3 className="font-bold text-[#1c0d06] transition-colors group-hover:text-[#7a5230]">
+                            {displayTitle}
+                          </h3>
+                        </div>
+
+                        {displayContent ? (
+                          <p className="mt-2 line-clamp-3 text-sm font-normal text-[#7a5230]">
                             {displayContent}
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-xs italic text-[#7a5230]/60">
+                            No content details provided
                           </p>
                         )}
                       </Link>
-                      <div className="mt-4 flex items-center gap-4 text-xs font-medium text-[#7a5230]">
+
+                      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-semibold text-[#7a5230]">
                         {displayProject && (
-                          <span className="flex items-center gap-1 rounded-md bg-[#f5ebe0] px-2 py-1 text-[#1c0d06]">
+                          <span className="flex items-center gap-1.5 rounded-md bg-[#f5ebe0] px-2.5 py-1 text-[#1c0d06]">
                             <Folder size={13} className="text-[#d4af37]" />
                             {displayProject}
                           </span>
                         )}
-                        {entry.createdAt && !isNaN(Date.parse(String(entry.createdAt))) && (
-                          <span className="flex items-center gap-1">
+                        {formattedDate && (
+                          <span className="flex items-center gap-1.5">
                             <Calendar size={13} />
-                            {new Date(entry.createdAt).toLocaleDateString()}
+                            {formattedDate}
+                          </span>
+                        )}
+                        {Array.isArray(entry.content) && entry.content.length > 0 && (
+                          <span className="flex items-center gap-1.5 text-[#7a5230]/80">
+                            <Tag size={13} />
+                            {entry.content.length} field(s)
                           </span>
                         )}
                       </div>

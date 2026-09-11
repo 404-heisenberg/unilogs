@@ -18,10 +18,6 @@ import {
 import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
 
-// ==========================================
-// TYPES & INTERFACES
-// ==========================================
-
 export interface CustomLogField {
   id: string;
   label: string;
@@ -49,10 +45,6 @@ export interface Entry {
     name: string;
   };
 }
-
-// ==========================================
-// SUB-COMPONENT: SIDEBAR NAVIGATION
-// ==========================================
 
 interface SidebarNavProps {
   isCollapsed: boolean;
@@ -142,10 +134,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   );
 };
 
-// ==========================================
-// SUB-COMPONENT: ANALYTICS OVERVIEW
-// ==========================================
-
 interface AnalyticsOverviewProps {
   totalHoursLogged: number;
   projectsCount: number;
@@ -164,7 +152,7 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
   return (
     <section className="flex w-full flex-col rounded-xl border-2 border-[#d4a373] bg-white p-6 shadow-md">
       <h3 className="text-xl font-bold text-[#1c0d06]">Analytics Overview</h3>
-      <p className="mt-1 border-b border-[#d4a373]/30 pb-3 mb-4 text-xs font-medium text-[#7a5230]">
+      <p className="mb-4 border-b border-[#d4a373]/30 pb-3 text-xs font-medium text-[#7a5230]">
         Summary: You currently have <strong>{projectsCount} active project(s)</strong> and{' '}
         <strong>{entriesCount} total logged entry/entries</strong>.
       </p>
@@ -206,11 +194,6 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
     </section>
   );
 };
-
-// ==========================================
-// SUB-COMPONENT: QUICK LOG FORM
-// ==========================================
-
 interface QuickLogFormProps {
   projectsList: Project[];
   onEntrySaved: () => Promise<void>;
@@ -312,7 +295,7 @@ export const QuickLogForm: React.FC<QuickLogFormProps> = ({ projectsList, onEntr
       </header>
 
       {logSuccessMessage && (
-        <div className="mb-4 flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-300 p-3 text-xs font-semibold text-emerald-800">
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
           <CheckCircle2 size={16} className="text-emerald-600" />
           Entry saved successfully! Your analytics have been updated.
         </div>
@@ -361,8 +344,8 @@ export const QuickLogForm: React.FC<QuickLogFormProps> = ({ projectsList, onEntr
           return (
             <div key={field.id} className="flex flex-col gap-2 border-t border-[#d4a373]/20 pt-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-1 items-center gap-2 min-w-[200px]">
-                  <span className="text-xs font-bold uppercase text-[#7a5230] shrink-0">
+                <div className="flex min-w-[200px] flex-1 items-center gap-2">
+                  <span className="shrink-0 text-xs font-bold uppercase text-[#7a5230]">
                     {index + 3}. Name:
                   </span>
                   <input
@@ -374,7 +357,7 @@ export const QuickLogForm: React.FC<QuickLogFormProps> = ({ projectsList, onEntr
                   />
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   <label className="text-[10px] font-bold uppercase text-[#7a5230]">Type:</label>
                   <select
                     value={field.type}
@@ -412,7 +395,7 @@ export const QuickLogForm: React.FC<QuickLogFormProps> = ({ projectsList, onEntr
                   placeholder={`Enter ${field.label}...`}
                   value={field.value}
                   onChange={(e) => handleCustomFieldChange(field.id, 'value', e.target.value)}
-                  className="min-h-[70px] w-full rounded-md border border-[#d4a373] bg-[#f5ebe0] px-4 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none resize-y"
+                  className="min-h-[70px] w-full resize-y rounded-md border border-[#d4a373] bg-[#f5ebe0] px-4 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none"
                 />
               ) : field.type === 'number' ? (
                 <input
@@ -482,7 +465,7 @@ export const QuickLogForm: React.FC<QuickLogFormProps> = ({ projectsList, onEntr
         <button
           type="button"
           onClick={handleAddCustomField}
-          className="self-start text-xs font-bold text-[#7a5230] hover:text-[#1c0d06] flex items-center gap-1"
+          className="flex items-center gap-1 self-start text-xs font-bold text-[#7a5230] hover:text-[#1c0d06]"
         >
           <Plus size={14} /> Add Another Field
         </button>
@@ -498,10 +481,6 @@ export const QuickLogForm: React.FC<QuickLogFormProps> = ({ projectsList, onEntr
     </section>
   );
 };
-
-// ==========================================
-// SUB-COMPONENT: CREATE PROJECT MODAL
-// ==========================================
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -599,17 +578,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   );
 };
 
-// ==========================================
-// MAIN CONTAINER: DASHBOARD PAGE
-// ==========================================
-
 export const DashboardPage: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
 
   // Session & User Resolution
   const { data: sessionData } = useSession();
-  const userObj = sessionData?.user || (sessionData as Record<string, unknown>);
+  const userObj = (sessionData?.user ?? sessionData ?? {}) as Record<string, unknown>;
 
   const userName =
     (typeof userObj?.name === 'string' && userObj.name) ||
@@ -697,7 +672,7 @@ export const DashboardPage: React.FC = () => {
         onLogout={handleLogout}
       />
 
-      <main className="flex flex-1 flex-col min-w-0 overflow-y-auto">
+      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <header className="flex h-20 items-center justify-between border-b-2 border-[#d4af37] bg-[#1c0d06] px-8 text-[#f5ebe0] shadow-md">
           <h2 className="text-2xl font-bold tracking-tight text-[#e6c687]">WELCOME</h2>
           <div className="flex items-center gap-3">

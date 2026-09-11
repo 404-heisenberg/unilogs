@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ function ProjectRow({
 }: {
   project: Project;
   archivedView: boolean;
-  onSave: (input: SaveInput) => void;
+  onSave: (input: SaveInput, onSuccess: () => void) => void;
   onArchiveToggle: () => void;
   isSaving: boolean;
   isTogglingArchive: boolean;
@@ -40,55 +40,77 @@ function ProjectRow({
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
 
+  // Keep local state in sync if project prop updates from server
+  useEffect(() => {
+    setName(project.name);
+    setDescription(project.description ?? '');
+  }, [project.name, project.description]);
+
   const cancel = () => {
     setEditing(false);
     setName(project.name);
     setDescription(project.description ?? '');
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName || isSaving) return;
+
+    onSave({ name: trimmedName, description: description.trim() || null }, () => setEditing(false));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      cancel();
+    }
+  };
+
   if (editing) {
     return (
-      <li className="flex flex-col gap-3 rounded-xl border border-[#d4af37]/40 bg-white p-4 shadow-sm transition-all">
-        <div className="flex flex-col gap-2">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-label="Project name"
-            placeholder="Project name"
-            className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
-          />
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description (optional)"
-            aria-label="Project description"
-            className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={cancel}
-            disabled={isSaving}
-            className="border-[#d4a373]/60 text-[#1c0d06] hover:bg-[#f5ebe0]"
-          >
-            <X className="mr-1 h-3.5 w-3.5" />
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            disabled={isSaving || !name.trim()}
-            onClick={() => {
-              onSave({ name: name.trim(), description: description.trim() || null });
-              setEditing(false);
-            }}
-            className="border border-[#d4af37]/30 bg-[#1c0d06] text-[#f5ebe0] hover:bg-[#1c0d06]/90"
-          >
-            <Check className="mr-1 h-3.5 w-3.5" />
-            {isSaving ? 'Saving…' : 'Save'}
-          </Button>
-        </div>
+      <li className="rounded-xl border border-[#d4af37]/40 bg-white p-4 shadow-sm transition-all">
+        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-label="Project name"
+              placeholder="Project name"
+              autoFocus
+              required
+              className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            />
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Description (optional)"
+              aria-label="Project description"
+              className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={cancel}
+              disabled={isSaving}
+              className="border-[#d4a373]/60 text-[#1c0d06] hover:bg-[#f5ebe0]"
+            >
+              <X className="mr-1 h-3.5 w-3.5" />
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSaving || !name.trim()}
+              className="border border-[#d4af37]/30 bg-[#1c0d06] text-[#f5ebe0] hover:bg-[#1c0d06]/90"
+            >
+              <Check className="mr-1 h-3.5 w-3.5" />
+              {isSaving ? 'Saving…' : 'Save'}
+            </Button>
+          </div>
+        </form>
       </li>
     );
   }
@@ -142,14 +164,14 @@ export default function ProjectsPage() {
 
   // Session & User Resolution
   const { data: sessionData } = useSession();
-  const userObj = sessionData?.user || (sessionData as Record<string, unknown>);
+  const userObj = (sessionData?.user ?? sessionData ?? {}) as Record<string, unknown>;
 
   const userName =
-    (typeof userObj?.name === 'string' && userObj.name) ||
-    (typeof userObj?.fullName === 'string' && userObj.fullName) ||
-    (typeof userObj?.full_name === 'string' && userObj.full_name) ||
-    (typeof userObj?.username === 'string' && userObj.username) ||
-    (typeof userObj?.email === 'string' ? userObj.email.split('@')[0] : 'User');
+    (typeof userObj.name === 'string' && userObj.name) ||
+    (typeof userObj.fullName === 'string' && userObj.fullName) ||
+    (typeof userObj.full_name === 'string' && userObj.full_name) ||
+    (typeof userObj.username === 'string' && userObj.username) ||
+    (typeof userObj.email === 'string' ? userObj.email.split('@')[0] : 'User');
 
   const userInitial = userName.charAt(0).toUpperCase();
 
@@ -374,9 +396,15 @@ export default function ProjectsPage() {
                     key={project.id}
                     project={project}
                     archivedView={archivedView}
-                    onSave={(input) => updateProject.mutate({ id: project.id, ...input })}
+                    onSave={(input, done) =>
+                      updateProject.mutate({ id: project.id, ...input }, { onSuccess: done })
+                    }
                     onArchiveToggle={() =>
-                      archiveToggle.mutate({ id: project.id, archived: project.archived })
+                      archiveToggle.mutate({
+                        id: project.id,
+                        archived:
+                          (project as Project & { archived?: boolean }).archived ?? archivedView,
+                      })
                     }
                     isSaving={updateProject.isPending && updateProject.variables?.id === project.id}
                     isTogglingArchive={
