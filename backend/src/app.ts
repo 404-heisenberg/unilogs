@@ -27,14 +27,16 @@ export function createApp() {
     }),
   );
 
-  // 2. Mount Better-Auth BEFORE express.json() with named wildcard parameter (*splat)
-  app.all('/api/auth/*splat', toNodeHandler(auth));
-
-  // 3. Body Parser (for remaining application routes)
+  // 2. Body Parser
   app.use(express.json());
 
-  // 4. Custom Application Routers
-  app.use('/api/custom-auth', authRoutes);
+  // 3. Custom Authentication Routes (Mount under /api/auth for test suite compatibility)
+  app.use('/api/auth', authRoutes);
+
+  // 4. Better-Auth Handler (Fallback for native Better-Auth endpoints)
+  app.all('/api/auth/*splat', toNodeHandler(auth));
+
+  // 5. Application Feature Routers
   app.use('/api/projects', projectRouter);
   app.use('/api/field-definitions', fieldDefinitionsRoutes);
   app.use('/api/entries', entriesRoutes);

@@ -1,7 +1,12 @@
 import { config } from 'dotenv';
 import { defineConfig } from 'vitest/config';
 
+// 1. Default NODE_ENV to 'test' if not explicitly set in the shell
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+
+// 2. Try loading .env.test, then fall back to .env (dotenv will not overwrite existing keys)
 config({ path: '.env.test', quiet: true });
+config({ path: '.env', quiet: true });
 
 if (process.env.NODE_ENV !== 'test') {
   throw new Error('NODE_ENV must be set to test before running the test suite');
@@ -9,7 +14,9 @@ if (process.env.NODE_ENV !== 'test') {
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 if (!testDatabaseUrl) {
-  throw new Error('TEST_DATABASE_URL must be set before running the test suite');
+  throw new Error(
+    'TEST_DATABASE_URL must be set in .env.test or .env before running the test suite',
+  );
 }
 
 let databaseName: string;
