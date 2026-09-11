@@ -5,6 +5,7 @@ import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
 
 const navItems = [
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/projects', label: 'Projects' },
   { to: '/projects/new', label: 'New Project' },
   { to: '/entries', label: 'Entries' },
