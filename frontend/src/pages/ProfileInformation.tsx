@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -29,22 +29,20 @@ export default function ProfileInformation() {
   // Layout State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Profile Form State
-  const [name, setName] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  // Profile Form State (Tracks local overrides when edited)
+  const [nameInput, setNameInput] = useState<string | null>(null);
+  const [avatarInput, setAvatarInput] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Deletion Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [password, setPassword] = useState('');
 
-  // Synchronize initial session data
-  useEffect(() => {
-    if (sessionData?.user) {
-      setName(sessionData.user.name || '');
-      setAvatarPreview(sessionData.user.image || sessionData.user.avatarUrl || null);
-    }
-  }, [sessionData]);
+  // Derive initial values from sessionData or user inputs
+  const userObj = sessionData?.user || (sessionData as any);
+
+  const name = nameInput ?? userObj?.name ?? userObj?.fullName ?? userObj?.full_name ?? '';
+  const avatarPreview = avatarInput ?? userObj?.image ?? userObj?.avatarUrl ?? null;
 
   // Profile Update Mutation
   const updateProfile = useMutation({
@@ -52,6 +50,8 @@ export default function ProfileInformation() {
       api.patch('/api/auth/profile', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['session'] });
+      setNameInput(null);
+      setAvatarInput(null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     },
@@ -72,7 +72,7 @@ export default function ProfileInformation() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+        setAvatarInput(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -97,107 +97,121 @@ export default function ProfileInformation() {
 
   const handleSignOut = async () => {
     try {
-      await api.post('/api/auth/logout');
-      navigate('/login');
+      await api.post('/api/auth/logout', {});
     } catch {
+      // Proceed with redirect regardless of network status
+    } finally {
       navigate('/login');
     }
   };
 
-  const userName = sessionData?.user?.name || 'Student User';
-  const userEmail = sessionData?.user?.email || '';
+  const userName =
+    userObj?.name ||
+    userObj?.fullName ||
+    userObj?.full_name ||
+    userObj?.username ||
+    (userObj?.email ? userObj.email.split('@')[0] : 'User');
+
+  const userEmail = userObj?.email || '';
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
-    <div className="flex min-h-screen bg-[#f5ebe0]">
+    <div className="flex min-h-screen bg-[#f5ebe0] text-[#1c0d06]">
       {/* 1. COLLAPSIBLE SIDEBAR */}
       <aside
-        className={`relative flex flex-col justify-between border-r border-[#d4af37]/40 bg-[#1c0d06] text-[#f5ebe0] transition-all duration-300 ${
+        className={`flex flex-col justify-between border-r-2 border-[#d4af37] bg-[#1c0d06] text-[#f5ebe0] transition-all duration-300 ${
           isSidebarCollapsed ? 'w-20' : 'w-64'
         }`}
       >
         <div>
           {/* Sidebar Header */}
-          <div className="flex h-16 items-center justify-between border-b border-[#d4af37]/30 px-4">
+          <header className="flex h-20 items-center justify-between border-b border-[#d4af37]/30 px-4">
             {!isSidebarCollapsed && (
-              <span className="text-xl font-bold tracking-wider text-[#d4af37]">UNILOGS</span>
+              <h1 className="text-xl font-bold tracking-wider text-[#e6c687]">UNILOGS</h1>
             )}
             <button
+              type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="rounded-lg p-1.5 text-[#d4af37] hover:bg-[#d4af37]/10"
-              aria-label="Toggle Sidebar"
+              className="rounded-md p-2 text-[#e6c687] hover:bg-[#2a150a] focus:outline-none"
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
-          </div>
+          </header>
 
           {/* Navigation Links */}
-          <nav className="mt-6 flex flex-col gap-1 px-3">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5ebe0]/80 transition-colors hover:bg-[#d4af37]/10 hover:text-[#d4af37]"
-            >
-              <LayoutDashboard size={18} />
-              {!isSidebarCollapsed && <span>Dashboard</span>}
-            </Link>
-
-            <Link
-              to="/projects"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5ebe0]/80 transition-colors hover:bg-[#d4af37]/10 hover:text-[#d4af37]"
-            >
-              <Folder size={18} />
-              {!isSidebarCollapsed && <span>Projects</span>}
-            </Link>
-
-            <Link
-              to="/entries"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5ebe0]/80 transition-colors hover:bg-[#d4af37]/10 hover:text-[#d4af37]"
-            >
-              <FileText size={18} />
-              {!isSidebarCollapsed && <span>All Entries</span>}
-            </Link>
-
-            <Link
-              to="/profile"
-              className="flex items-center gap-3 rounded-lg bg-[#d4af37]/20 px-3 py-2.5 text-sm font-medium text-[#d4af37]"
-            >
-              <UserIcon size={18} />
-              {!isSidebarCollapsed && <span>Profile</span>}
-            </Link>
+          <nav className="p-4">
+            <ul className="flex flex-col gap-2">
+              <li>
+                <Link
+                  to="/dashboard"
+                  className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-[#f5ebe0] transition-colors hover:bg-[#2a150a] hover:text-[#d4af37]"
+                >
+                  <LayoutDashboard size={20} className="shrink-0" />
+                  {!isSidebarCollapsed && <span>Dashboard</span>}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/projects"
+                  className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-[#f5ebe0] transition-colors hover:bg-[#2a150a] hover:text-[#d4af37]"
+                >
+                  <Folder size={20} className="shrink-0" />
+                  {!isSidebarCollapsed && <span>Projects</span>}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/entries"
+                  className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-[#f5ebe0] transition-colors hover:bg-[#2a150a] hover:text-[#d4af37]"
+                >
+                  <FileText size={20} className="shrink-0" />
+                  {!isSidebarCollapsed && <span>All Entries</span>}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/profile"
+                  className="flex w-full items-center gap-3 rounded-md bg-[#d4a373] p-3 font-semibold text-[#1c0d06] transition-colors"
+                >
+                  <UserIcon size={20} className="shrink-0" />
+                  {!isSidebarCollapsed && <span>Profile Information</span>}
+                </Link>
+              </li>
+            </ul>
           </nav>
         </div>
 
         {/* Sidebar Footer / Sign Out */}
-        <div className="border-t border-[#d4af37]/30 p-3">
+        <footer className="border-t border-[#d4af37]/30 p-4">
           <button
+            type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10 hover:text-red-200"
+            className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300"
           >
-            <LogOut size={18} />
+            <LogOut size={20} className="shrink-0" />
             {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
-        </div>
+        </footer>
       </aside>
 
       {/* 2. MAIN LAYOUT AREA */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* TOP BANNER / HEADER */}
-        <header className="flex h-16 items-center justify-between border-b border-[#d4af37]/30 bg-white px-8 shadow-sm">
-          <div>
-            <h2 className="text-lg font-semibold text-[#1c0d06]">Profile Settings</h2>
-          </div>
+        <header className="flex h-20 items-center justify-between border-b-2 border-[#d4af37] bg-[#1c0d06] px-8 text-[#f5ebe0] shadow-md">
+          <h2 className="text-2xl font-bold tracking-tight text-[#e6c687]">PROFILE INFORMATION</h2>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-[#7a5230]">{userName}</span>
+            <span className="font-semibold text-[#f5ebe0]">{userName}</span>
             {avatarPreview ? (
               <img
                 src={avatarPreview}
                 alt={userName}
-                className="h-9 w-9 rounded-full object-cover border border-[#d4af37]"
+                className="h-10 w-10 rounded-full object-cover border border-[#d4af37]"
               />
             ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1c0d06] text-sm font-bold text-[#d4af37]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d4af37] bg-[#d4a373] text-lg font-bold text-[#1c0d06]">
                 {userInitial}
-              </div>
+              </span>
             )}
           </div>
         </header>
@@ -233,13 +247,13 @@ export default function ProfileInformation() {
                           className="h-20 w-20 rounded-full object-cover border-2 border-[#d4af37] shadow-sm"
                         />
                       ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#1c0d06] text-2xl font-bold text-[#d4af37] shadow-sm">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full border border-[#d4af37] bg-[#1c0d06] text-2xl font-bold text-[#e6c687] shadow-sm">
                           {userInitial}
                         </div>
                       )}
                       <label
                         htmlFor="avatar-upload"
-                        className="absolute bottom-0 right-0 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#d4af37] text-[#1c0d06] shadow transition-transform hover:scale-105"
+                        className="absolute bottom-0 right-0 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#d4a373] text-[#1c0d06] shadow transition-transform hover:scale-105"
                       >
                         <Camera size={14} />
                       </label>
@@ -254,9 +268,9 @@ export default function ProfileInformation() {
                     <div>
                       <label
                         htmlFor="avatar-upload"
-                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#d4a373]/50 bg-white px-3 py-1.5 text-xs font-medium text-[#1c0d06] hover:bg-[#f5ebe0] transition-colors"
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#d4a373]/50 bg-white px-3 py-1.5 text-xs font-semibold text-[#1c0d06] hover:bg-[#f5ebe0] transition-colors"
                       >
-                        <Camera size={14} /> Upload image
+                        <Camera size={14} className="text-[#7a5230]" /> Upload image
                       </label>
                       <p className="mt-1 text-xs text-[#7a5230]">
                         JPG, PNG, or GIF. Max file size 5MB.
@@ -277,9 +291,9 @@ export default function ProfileInformation() {
                     id="user-name"
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => setNameInput(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-[#d4a373]/50 bg-white px-4 py-2 text-sm text-[#1c0d06] outline-none transition-all focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]"
+                    className="w-full rounded-xl border border-[#d4a373]/50 bg-white px-4 py-2.5 text-sm text-[#1c0d06] outline-none transition-all focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]"
                   />
                 </div>
 
@@ -296,7 +310,7 @@ export default function ProfileInformation() {
                     type="email"
                     value={userEmail}
                     disabled
-                    className="w-full rounded-xl border border-[#d4a373]/30 bg-[#f5ebe0]/40 px-4 py-2 text-sm text-[#7a5230] cursor-not-allowed outline-none"
+                    className="w-full rounded-xl border border-[#d4a373]/30 bg-[#f5ebe0]/60 px-4 py-2.5 text-sm text-[#7a5230] cursor-not-allowed outline-none"
                   />
                 </div>
 
@@ -305,14 +319,14 @@ export default function ProfileInformation() {
                   <Button
                     type="submit"
                     disabled={updateProfile.isPending}
-                    className="bg-[#1c0d06] text-[#f5ebe0] shadow-sm hover:bg-[#1c0d06]/90 border border-[#d4af37]/30"
+                    className="border border-[#d4af37]/30 bg-[#1c0d06] text-[#f5ebe0] shadow-sm hover:bg-[#1c0d06]/90"
                   >
                     <Save className="mr-1.5 h-4 w-4 text-[#d4af37]" />
                     {updateProfile.isPending ? 'Saving…' : 'Save Changes'}
                   </Button>
 
                   {saveSuccess && (
-                    <span className="flex items-center gap-1 text-sm text-emerald-700 font-medium">
+                    <span className="flex items-center gap-1 text-sm text-emerald-800 font-medium">
                       <Check size={16} /> Changes saved successfully!
                     </span>
                   )}
@@ -327,18 +341,18 @@ export default function ProfileInformation() {
             </div>
 
             {/* Danger Zone */}
-            <div className="rounded-xl border border-red-300/80 bg-red-50/50 p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-red-900 border-b border-red-200 pb-3 mb-3">
+            <div className="rounded-xl border border-red-300 bg-red-50/60 p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-red-950 border-b border-red-200 pb-3 mb-3">
                 Danger Zone
               </h2>
-              <p className="text-sm text-red-700 mb-4">
+              <p className="text-sm text-red-800 mb-4">
                 Permanently delete your account, projects, and log entries. This cannot be undone.
               </p>
               <Button
                 type="button"
                 variant="destructive"
                 onClick={() => setIsDeleteModalOpen(true)}
-                className="bg-red-700 hover:bg-red-800 text-white"
+                className="bg-red-800 text-white hover:bg-red-900"
               >
                 <Trash2 className="mr-1.5 h-4 w-4" /> Delete Account
               </Button>
@@ -350,12 +364,13 @@ export default function ProfileInformation() {
       {/* 3. PASSWORD CONFIRMATION MODAL */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[#d4af37]/30">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border-2 border-[#d4af37]">
             <div className="flex items-center justify-between pb-3 border-b border-[#d4a373]/20">
               <div className="flex items-center gap-2 text-red-800 font-semibold text-lg">
                 <AlertTriangle size={20} /> Confirm Account Deletion
               </div>
               <button
+                type="button"
                 onClick={handleCloseDeleteModal}
                 className="text-[#7a5230] hover:text-[#1c0d06]"
               >
@@ -385,7 +400,7 @@ export default function ProfileInformation() {
                     placeholder="••••••••"
                     autoComplete="current-password"
                     required
-                    className="w-full rounded-xl border border-red-300 bg-white pl-9 pr-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full rounded-xl border border-red-300 bg-white pl-9 pr-3 py-2 text-sm text-[#1c0d06] outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                   />
                 </div>
               </div>
@@ -404,7 +419,7 @@ export default function ProfileInformation() {
                   type="submit"
                   variant="destructive"
                   disabled={!password || deleteAccount.isPending}
-                  className="bg-red-700 hover:bg-red-800"
+                  className="bg-red-800 text-white hover:bg-red-900"
                 >
                   {deleteAccount.isPending ? 'Deleting…' : 'Permanently Delete'}
                 </Button>

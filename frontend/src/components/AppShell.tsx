@@ -1,27 +1,51 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useSession } from '@/hooks/useSession';
-import { api } from '@/lib/api';
+import React, { Component, ReactNode, useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 
-const navItems = [
-  { to: '/projects', label: 'Projects' },
-  { to: '/projects/new', label: 'New Project' },
-  { to: '/entries', label: 'Entries' },
-  { to: '/entries/new', label: 'New Entry' },
-];
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class LocalErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Uncaught error in sub-tree:', error, errorInfo);
+  }
+
+  public render() {
+    if (this.state.hasError) {
+      return (
+        <div className="m-8 rounded-xl border border-red-300 bg-red-50 p-6 text-red-900 shadow-md">
+          <h2 className="text-xl font-bold">Runtime Error Caught</h2>
+          <p className="mt-2 text-sm font-semibold">{this.state.error?.message}</p>
+          <pre className="mt-4 max-h-60 overflow-auto rounded bg-red-100 p-3 text-xs font-mono text-red-800">
+            {this.state.error?.stack}
+          </pre>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 rounded-md bg-[#1c0d06] px-4 py-2 text-xs font-semibold text-[#f5ebe0]"
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function AppShell() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const queryClient = useQueryClient();
-  const { data } = useSession();
-
-  const handleSignOut = async () => {
-    await api.post('/api/auth/sign-out');
-    queryClient.removeQueries({ queryKey: ['session'] });
-    navigate('/login');
-  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -39,60 +63,10 @@ export default function AppShell() {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen bg-[#f5ebe0]">
-      <aside className="flex w-64 flex-col justify-between bg-[#1c0d06] p-4 text-[#f5ebe0]">
-        <div>
-          <div className="mb-6 px-2 py-2">
-            <span className="text-lg font-bold tracking-tight text-[#e6c687]">UniLogs</span>
-          </div>
-          <nav className="flex flex-col gap-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`rounded-md px-3 py-2 text-sm transition-colors ${
-                    isActive
-                      ? 'bg-[#e6c687]/20 font-semibold text-[#e6c687]'
-                      : 'text-[#d4a373] hover:bg-white/5 hover:text-[#e6c687]'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="border-t border-[#d4a373]/20 pt-4">
-          {data?.user && (
-            <div className="mb-3 rounded-md bg-white/5 px-3 py-2">
-              <p className="text-sm font-medium text-[#f5ebe0]">{data.user.name}</p>
-              <p className="text-xs text-[#d4a373]">{data.user.email}</p>
-            </div>
-          )}
-          <Link
-            to="/settings"
-            className={`block rounded-md px-3 py-2 text-sm transition-colors ${
-              location.pathname === '/settings'
-                ? 'bg-[#e6c687]/20 font-semibold text-[#e6c687]'
-                : 'text-[#d4a373] hover:bg-white/5 hover:text-[#e6c687]'
-            }`}
-          >
-            Settings
-          </Link>
-          <button
-            onClick={handleSignOut}
-            className="w-full rounded-md px-3 py-2 text-left text-sm text-[#e6c687]/70 transition-colors hover:bg-white/5 hover:text-[#e6c687]"
-          >
-            Sign out
-          </button>
-        </div>
-      </aside>
-      <main className="flex-1 overflow-y-auto p-8 text-[#1c0d06]">
+    <div className="min-h-screen w-full bg-[#f5ebe0]">
+      <LocalErrorBoundary>
         <Outlet />
-      </main>
+      </LocalErrorBoundary>
     </div>
   );
 }

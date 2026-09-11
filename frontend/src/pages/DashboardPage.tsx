@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSession, api } from '../lib/api';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Folder,
+  FileText,
+  User as UserIcon,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  X,
+  Clock,
+  FolderPlus,
+} from 'lucide-react';
+import { useSession } from '@/hooks/useSession';
+import { api } from '@/lib/api';
 
 interface CustomLogField {
   id: string;
@@ -18,13 +34,6 @@ interface Project {
   };
 }
 
-interface EntryTag {
-  tag: {
-    id: number;
-    name: string;
-  };
-}
-
 interface Entry {
   id: number;
   projectId: number;
@@ -35,18 +44,15 @@ interface Entry {
     id: number;
     name: string;
   };
-  tags?: EntryTag[];
 }
 
 export const DashboardPage: React.FC = () => {
+  // Layout State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'entries' | 'profile'>(
-    'dashboard',
-  );
 
   // Session & User Resolution
-  const sessionResult = useSession();
-  const userObj = sessionResult?.data?.user || (sessionResult?.data as any);
+  const { data: sessionData } = useSession();
+  const userObj = sessionData?.user || (sessionData as any);
 
   const userName =
     userObj?.name ||
@@ -61,15 +67,19 @@ export const DashboardPage: React.FC = () => {
   const [projectsList, setProjectsList] = useState<Project[]>([]);
   const [entriesList, setEntriesList] = useState<Entry[]>([]);
   const [totalHoursLogged, setTotalHoursLogged] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Project Creation Modal State
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [projectNameInput, setProjectNameInput] = useState('');
   const [projectDescInput, setProjectDescInput] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   // Log Entry Form State
   const [entryDate, setEntryDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [selectedProject, setSelectedProject] = useState<string>('');
+  const [isSubmittingLog, setIsSubmittingLog] = useState(false);
+  const [logSuccessMessage, setLogSuccessMessage] = useState(false);
 
   const [customFields, setCustomFields] = useState<CustomLogField[]>([
     { id: 'field_1', label: 'Category / Activity', value: '', type: 'text' },
@@ -79,29 +89,30 @@ export const DashboardPage: React.FC = () => {
 
   const navigate = useNavigate();
 
-  // Parse duration string (e.g., "2h 30m") to minutes for calculations
+  // Parse duration string (e.g., "2h 30m") to minutes for analytics calculation
   const calculateMinutesFromDuration = (val: string): number => {
     if (!val) return 0;
-    const hMatch = val.match(/(\d+)\s*h/);
-    const mMatch = val.match(/(\d+)\s*m/);
+    const hMatch = val.match(/(\d+)\s*h/i);
+    const mMatch = val.match(/(\d+)\s*m/i);
     const hours = hMatch ? parseInt(hMatch[1], 10) : 0;
     const mins = mMatch ? parseInt(mMatch[1], 10) : 0;
     return hours * 60 + mins;
   };
 
-  // Helper for rendering/updating duration inputs
+  // Helper for rendering duration inputs
   const parseDuration = (val: string) => {
-    const hMatch = val.match(/(\d+)\s*h/);
-    const mMatch = val.match(/(\d+)\s*m/);
+    const hMatch = val.match(/(\d+)\s*h/i);
+    const mMatch = val.match(/(\d+)\s*m/i);
     return {
       hours: hMatch ? hMatch[1] : '',
       mins: mMatch ? mMatch[1] : '',
     };
   };
 
-  // Fetch Projects & Entries from PostgreSQL backend
+  // Fetch Projects & Entries from backend
   const fetchData = useCallback(async () => {
     try {
+      setIsLoading(true);
       const [projectsData, entriesData] = await Promise.all([
         api.get<Project[]>('/api/projects').catch(() => []),
         api.get<Entry[]>('/api/entries').catch(() => []),
@@ -114,20 +125,23 @@ export const DashboardPage: React.FC = () => {
       if (Array.isArray(entriesData)) {
         setEntriesList(entriesData);
 
-        // Calculate total hours across all JSON content fields
         let totalMinutes = 0;
         entriesData.forEach((entry) => {
           if (Array.isArray(entry.content)) {
-            const durField = entry.content.find((f) => f.type === 'duration');
-            if (durField?.value) {
-              totalMinutes += calculateMinutesFromDuration(durField.value);
-            }
+            const durFields = entry.content.filter((f) => f.type === 'duration');
+            durFields.forEach((field) => {
+              if (field?.value) {
+                totalMinutes += calculateMinutesFromDuration(field.value);
+              }
+            });
           }
         });
         setTotalHoursLogged(parseFloat((totalMinutes / 60).toFixed(1)));
       }
     } catch (err) {
       console.error('Error loading dashboard data:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -164,26 +178,40 @@ export const DashboardPage: React.FC = () => {
     );
   };
 
+  const handleAddCustomField = () => {
+    const newId = `field_${Date.now()}`;
+    setCustomFields((prev) => [
+      ...prev,
+      { id: newId, label: 'Additional Detail', value: '', type: 'text' },
+    ]);
+  };
+
+  const handleRemoveCustomField = (id: string) => {
+    if (customFields.length <= 1) return;
+    setCustomFields((prev) => prev.filter((field) => field.id !== id));
+  };
+
   const handleCreateProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectNameInput.trim()) return;
 
     try {
+      setIsCreatingProject(true);
       await api.post<Project>('/api/projects', {
         name: projectNameInput.trim(),
         description: projectDescInput.trim(),
       });
       await fetchData();
+      setProjectNameInput('');
+      setProjectDescInput('');
+      setIsProjectModalOpen(false);
     } catch (err) {
       console.error('Failed to create project:', err);
+    } finally {
+      setIsCreatingProject(false);
     }
-
-    setProjectNameInput('');
-    setProjectDescInput('');
-    setIsProjectModalOpen(false);
   };
 
-  // Submit Log Entry matching Prisma schema (projectId: Int, content: Json)
   const handleQuickLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProject) return;
@@ -203,246 +231,166 @@ export const DashboardPage: React.FC = () => {
     };
 
     try {
+      setIsSubmittingLog(true);
       await api.post('/api/entries', payload);
-      await fetchData(); // Refresh analytics and project lists
+      await fetchData();
+
+      setSelectedProject('');
+      setCustomFields((prev) => prev.map((f) => ({ ...f, value: '' })));
+      setLogSuccessMessage(true);
+      setTimeout(() => setLogSuccessMessage(false), 3500);
     } catch (err) {
       console.error('Error saving entry:', err);
+    } finally {
+      setIsSubmittingLog(false);
     }
-
-    setSelectedProject('');
-    setCustomFields((prev) => prev.map((f) => ({ ...f, value: '' })));
   };
 
   return (
-    <main className="flex min-h-screen bg-[#f5ebe0] text-[#1c0d06]">
-      {/* Sidebar Navigation */}
+    <div className="flex min-h-screen bg-[#f5ebe0] text-[#1c0d06]">
+      {/* 1. SIDEBAR NAVIGATION */}
       <aside
-        className={`flex flex-col justify-between bg-[#1c0d06] text-[#f5ebe0] transition-all duration-300 border-r-2 border-[#d4af37] ${
+        className={`flex flex-col justify-between border-r-2 border-[#d4af37] bg-[#1c0d06] text-[#f5ebe0] transition-all duration-300 ${
           isSidebarCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        <section>
-          <header className="flex h-20 items-center justify-between px-4 border-b border-[#d4af37]/30">
+        <div>
+          <header className="flex h-20 items-center justify-between border-b border-[#d4af37]/30 px-4">
             {!isSidebarCollapsed && (
-              <h1 className="text-xl font-bold tracking-wider text-[#e6c687]">UniLogs</h1>
+              <h1 className="text-xl font-bold tracking-wider text-[#e6c687]">UNILOGS</h1>
             )}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="rounded-md p-2 text-[#e6c687] hover:bg-[#2a150a] focus:outline-none cursor-pointer"
+              className="rounded-md p-2 text-[#e6c687] hover:bg-[#2a150a] focus:outline-none"
               aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+              {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
           </header>
 
           <nav className="p-4">
             <ul className="flex flex-col gap-2">
               <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('dashboard');
-                    navigate('/dashboard');
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-md p-3 font-semibold transition-colors cursor-pointer ${
-                    activeTab === 'dashboard'
-                      ? 'bg-[#d4a373] text-[#1c0d06]'
-                      : 'text-[#f5ebe0] hover:bg-[#2a150a]'
-                  }`}
+                <Link
+                  to="/dashboard"
+                  className="flex w-full items-center gap-3 rounded-md bg-[#d4a373] p-3 font-semibold text-[#1c0d06] transition-colors"
                 >
-                  <svg
-                    className="h-5 w-5 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                    />
-                  </svg>
+                  <LayoutDashboard size={20} className="shrink-0" />
                   {!isSidebarCollapsed && <span>Dashboard</span>}
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('projects');
-                    navigate('/projects');
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-md p-3 font-semibold transition-colors cursor-pointer ${
-                    activeTab === 'projects'
-                      ? 'bg-[#d4a373] text-[#1c0d06]'
-                      : 'text-[#f5ebe0] hover:bg-[#2a150a]'
-                  }`}
+                <Link
+                  to="/projects"
+                  className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-[#f5ebe0] transition-colors hover:bg-[#2a150a] hover:text-[#d4af37]"
                 >
-                  <svg
-                    className="h-5 w-5 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                    />
-                  </svg>
+                  <Folder size={20} className="shrink-0" />
                   {!isSidebarCollapsed && <span>Projects</span>}
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('entries');
-                    navigate('/entries');
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-md p-3 font-semibold transition-colors cursor-pointer ${
-                    activeTab === 'entries'
-                      ? 'bg-[#d4a373] text-[#1c0d06]'
-                      : 'text-[#f5ebe0] hover:bg-[#2a150a]'
-                  }`}
+                <Link
+                  to="/entries"
+                  className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-[#f5ebe0] transition-colors hover:bg-[#2a150a] hover:text-[#d4af37]"
                 >
-                  <svg
-                    className="h-5 w-5 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
+                  <FileText size={20} className="shrink-0" />
                   {!isSidebarCollapsed && <span>All Entries</span>}
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('profile');
-                    navigate('/profile');
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-md p-3 font-semibold transition-colors cursor-pointer ${
-                    activeTab === 'profile'
-                      ? 'bg-[#d4a373] text-[#1c0d06]'
-                      : 'text-[#f5ebe0] hover:bg-[#2a150a]'
-                  }`}
+                <Link
+                  to="/profile"
+                  className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-[#f5ebe0] transition-colors hover:bg-[#2a150a] hover:text-[#d4af37]"
                 >
-                  <svg
-                    className="h-5 w-5 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+                  <UserIcon size={20} className="shrink-0" />
                   {!isSidebarCollapsed && <span>Profile Information</span>}
-                </button>
+                </Link>
               </li>
             </ul>
           </nav>
-        </section>
+        </div>
 
         {/* Sidebar Footer with Logout Button */}
-        <footer className="p-4 border-t border-[#d4af37]/30">
+        <footer className="border-t border-[#d4af37]/30 p-4">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors cursor-pointer"
+            className="flex w-full items-center gap-3 rounded-md p-3 font-semibold text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300"
           >
-            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
+            <LogOut size={20} className="shrink-0" />
             {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
         </footer>
       </aside>
 
-      {/* Main Workspace */}
-      <section className="flex flex-1 flex-col overflow-y-auto">
+      {/* 2. MAIN WORKSPACE */}
+      <main className="flex flex-1 flex-col min-w-0 overflow-y-auto">
         {/* Top Header Bar */}
         <header className="flex h-20 items-center justify-between border-b-2 border-[#d4af37] bg-[#1c0d06] px-8 text-[#f5ebe0] shadow-md">
           <h2 className="text-2xl font-bold tracking-tight text-[#e6c687]">WELCOME</h2>
-          <article className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <span className="font-semibold text-[#f5ebe0]">{userName}</span>
             <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d4af37] bg-[#d4a373] text-lg font-bold text-[#1c0d06]">
               {userInitial}
             </span>
-          </article>
+          </div>
         </header>
 
         {/* Dashboard Content Workspace */}
-        <section className="flex flex-1 flex-col items-center justify-center p-6 md:p-12">
-          <section className="flex w-full max-w-3xl flex-col items-center gap-6">
+        <div className="flex flex-1 flex-col items-center justify-center p-6 md:p-12">
+          <div className="flex w-full max-w-3xl flex-col items-center gap-6">
             {/* Analytics Overview */}
             <section className="flex w-full flex-col rounded-xl border-2 border-[#d4a373] bg-white p-6 shadow-md">
               <h3 className="text-xl font-bold text-[#1c0d06]">Analytics Overview</h3>
-              <p className="mt-1 text-xs font-medium text-[#7a5230] border-b border-[#d4a373]/30 pb-3 mb-4">
+              <p className="mt-1 border-b border-[#d4a373]/30 pb-3 mb-4 text-xs font-medium text-[#7a5230]">
                 Summary: You currently have <strong>{projectsList.length} active project(s)</strong>{' '}
                 and <strong>{entriesList.length} total logged entry/entries</strong>.
               </p>
-              <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <article className="flex flex-col items-center rounded-lg bg-[#f5ebe0] p-4 text-center border border-[#d4a373]/40">
-                  <span className="text-3xl font-extrabold text-[#1c0d06]">
-                    {totalHoursLogged} hrs
-                  </span>
-                  <span className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
-                    Logged Total
-                  </span>
-                </article>
-                <article
-                  onClick={() => navigate('/projects')}
-                  className="flex flex-col items-center rounded-lg bg-[#f5ebe0] p-4 text-center border border-[#d4a373]/40 cursor-pointer hover:bg-[#e6c687]/30 transition-colors"
-                >
-                  <span className="text-3xl font-extrabold text-[#1c0d06]">
-                    {projectsList.length}
-                  </span>
-                  <span className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
-                    Active Projects
-                  </span>
-                </article>
-                <article
-                  onClick={() => navigate('/entries')}
-                  className="flex flex-col items-center rounded-lg bg-[#f5ebe0] p-4 text-center border border-[#d4a373]/40 cursor-pointer hover:bg-[#e6c687]/30 transition-colors"
-                >
-                  <span className="text-3xl font-extrabold text-[#1c0d06]">
-                    {entriesList.length}
-                  </span>
-                  <span className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
-                    Total Entries
-                  </span>
-                </article>
-              </section>
+
+              {isLoading ? (
+                <div className="py-6 text-center text-sm font-medium text-[#7a5230]">
+                  Loading analytics data…
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="flex flex-col items-center rounded-lg border border-[#d4a373]/40 bg-[#f5ebe0] p-4 text-center">
+                    <span className="text-3xl font-extrabold text-[#1c0d06]">
+                      {totalHoursLogged} hrs
+                    </span>
+                    <span className="mt-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
+                      <Clock size={12} /> Logged Total
+                    </span>
+                  </div>
+
+                  <div
+                    onClick={() => navigate('/projects')}
+                    className="flex cursor-pointer flex-col items-center rounded-lg border border-[#d4a373]/40 bg-[#f5ebe0] p-4 text-center transition-colors hover:bg-[#e6c687]/30"
+                  >
+                    <span className="text-3xl font-extrabold text-[#1c0d06]">
+                      {projectsList.length}
+                    </span>
+                    <span className="mt-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
+                      <Folder size={12} /> Active Projects
+                    </span>
+                  </div>
+
+                  <div
+                    onClick={() => navigate('/entries')}
+                    className="flex cursor-pointer flex-col items-center rounded-lg border border-[#d4a373]/40 bg-[#f5ebe0] p-4 text-center transition-colors hover:bg-[#e6c687]/30"
+                  >
+                    <span className="text-3xl font-extrabold text-[#1c0d06]">
+                      {entriesList.length}
+                    </span>
+                    <span className="mt-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
+                      <FileText size={12} /> Total Entries
+                    </span>
+                  </div>
+                </div>
+              )}
             </section>
 
-            {/* Create Project Section */}
+            {/* Create Project CTA */}
             <section className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-[#d4a373] bg-white p-8 text-center shadow-md">
               <h3 className="text-2xl font-bold text-[#1c0d06]">Create New Project</h3>
               <p className="mt-1 text-sm font-medium text-[#7a5230]">
@@ -451,13 +399,13 @@ export const DashboardPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsProjectModalOpen(true)}
-                className="mt-4 rounded-md bg-[#1c0d06] px-6 py-2.5 font-semibold text-[#f5ebe0] hover:opacity-90 cursor-pointer"
+                className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#1c0d06] px-6 py-2.5 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90"
               >
-                + Start New Project
+                <Plus size={18} /> Start New Project
               </button>
             </section>
 
-            {/* Log Entry Form */}
+            {/* Quick Log Entry Form */}
             <section className="flex w-full flex-col rounded-xl border-2 border-[#d4a373] bg-white p-8 shadow-md">
               <header className="mb-4 text-center">
                 <h3 className="text-2xl font-bold text-[#1c0d06]">Log a New Entry</h3>
@@ -467,10 +415,17 @@ export const DashboardPage: React.FC = () => {
                 </p>
               </header>
 
+              {logSuccessMessage && (
+                <div className="mb-4 flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-300 p-3 text-xs font-semibold text-emerald-800">
+                  <CheckCircle2 size={16} className="text-emerald-600" />
+                  Entry saved successfully! Your analytics have been updated.
+                </div>
+              )}
+
               <form onSubmit={handleQuickLog} className="flex flex-col gap-5">
                 {/* Field 1: Date */}
-                <article className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-[#1c0d06] uppercase tracking-wide">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold uppercase tracking-wide text-[#1c0d06]">
                     1. Date
                   </label>
                   <input
@@ -480,11 +435,11 @@ export const DashboardPage: React.FC = () => {
                     className="w-full rounded-md border border-[#d4a373] bg-[#f5ebe0] px-4 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none"
                     required
                   />
-                </article>
+                </div>
 
                 {/* Field 2: Select Project */}
-                <article className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-[#1c0d06] uppercase tracking-wide">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold uppercase tracking-wide text-[#1c0d06]">
                     2. Select Project
                   </label>
                   <select
@@ -504,20 +459,20 @@ export const DashboardPage: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                </article>
+                </div>
 
                 {/* Dynamic Custom Content Fields */}
                 {customFields.map((field, index) => {
                   const duration = parseDuration(field.value);
 
                   return (
-                    <article
+                    <div
                       key={field.id}
                       className="flex flex-col gap-2 border-t border-[#d4a373]/20 pt-3"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-1 items-center gap-2 min-w-[200px]">
-                          <span className="text-xs font-bold text-[#7a5230] uppercase shrink-0">
+                          <span className="text-xs font-bold uppercase text-[#7a5230] shrink-0">
                             {index + 3}. Name:
                           </span>
                           <input
@@ -531,7 +486,7 @@ export const DashboardPage: React.FC = () => {
                           />
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <label className="text-[10px] font-bold uppercase text-[#7a5230]">
                             Type:
                           </label>
@@ -551,6 +506,17 @@ export const DashboardPage: React.FC = () => {
                             <option value="number">Number Only</option>
                             <option value="duration">Time Spent (Hours & Mins)</option>
                           </select>
+
+                          {customFields.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomField(field.id)}
+                              className="p-1 text-red-600 hover:text-red-800"
+                              title="Remove field"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -562,7 +528,7 @@ export const DashboardPage: React.FC = () => {
                           onChange={(e) =>
                             handleCustomFieldChange(field.id, 'value', e.target.value)
                           }
-                          className="w-full rounded-md border border-[#d4a373] bg-[#f5ebe0] px-4 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none resize-y min-h-[70px]"
+                          className="min-h-[70px] w-full rounded-md border border-[#d4a373] bg-[#f5ebe0] px-4 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none resize-y"
                         />
                       ) : field.type === 'number' ? (
                         <input
@@ -586,8 +552,9 @@ export const DashboardPage: React.FC = () => {
                               value={duration.hours}
                               onChange={(e) => {
                                 const h = e.target.value.replace(/[^0-9]/g, '');
-                                const m = duration.mins || '0';
-                                handleCustomFieldChange(field.id, 'value', `${h || '0'}h ${m}m`);
+                                const m = duration.mins;
+                                const valStr = !h && !m ? '' : `${h || '0'}h ${m || '0'}m`;
+                                handleCustomFieldChange(field.id, 'value', valStr);
                               }}
                               className="w-full rounded-md border border-[#d4a373] bg-[#f5ebe0] px-3 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none"
                             />
@@ -602,11 +569,13 @@ export const DashboardPage: React.FC = () => {
                               placeholder="0"
                               value={duration.mins}
                               onChange={(e) => {
-                                let m = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10);
-                                if (isNaN(m)) m = 0;
-                                if (m > 59) m = 59;
-                                const h = duration.hours || '0';
-                                handleCustomFieldChange(field.id, 'value', `${h}h ${m}m`);
+                                const rawM = e.target.value.replace(/[^0-9]/g, '');
+                                let mNum = parseInt(rawM, 10);
+                                if (!isNaN(mNum) && mNum > 59) mNum = 59;
+                                const m = isNaN(mNum) ? '' : mNum.toString();
+                                const h = duration.hours;
+                                const valStr = !h && !m ? '' : `${h || '0'}h ${m || '0'}m`;
+                                handleCustomFieldChange(field.id, 'value', valStr);
                               }}
                               className="w-full rounded-md border border-[#d4a373] bg-[#f5ebe0] px-3 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none"
                             />
@@ -624,35 +593,46 @@ export const DashboardPage: React.FC = () => {
                           className="w-full rounded-md border border-[#d4a373] bg-[#f5ebe0] px-4 py-2 text-sm font-semibold text-[#1c0d06] focus:outline-none"
                         />
                       )}
-                    </article>
+                    </div>
                   );
                 })}
 
+                {/* Add Custom Field Control */}
+                <button
+                  type="button"
+                  onClick={handleAddCustomField}
+                  className="self-start text-xs font-bold text-[#7a5230] hover:text-[#1c0d06] flex items-center gap-1"
+                >
+                  <Plus size={14} /> Add Another Field
+                </button>
+
                 <button
                   type="submit"
-                  disabled={projectsList.length === 0}
-                  className="mt-2 w-full rounded-md bg-[#1c0d06] py-3 text-sm font-bold text-[#f5ebe0] hover:opacity-90 disabled:opacity-50 cursor-pointer"
+                  disabled={projectsList.length === 0 || isSubmittingLog}
+                  className="mt-2 w-full rounded-md bg-[#1c0d06] py-3 text-sm font-bold text-[#f5ebe0] transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                  Save Log Entry
+                  {isSubmittingLog ? 'Saving Log Entry…' : 'Save Log Entry'}
                 </button>
               </form>
             </section>
-          </section>
-        </section>
-      </section>
+          </div>
+        </div>
+      </main>
 
-      {/* Pop-Up Modal for Creating a New Project */}
+      {/* 3. CREATE NEW PROJECT MODAL */}
       {isProjectModalOpen && (
-        <aside className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <article className="w-full max-w-md rounded-xl border-2 border-[#d4a373] bg-[#f5ebe0] p-6 shadow-2xl text-[#1c0d06]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border-2 border-[#d4a373] bg-[#f5ebe0] p-6 text-[#1c0d06] shadow-2xl">
             <header className="flex items-center justify-between border-b border-[#d4a373]/40 pb-3">
-              <h3 className="text-xl font-bold text-[#1c0d06]">Create New Project</h3>
+              <h3 className="flex items-center gap-2 text-xl font-bold text-[#1c0d06]">
+                <FolderPlus size={20} /> Create New Project
+              </h3>
               <button
                 type="button"
                 onClick={() => setIsProjectModalOpen(false)}
-                className="text-lg font-bold text-[#1c0d06] cursor-pointer"
+                className="text-[#1c0d06] hover:opacity-75"
               >
-                ✕
+                <X size={18} />
               </button>
             </header>
 
@@ -684,22 +664,23 @@ export const DashboardPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsProjectModalOpen(false)}
-                  className="rounded-md border border-[#d4a373] px-4 py-2 text-xs font-bold text-[#1c0d06] hover:bg-[#e6c687] cursor-pointer"
+                  className="rounded-md border border-[#d4a373] px-4 py-2 text-xs font-bold text-[#1c0d06] hover:bg-[#e6c687]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-[#1c0d06] px-5 py-2 text-xs font-bold text-[#f5ebe0] hover:opacity-90 cursor-pointer"
+                  disabled={isCreatingProject}
+                  className="rounded-md bg-[#1c0d06] px-5 py-2 text-xs font-bold text-[#f5ebe0] transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                  Create Project
+                  {isCreatingProject ? 'Creating…' : 'Create Project'}
                 </button>
               </footer>
             </form>
-          </article>
-        </aside>
+          </div>
+        </div>
       )}
-    </main>
+    </div>
   );
 };
 

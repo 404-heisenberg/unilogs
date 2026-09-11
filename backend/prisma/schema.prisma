@@ -1,79 +1,66 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String   @id
+  id            String    @id
   name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
+  email         String    @unique
+  emailVerified Boolean   @default(false)
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
-
-  projects Project[]
-  sessions Session[]
-  accounts Account[]
+  accounts      Account[]
+  projects      Project[]
+  sessions      Session[]
 
   @@map("user")
 }
 
 model Project {
-  id     Int    @id @default(autoincrement())
-  name   String
+  id          Int               @id @default(autoincrement())
+  name        String
+  userId      String
   description String?
-  archived Boolean @default(false)
-  userId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  fields  FieldDefinition[]
-  entries Entry[]
+  archived    Boolean           @default(false)
+  entries     Entry[]
+  fields      FieldDefinition[]
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("projects")
 }
 
 model FieldDefinition {
-  id        Int    @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   projectId Int
   name      String
   fieldType String
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("field_definitions")
 }
 
 model Entry {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   projectId Int
   date      DateTime
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
   content   Json
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  tags      EntryTag[]
   auditLogs AuditLog[]
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tags      EntryTag[]
 
   @@map("entries")
 }
 
 model Tag {
-  id   Int    @id @default(autoincrement())
-  name String
-
+  id      Int        @id @default(autoincrement())
+  name    String
   entries EntryTag[]
 
   @@map("tags")
@@ -82,18 +69,11 @@ model Tag {
 model EntryTag {
   entryId Int
   tagId   Int
-
-  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  tag   Tag   @relation(fields: [tagId], references: [id])
+  entry   Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  tag     Tag   @relation(fields: [tagId], references: [id])
 
   @@id([entryId, tagId])
   @@map("entry_tags")
-}
-
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
 }
 
 model AuditLog {
@@ -103,8 +83,7 @@ model AuditLog {
   oldData    Json?
   newData    Json?
   modifiedAt DateTime    @default(now())
-
-  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entry      Entry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@map("audit_logs")
 }
@@ -118,8 +97,7 @@ model Session {
   ipAddress String?
   userAgent String?
   userId    String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("session")
@@ -130,7 +108,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  issuer                String    @default("")
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -140,8 +117,8 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  issuer                String    @default("")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("account")
@@ -157,4 +134,10 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
 }

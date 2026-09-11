@@ -3,6 +3,7 @@ import cors from 'cors';
 import { healthRouter } from './routes/health.js';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth.js';
+import authRoutes from './routes/auth.js';
 import entriesRoutes from './routes/entries.js';
 import projectRouter from './routes/projects.js';
 import fieldDefinitionsRoutes from './routes/field-definitions.js';
@@ -13,20 +14,27 @@ import { openapiSpec } from './openapi.js';
 export function createApp() {
   const app = express();
 
+  // 1. Sanitize CORS Origin (strips trailing slashes)
+  const rawOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+  const allowedOrigin = rawOrigin.replace(/\/$/, '');
+
   app.use(
     cors({
-      origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+      origin: allowedOrigin,
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     }),
   );
 
-  // 1. Better Auth handler must handle /api/auth/* BEFORE express.json()
-  app.all('/api/auth/*', toNodeHandler(auth));
+  // 2. Mount Better-Auth BEFORE express.json() with named wildcard parameter (*splat)
+  app.all('/api/auth/*splat', toNodeHandler(auth));
 
-  // 2. Global JSON body parser for remaining Express routes
+  // 3. Body Parser (for remaining application routes)
   app.use(express.json());
 
-  // 3. Application API Routes
+  // 4. Custom Application Routers
+  app.use('/api/custom-auth', authRoutes);
   app.use('/api/projects', projectRouter);
   app.use('/api/field-definitions', fieldDefinitionsRoutes);
   app.use('/api/entries', entriesRoutes);
