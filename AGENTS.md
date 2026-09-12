@@ -136,7 +136,7 @@ scope as a branch prefix or vice versa.
 ## Pull requests
 
 `main` is protected. Direct pushes are blocked. Every change goes through a pull
-request with an approving review and four passing CI jobs.
+request with an approving review and five passing CI jobs.
 
 Merges are **squash merge**, then delete the branch.
 
@@ -163,6 +163,39 @@ been applied is history — correct it with a new migration instead.
 `DATABASE_URL` points at a Neon development branch for local work. The production
 connection string lives only in Render's environment variables and is never
 committed.
+
+## Testing
+
+Two layers, run separately:
+
+- **Unit / component tests** — `npm test` in `frontend/` (Vitest + React
+  Testing Library, component-level, API calls mocked) and `backend/` (Vitest +
+  Supertest, hits a real Express app and a real Postgres test database, no
+  mocks). Fast, and what CI runs on every pull request.
+- **End-to-end tests** — `npm run test:e2e` in `frontend/` (Playwright).
+  Drives a real browser against the real frontend dev server and a real
+  backend, both started automatically. Slower, and reserved for the golden
+  path and the error cases that only exist once a real backend is in the
+  loop (duplicate signup, wrong password) — not a substitute for the
+  component tests above.
+
+To run E2E locally:
+
+```bash
+cd backend
+cp .env.test.example .env.test   # first time only
+npm run test:db:up               # starts the same disposable Postgres the backend tests use
+npx prisma migrate deploy        # DATABASE_URL from .env.test — first time, or after a new migration
+
+cd ../frontend
+npx playwright install chromium  # first time only
+npm run test:e2e
+```
+
+E2E reuses `backend/.env.test` (the file backend's own integration tests
+already use) rather than a second env file — see `frontend/playwright.config.ts`.
+It refuses to run without `TEST_DATABASE_URL` and `BETTER_AUTH_SECRET` set, so
+it can never accidentally point at a real dev or production database.
 
 ## Gotchas
 
