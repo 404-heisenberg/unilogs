@@ -211,6 +211,17 @@ router.get('/events/suggestions', authenticate, async (req, res) => {
   try {
     const events = await getCalendarEvents(req);
 
+    const handledSuggestions = await prisma.calendarSuggestion.findMany({
+      where: {
+        userId: req.userId,
+      },
+      select: {
+        eventId: true,
+      },
+    });
+
+    const handledEventIds = new Set(handledSuggestions.map((suggestion) => suggestion.eventId));
+
     if (events === null) {
       return res.status(200).json({
         connected: false,
@@ -218,12 +229,14 @@ router.get('/events/suggestions', authenticate, async (req, res) => {
       });
     }
 
-    const suggestions = (events as GoogleCalendarEvent[]).map((event) => ({
-      id: event.id,
-      title: event.summary ?? 'Untitled event',
-      start: event.start?.dateTime ?? event.start?.date,
-      end: event.end?.dateTime ?? event.end?.date,
-    }));
+    const suggestions = (events as GoogleCalendarEvent[])
+      .filter((event) => event.id && !handledEventIds.has(event.id))
+      .map((event) => ({
+        id: event.id,
+        title: event.summary ?? 'Untitled event',
+        start: event.start?.dateTime ?? event.start?.date,
+        end: event.end?.dateTime ?? event.end?.date,
+      }));
 
     return res.status(200).json({
       connected: true,
@@ -241,6 +254,14 @@ router.get('/events/suggestions', authenticate, async (req, res) => {
 router.post('/events/suggestions/:eventId/accept', authenticate, async (req, res) => {
   try {
     const userId = req.userId;
+    const eventId = req.params.eventId as string;
+
+    if (!eventId) {
+      return res.status(400).json({
+        error: 'eventId is required',
+      });
+    }
+
     const { projectId, content, date } = req.body;
 
     if (!userId) {
@@ -293,12 +314,51 @@ router.post('/events/suggestions/:eventId/accept', authenticate, async (req, res
       },
     });
 
+    await prisma.calendarSuggestion.create({
+      data: {
+        userId,
+        eventId,
+        status: 'ACCEPTED',
+      },
+    });
+
     return res.status(201).json(entry);
   } catch (error) {
     console.error('Google Calendar suggestion accept error:', error);
 
     return res.status(500).json({
       error: 'Failed to accept calendar suggestion',
+    });
+  }
+});
+
+router.post('/events/suggestions/:eventId/reject', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const eventId = req.params.eventId as string;
+
+    if (!eventId) {
+      return res.status(400).json({
+        error: 'eventId is required',
+      });
+    }
+
+    await prisma.calendarSuggestion.create({
+      data: {
+        userId,
+        eventId,
+        status: 'REJECTED',
+      },
+    });
+
+    return res.status(200).json({
+      message: 'Calendar suggestion rejected',
+    });
+  } catch (error) {
+    console.error('Google Calendar suggestion reject error', error);
+
+    return res.status(500).json({
+      error: 'Failed to reject calendar suggestion',
     });
   }
 });
