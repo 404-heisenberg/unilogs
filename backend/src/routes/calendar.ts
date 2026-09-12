@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import type { Request } from 'express';
 import { auth, prisma } from '../auth.js';
 import { authenticate } from '../middleware/authenticate.js';
+import { validateEntryContent } from '../lib/validateEntry.js';
 
 const router = Router();
 
@@ -12,8 +14,68 @@ type GoogleCalendarResponse = {
   items?: unknown[];
 };
 
+type GoogleCalendarEvent = {
+  id?: string;
+  summary?: string;
+  start?: {
+    dateTime?: string;
+    date?: string;
+  };
+  end?: {
+    dateTime?: string;
+    date?: string;
+  };
+};
+
 function hasCalendarScope(account: { scope?: string | null } | null): boolean {
   return Boolean(account?.scope?.includes(GOOGLE_CALENDAR_SCOPE));
+}
+
+async function getCalendarEvents(req: Request) {
+  const account = await prisma.account.findFirst({
+    where: {
+      userId: req.userId,
+      providerId: 'google',
+    },
+  });
+
+  if (!account) {
+    return null;
+  }
+
+  const tokenResult = await auth.api.getAccessToken({
+    body: {
+      accountId: account.id,
+    },
+    headers: req.headers,
+  });
+
+  const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+
+  const now = new Date();
+  const timeMax = new Date();
+
+  timeMax.setDate(timeMax.getDate() + 30);
+
+  url.searchParams.set('timeMin', now.toISOString());
+  url.searchParams.set('timeMax', timeMax.toISOString());
+  url.searchParams.set('singleEvents', 'true');
+  url.searchParams.set('orderBy', 'startTime');
+  url.searchParams.set('maxResults', '20');
+
+  const googleResponse = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${tokenResult.accessToken}`,
+    },
+  });
+
+  if (!googleResponse.ok) {
+    throw new Error('Failed to fecth Google Calendar events');
+  }
+
+  const data = (await googleResponse.json()) as GoogleCalendarResponse;
+
+  return data.items ?? [];
 }
 
 // A DB-only check so Settings can show connection status without calling
@@ -65,11 +127,17 @@ router.post('/connect', authenticate, async (req, res) => {
         errorCallbackURL: SETTINGS_URL,
       },
       headers: req.headers,
+      asResponse: true,
     });
 
-    return res.status(200).json({
-      url: result.url,
-    });
+    const setCookies = result.headers.getSetCookie();
+    if (setCookies.length > 0) {
+      res.setHeader('Set-Cookie', setCookies);
+    }
+
+    const data = await result.json();
+
+    return res.status(result.status).json(data);
   } catch (error) {
     console.error('Google Calendar connect error:', error);
 
@@ -117,49 +185,14 @@ router.delete('/disconnect', authenticate, async (req, res) => {
 
 router.get('/events', authenticate, async (req, res) => {
   try {
-    const account = await prisma.account.findFirst({
-      where: {
-        userId: req.userId,
-        providerId: 'google',
-      },
-    });
+    const events = await getCalendarEvents(req);
 
-    if (!account) {
+    if (events === null) {
       return res.status(200).json({
         connected: false,
         message: 'Google Calendar is not connected',
       });
     }
-
-    const tokenResult = await auth.api.getAccessToken({
-      body: {
-        accountId: account.id,
-      },
-      headers: req.headers,
-    });
-
-    const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
-
-    url.searchParams.set('timeMin', new Date().toISOString());
-    url.searchParams.set('singleEvents', 'true');
-    url.searchParams.set('orderBy', 'startTime');
-    url.searchParams.set('maxResults', '20');
-
-    const googleResponse = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${tokenResult.accessToken}`,
-      },
-    });
-
-    if (!googleResponse.ok) {
-      return res.status(502).json({
-        error: 'Failed to fetch Google Calendar events',
-      });
-    }
-
-    const data = (await googleResponse.json()) as GoogleCalendarResponse;
-
-    const events = data.items ?? [];
 
     return res.status(200).json({
       connected: true,
@@ -169,7 +202,163 @@ router.get('/events', authenticate, async (req, res) => {
     console.error('Google Calendar events error:', error);
 
     return res.status(500).json({
-      error: 'Failed to fetch Google Calendar events',
+      error: 'Failed to fetch the Google Calendar events',
+    });
+  }
+});
+
+router.get('/events/suggestions', authenticate, async (req, res) => {
+  try {
+    const events = await getCalendarEvents(req);
+
+    const handledSuggestions = await prisma.calendarSuggestion.findMany({
+      where: {
+        userId: req.userId,
+      },
+      select: {
+        eventId: true,
+      },
+    });
+
+    const handledEventIds = new Set(handledSuggestions.map((suggestion) => suggestion.eventId));
+
+    if (events === null) {
+      return res.status(200).json({
+        connected: false,
+        suggestions: [],
+      });
+    }
+
+    const suggestions = (events as GoogleCalendarEvent[])
+      .filter((event) => event.id && !handledEventIds.has(event.id))
+      .map((event) => ({
+        id: event.id,
+        title: event.summary ?? 'Untitled event',
+        start: event.start?.dateTime ?? event.start?.date,
+        end: event.end?.dateTime ?? event.end?.date,
+      }));
+
+    return res.status(200).json({
+      connected: true,
+      suggestions,
+    });
+  } catch (error) {
+    console.error('Google Calendar suggestions error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to fetch calendar suggestions',
+    });
+  }
+});
+
+router.post('/events/suggestions/:eventId/accept', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const eventId = req.params.eventId as string;
+
+    if (!eventId) {
+      return res.status(400).json({
+        error: 'eventId is required',
+      });
+    }
+
+    const { projectId, content, date } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!projectId || !content) {
+      return res.status(400).json({
+        error: 'projectId and content are required',
+      });
+    }
+
+    const projectIdInt = parseInt(projectId, 10);
+
+    if (Number.isNaN(projectIdInt)) {
+      return res.status(400).json({
+        error: 'projectId must be a valid integer',
+      });
+    }
+
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectIdInt,
+        userId,
+      },
+      include: {
+        fields: true,
+      },
+    });
+
+    if (!project) {
+      return res.status(403).json({
+        error: 'You do not have access to this project',
+      });
+    }
+
+    const contentErrors = validateEntryContent(content, project.fields);
+
+    if (contentErrors.length > 0) {
+      return res.status(400).json({
+        errors: contentErrors,
+      });
+    }
+
+    const entry = await prisma.entry.create({
+      data: {
+        projectId: projectIdInt,
+        content,
+        date: date ? new Date(date) : new Date(),
+      },
+    });
+
+    await prisma.calendarSuggestion.create({
+      data: {
+        userId,
+        eventId,
+        status: 'ACCEPTED',
+      },
+    });
+
+    return res.status(201).json(entry);
+  } catch (error) {
+    console.error('Google Calendar suggestion accept error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to accept calendar suggestion',
+    });
+  }
+});
+
+router.post('/events/suggestions/:eventId/reject', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const eventId = req.params.eventId as string;
+
+    if (!eventId) {
+      return res.status(400).json({
+        error: 'eventId is required',
+      });
+    }
+
+    await prisma.calendarSuggestion.create({
+      data: {
+        userId,
+        eventId,
+        status: 'REJECTED',
+      },
+    });
+
+    return res.status(200).json({
+      message: 'Calendar suggestion rejected',
+    });
+  } catch (error) {
+    console.error('Google Calendar suggestion reject error', error);
+
+    return res.status(500).json({
+      error: 'Failed to reject calendar suggestion',
     });
   }
 });
