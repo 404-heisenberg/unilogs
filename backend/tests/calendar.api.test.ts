@@ -75,3 +75,67 @@ describe('GET /api/calendar/status', () => {
     expect(response.body).toEqual({ connected: true });
   });
 });
+
+describe('POST /api/calendar/connect', () => {
+  it('rejects unauthenticated requests', async () => {
+    const api = await getApiClient();
+    const response = await api.post('/api/calendar/connect');
+    expect(response.status).toBe(401);
+  });
+
+  it('reports already connected without starting a new OAuth flow', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await linkGoogleAccount(
+      await getUserId(email),
+      'https://www.googleapis.com/auth/calendar.readonly openid',
+    );
+
+    const response = await agent.post('/api/calendar/connect');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      connected: true,
+      message: 'Google Calendar is already connected',
+    });
+  });
+});
+
+describe('DELETE /api/calendar/disconnect', () => {
+  it('rejects unauthenticated requests', async () => {
+    const api = await getApiClient();
+    const response = await api.delete('/api/calendar/disconnect');
+    expect(response.status).toBe(401);
+  });
+
+  it('reports not connected when there is no linked Google account', async () => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.delete('/api/calendar/disconnect');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      connected: false,
+      message: 'Google Calendar is not connected',
+    });
+  });
+});
+
+describe('GET /api/calendar/events', () => {
+  it('rejects unauthenticated requests', async () => {
+    const api = await getApiClient();
+    const response = await api.get('/api/calendar/events');
+    expect(response.status).toBe(401);
+  });
+
+  it('reports not connected when there is no linked Google account', async () => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.get('/api/calendar/events');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      connected: false,
+      message: 'Google Calendar is not connected',
+    });
+  });
+});

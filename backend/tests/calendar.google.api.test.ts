@@ -1,0 +1,258 @@
+import { randomUUID } from 'node:crypto';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../src/generated/prisma/client.js';
+import {
+  createAuthenticatedUser,
+  deleteTestUsers,
+  disconnectTestDatabase,
+  getApiClient,
+} from './helpers/api.js';
+
+// Everything in calendar.ts that actually talks to Google (linking, unlinking,
+// fetching events) is mocked here rather than hitting Google for real — CI has
+// no Google credentials, and the response is out of our control anyway. The
+// DB-only branches (already connected / not connected) are covered without
+// mocking in calendar.api.test.ts.
+const { linkSocialAccount, unlinkAccount, getAccessToken } = vi.hoisted(() => ({
+  linkSocialAccount: vi.fn(),
+  unlinkAccount: vi.fn(),
+  getAccessToken: vi.fn(),
+}));
+
+vi.mock('../src/auth.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/auth.js')>();
+  return {
+    ...actual,
+    auth: {
+      ...actual.auth,
+      api: {
+        ...actual.auth.api,
+        linkSocialAccount,
+        unlinkAccount,
+        getAccessToken,
+      },
+    },
+  };
+});
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
+});
+
+async function getUserId(email: string) {
+  const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+  return user.id;
+}
+
+async function linkGoogleAccount(userId: string, scope: string) {
+  return prisma.account.create({
+    data: {
+      id: randomUUID(),
+      accountId: randomUUID(),
+      providerId: 'google',
+      userId,
+      scope,
+    },
+  });
+}
+
+async function connectAccount(email: string) {
+  return linkGoogleAccount(
+    await getUserId(email),
+    'https://www.googleapis.com/auth/calendar.readonly openid',
+  );
+}
+
+beforeEach(() => {
+  linkSocialAccount.mockReset();
+  unlinkAccount.mockReset();
+  getAccessToken.mockReset();
+  vi.stubGlobal('fetch', vi.fn());
+});
+
+afterEach(async () => {
+  vi.unstubAllGlobals();
+  await deleteTestUsers();
+});
+
+afterAll(async () => {
+  await prisma.$disconnect();
+  await disconnectTestDatabase();
+});
+
+describe('POST /api/calendar/connect', () => {
+  it('starts the OAuth flow, forwards the consent URL, and preserves Set-Cookie', async () => {
+    const { agent } = await createAuthenticatedUser();
+    // asResponse: true (see calendar.ts) makes linkSocialAccount resolve a
+    // raw Response-like object rather than a parsed body, so the route can
+    // read and forward its Set-Cookie headers untouched.
+    linkSocialAccount.mockResolvedValue({
+      status: 200,
+      headers: { getSetCookie: () => ['oauth_state=abc123; HttpOnly; Path=/'] },
+      json: async () => ({ url: 'https://accounts.google.com/o/oauth2/consent' }),
+    });
+
+    const response = await agent.post('/api/calendar/connect');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ url: 'https://accounts.google.com/o/oauth2/consent' });
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('oauth_state=abc123')]),
+    );
+    expect(linkSocialAccount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          provider: 'google',
+          scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+        }),
+      }),
+    );
+  });
+
+  it('returns 400 when Better Auth fails to start the flow', async () => {
+    const { agent } = await createAuthenticatedUser();
+    linkSocialAccount.mockRejectedValue(new Error('provider unavailable'));
+
+    const response = await agent.post('/api/calendar/connect');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Failed to connect Google Calendar' });
+  });
+});
+
+describe('DELETE /api/calendar/disconnect', () => {
+  it('unlinks the account and reports disconnected', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    const account = await linkGoogleAccount(
+      await getUserId(email),
+      'https://www.googleapis.com/auth/calendar.readonly openid',
+    );
+    unlinkAccount.mockResolvedValue(undefined);
+
+    const response = await agent.delete('/api/calendar/disconnect');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      connected: false,
+      message: 'Google Calendar disconnected successfully',
+    });
+    expect(unlinkAccount).toHaveBeenCalledWith(
+      expect.objectContaining({ body: { accountId: account.id } }),
+    );
+  });
+
+  it('returns 400 when Better Auth fails to unlink the account', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await linkGoogleAccount(
+      await getUserId(email),
+      'https://www.googleapis.com/auth/calendar.readonly openid',
+    );
+    unlinkAccount.mockRejectedValue(new Error('provider unavailable'));
+
+    const response = await agent.delete('/api/calendar/disconnect');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Failed to disconnect Google Calendar' });
+  });
+});
+
+describe('GET /api/calendar/events', () => {
+  it('returns events fetched from the Google Calendar API', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+    getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
+    const events = [{ id: 'evt-1', summary: 'Lecture' }];
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ items: events }), { status: 200 }),
+    );
+
+    const response = await agent.get('/api/calendar/events');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ connected: true, events });
+
+    const [url, init] = vi.mocked(fetch).mock.calls[0];
+    expect(String(url)).toContain('calendars/primary/events');
+    expect(init?.headers).toEqual({ Authorization: 'Bearer test-access-token' });
+  });
+
+  it('returns 500 when the Google Calendar API responds with an error', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+    getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
+    vi.mocked(fetch).mockResolvedValue(new Response('', { status: 500 }));
+
+    const response = await agent.get('/api/calendar/events');
+
+    // getCalendarEvents() throws a plain Error on a non-ok Google response
+    // rather than distinguishing it from any other failure (see calendar.ts)
+    // — the route's catch-all always returns 500 with this exact message.
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
+  });
+
+  it('returns 500 when the access token cannot be retrieved', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+    getAccessToken.mockRejectedValue(new Error('token expired'));
+
+    const response = await agent.get('/api/calendar/events');
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
+  });
+});
+
+describe('GET /api/calendar/events/suggestions', () => {
+  it('rejects unauthenticated requests', async () => {
+    const api = await getApiClient();
+    const response = await api.get('/api/calendar/events/suggestions');
+    expect(response.status).toBe(401);
+  });
+
+  it('reports disconnected with no suggestions when there is no linked Google account', async () => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.get('/api/calendar/events/suggestions');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ connected: false, suggestions: [] });
+  });
+
+  it('excludes events that already have an accepted or rejected suggestion', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+    getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
+    const events = [
+      { id: 'evt-handled', summary: 'Already handled', start: { date: '2026-09-10' } },
+      {
+        id: 'evt-new',
+        summary: 'New lecture',
+        start: { dateTime: '2026-09-11T10:00:00Z' },
+        end: { dateTime: '2026-09-11T11:00:00Z' },
+      },
+    ];
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ items: events }), { status: 200 }),
+    );
+    await prisma.calendarSuggestion.create({
+      data: { userId: await getUserId(email), eventId: 'evt-handled', status: 'REJECTED' },
+    });
+
+    const response = await agent.get('/api/calendar/events/suggestions');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      connected: true,
+      suggestions: [
+        {
+          id: 'evt-new',
+          title: 'New lecture',
+          start: '2026-09-11T10:00:00Z',
+          end: '2026-09-11T11:00:00Z',
+        },
+      ],
+    });
+  });
+});

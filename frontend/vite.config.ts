@@ -14,5 +14,8 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.ts',
     css: false,
+    // Vitest's default include also matches e2e/*.spec.ts — those are
+    // Playwright tests, run separately via `npm run test:e2e`, not Vitest.
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 });
