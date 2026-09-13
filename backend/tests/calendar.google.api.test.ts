@@ -70,14 +70,24 @@ afterAll(async () => {
 });
 
 describe('POST /api/calendar/connect', () => {
-  it('starts the OAuth flow and returns the consent URL', async () => {
+  it('starts the OAuth flow, forwards the consent URL, and preserves Set-Cookie', async () => {
     const { agent } = await createAuthenticatedUser();
-    linkSocialAccount.mockResolvedValue({ url: 'https://accounts.google.com/o/oauth2/consent' });
+    // asResponse: true (see calendar.ts) makes linkSocialAccount resolve a
+    // raw Response-like object rather than a parsed body, so the route can
+    // read and forward its Set-Cookie headers untouched.
+    linkSocialAccount.mockResolvedValue({
+      status: 200,
+      headers: { getSetCookie: () => ['oauth_state=abc123; HttpOnly; Path=/'] },
+      json: async () => ({ url: 'https://accounts.google.com/o/oauth2/consent' }),
+    });
 
     const response = await agent.post('/api/calendar/connect');
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ url: 'https://accounts.google.com/o/oauth2/consent' });
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('oauth_state=abc123')]),
+    );
     expect(linkSocialAccount).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
@@ -162,7 +172,7 @@ describe('GET /api/calendar/events', () => {
     expect(init?.headers).toEqual({ Authorization: 'Bearer test-access-token' });
   });
 
-  it('returns 502 when the Google Calendar API responds with an error', async () => {
+  it('returns 500 when the Google Calendar API responds with an error', async () => {
     const { agent, email } = await createAuthenticatedUser();
     await connectAccount(email);
     getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
@@ -170,8 +180,11 @@ describe('GET /api/calendar/events', () => {
 
     const response = await agent.get('/api/calendar/events');
 
-    expect(response.status).toBe(502);
-    expect(response.body).toEqual({ error: 'Failed to fetch Google Calendar events' });
+    // getCalendarEvents() throws a plain Error on a non-ok Google response
+    // rather than distinguishing it from any other failure (see calendar.ts)
+    // — the route's catch-all always returns 500 with this exact message.
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
   });
 
   it('returns 500 when the access token cannot be retrieved', async () => {
@@ -182,6 +195,6 @@ describe('GET /api/calendar/events', () => {
     const response = await agent.get('/api/calendar/events');
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: 'Failed to fetch Google Calendar events' });
+    expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
   });
 });
