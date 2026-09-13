@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
-import { createAuthenticatedUser, deleteTestUsers, disconnectTestDatabase } from './helpers/api.js';
+import {
+  createAuthenticatedUser,
+  deleteTestUsers,
+  disconnectTestDatabase,
+  getApiClient,
+} from './helpers/api.js';
 
 // Everything in calendar.ts that actually talks to Google (linking, unlinking,
 // fetching events) is mocked here rather than hitting Google for real — CI has
@@ -50,6 +55,13 @@ async function linkGoogleAccount(userId: string, scope: string) {
       scope,
     },
   });
+}
+
+async function connectAccount(email: string) {
+  return linkGoogleAccount(
+    await getUserId(email),
+    'https://www.googleapis.com/auth/calendar.readonly openid',
+  );
 }
 
 beforeEach(() => {
@@ -146,13 +158,6 @@ describe('DELETE /api/calendar/disconnect', () => {
 });
 
 describe('GET /api/calendar/events', () => {
-  async function connectAccount(email: string) {
-    return linkGoogleAccount(
-      await getUserId(email),
-      'https://www.googleapis.com/auth/calendar.readonly openid',
-    );
-  }
-
   it('returns events fetched from the Google Calendar API', async () => {
     const { agent, email } = await createAuthenticatedUser();
     await connectAccount(email);
@@ -196,5 +201,58 @@ describe('GET /api/calendar/events', () => {
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
+  });
+});
+
+describe('GET /api/calendar/events/suggestions', () => {
+  it('rejects unauthenticated requests', async () => {
+    const api = await getApiClient();
+    const response = await api.get('/api/calendar/events/suggestions');
+    expect(response.status).toBe(401);
+  });
+
+  it('reports disconnected with no suggestions when there is no linked Google account', async () => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.get('/api/calendar/events/suggestions');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ connected: false, suggestions: [] });
+  });
+
+  it('excludes events that already have an accepted or rejected suggestion', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+    getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
+    const events = [
+      { id: 'evt-handled', summary: 'Already handled', start: { date: '2026-09-10' } },
+      {
+        id: 'evt-new',
+        summary: 'New lecture',
+        start: { dateTime: '2026-09-11T10:00:00Z' },
+        end: { dateTime: '2026-09-11T11:00:00Z' },
+      },
+    ];
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ items: events }), { status: 200 }),
+    );
+    await prisma.calendarSuggestion.create({
+      data: { userId: await getUserId(email), eventId: 'evt-handled', status: 'REJECTED' },
+    });
+
+    const response = await agent.get('/api/calendar/events/suggestions');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      connected: true,
+      suggestions: [
+        {
+          id: 'evt-new',
+          title: 'New lecture',
+          start: '2026-09-11T10:00:00Z',
+          end: '2026-09-11T11:00:00Z',
+        },
+      ],
+    });
   });
 });
