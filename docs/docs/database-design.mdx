@@ -13,7 +13,7 @@ The UniLogs database is designed to support users, projects, custom field defini
 
 ## Entity Relationship Diagram
 
-The database consists of ten tables: `user`, `session`, `account`, and `verification` (required by Better Auth), plus `projects`, `field_definitions`, `entries`, `tags`, `entry_tags`, and `audit_logs` (the UniLogs domain tables).
+The database consists of eleven tables: `user`, `session`, `account`, and `verification` (required by Better Auth), plus `projects`, `field_definitions`, `entries`, `tags`, `entry_tags`, `audit_logs`, and `calendar_suggestions` (the UniLogs domain tables).
 
 The relationships between these tables are shown in the entity diagram below.
 
@@ -40,14 +40,14 @@ The `user` table stores the information required for user accounts. Its structur
 The `session` table stores active login sessions issued by Better Auth. Each session belongs to one user and carries the token read from the session cookie on every request.
 
 | Column      | Type      | Constraints                        |
-| ----------- | --------- | ----------------------------------- |
+| ----------- | --------- | ---------------------------------- |
 | `id`        | text      | Primary key                        |
 | `expiresAt` | timestamp | Not null                           |
 | `token`     | text      | Not null, unique                   |
 | `createdAt` | timestamp | Not null                           |
 | `updatedAt` | timestamp | Not null                           |
-| `ipAddress` | text      |                                     |
-| `userAgent` | text      |                                     |
+| `ipAddress` | text      |                                    |
+| `userAgent` | text      |                                    |
 | `userId`    | text      | Not null, foreign key to `user.id` |
 
 ### Account
@@ -55,21 +55,21 @@ The `session` table stores active login sessions issued by Better Auth. Each ses
 The `account` table stores the credentials and provider tokens Better Auth uses to authenticate a user — a password hash for email/password sign-in, or OAuth tokens for a provider like Google. A user can have more than one linked account.
 
 | Column                  | Type      | Constraints                        |
-| ------------------------ | --------- | ----------------------------------- |
-| `id`                     | text      | Primary key                        |
-| `accountId`              | text      | Not null                           |
-| `providerId`             | text      | Not null                           |
-| `userId`                 | text      | Not null, foreign key to `user.id` |
-| `issuer`                 | text      | Not null                           |
-| `accessToken`            | text      |                                     |
-| `refreshToken`           | text      |                                     |
-| `idToken`                | text      |                                     |
-| `accessTokenExpiresAt`   | timestamp |                                     |
-| `refreshTokenExpiresAt`  | timestamp |                                     |
-| `scope`                  | text      |                                     |
-| `password`               | text      |                                     |
-| `createdAt`              | timestamp | Not null                           |
-| `updatedAt`               | timestamp | Not null                           |
+| ----------------------- | --------- | ---------------------------------- |
+| `id`                    | text      | Primary key                        |
+| `accountId`             | text      | Not null                           |
+| `providerId`            | text      | Not null                           |
+| `userId`                | text      | Not null, foreign key to `user.id` |
+| `issuer`                | text      | Not null                           |
+| `accessToken`           | text      |                                    |
+| `refreshToken`          | text      |                                    |
+| `idToken`               | text      |                                    |
+| `accessTokenExpiresAt`  | timestamp |                                    |
+| `refreshTokenExpiresAt` | timestamp |                                    |
+| `scope`                 | text      |                                    |
+| `password`              | text      |                                    |
+| `createdAt`             | timestamp | Not null                           |
+| `updatedAt`             | timestamp | Not null                           |
 
 ### Verification
 
@@ -88,11 +88,18 @@ The `verification` table stores short-lived tokens used for flows like email ver
 
 The `projects` table stores the projects created by users. Each project belongs to one user and acts as a container for its entries and field definitions.
 
-| Column    | Type    | Constraints                        |
-| --------- | ------- | ---------------------------------- |
-| `id`      | integer | Primary key                        |
-| `name`    | varchar |                                    |
-| `user_id` | varchar | Not null, foreign key to `user.id` |
+| Column        | Type    | Constraints                        |
+| ------------- | ------- | ---------------------------------- |
+| `id`          | integer | Primary key                        |
+| `name`        | varchar |                                    |
+| `description` | varchar | Nullable                           |
+| `archived`    | boolean | Not null, default `false`          |
+| `user_id`     | varchar | Not null, foreign key to `user.id` |
+
+`archived` lets a user retire a project without losing its entries — archived
+projects are hidden from the default project list but remain fully intact and
+can be unarchived. `description` is optional free text shown alongside the
+project name.
 
 ### Field definitions
 
@@ -150,6 +157,25 @@ The `audit_logs` table stores the history of changes made to entries. Each modif
 | `new_data`    | jsonb          |                                       |
 | `modified_at` | timestamp      |                                       |
 
+### Calendar_suggestions
+
+The `calendar_suggestions` table records what a user has already decided about
+a Google Calendar event surfaced as a possible log entry, so the same event
+isn't suggested again after being accepted or dismissed. Each row belongs to
+one user.
+
+| Column       | Type      | Constraints                         |
+| ------------ | --------- | ----------------------------------- |
+| `id`         | integer   | Primary key                         |
+| `user_id`    | varchar   | Not null, foreign key to `user.id`  |
+| `event_id`   | varchar   | Not null                            |
+| `status`     | varchar   | Not null (`ACCEPTED` or `REJECTED`) |
+| `created_at` | timestamp | Not null, default now               |
+
+The combination of `user_id` and `event_id` is unique, so accepting or
+rejecting the same calendar event twice for the same user is rejected at the
+database level rather than relying on application code to catch it.
+
 ## Audit Action
 
 The `audit_action` enum defines the types of changes that can be recorded in the audit log.
@@ -168,6 +194,7 @@ The `audit_action` enum defines the types of changes that can be recorded in the
 - One project can have many entries.
 - One entry can have many tags, and one tag can belong to many entries through the `entry_tags` junction table.
 - One entry can have many audit log records, allowing changes to an entry to be tracked over time.
+- One user can have many calendar suggestion records, one per Google Calendar event they've accepted or rejected.
 
 ## Design Decisions
 
@@ -191,8 +218,61 @@ The `entry_tags` junction table allows entries and tags to have a many-to-many r
 
 The `audit_logs` table preserves the history of changes made to entries by storing the action, previous data, and new data.
 
+### Calendar Suggestion Status
+
+`calendar_suggestions.status` is a plain `varchar` rather than a Postgres enum
+like `audit_action`. The only two values today are `ACCEPTED` and `REJECTED`,
+but this table exists purely to remember a per-user, per-event decision —
+nothing joins or filters on `status` in a way that benefits from database-level
+enum validation, so a plain column avoids a migration if a future status (for
+example, "snoozed") is added.
+
+## Deployment
+
+The database is **PostgreSQL on [Neon](https://neon.tech)**, a managed,
+serverless Postgres provider. Nobody on the team installs or administers a
+local Postgres server — see `tech-stack.mdx` for why Neon specifically was
+chosen over a self-hosted database.
+
+### Environments
+
+Three separate databases exist, and the team never lets them mix:
+
+- **Production** — a Neon branch whose connection string lives only in
+  Render's environment variables. It is never checked out to a developer
+  machine and never committed anywhere in this repository.
+- **Development** — a separate Neon branch, referenced by each developer's own
+  local `backend/.env` (`DATABASE_URL`). Neon's branching feature means this
+  can be reset from production data, or from a clean schema, without touching
+  production itself.
+- **Test** — a disposable Postgres instance, run locally via Docker
+  (`backend/docker-compose.test.yml`) or, in CI, a fresh
+  `postgres:16-alpine` service container created for every run and discarded
+  afterwards. This is deliberate: automated tests create and delete real
+  rows, so they must never be able to reach the development or production
+  database. `backend/vitest.config.ts` refuses to run the suite unless
+  `TEST_DATABASE_URL` points at a database with `test` in its name, as a
+  guard against pointing it at the wrong environment by mistake.
+
+### Migrations
+
+Schema changes are managed entirely through Prisma Migrate, so every change is
+a versioned, checked-in SQL file under `backend/prisma/migrations/` rather
+than a manual change made directly against a database:
+
+- `npx prisma migrate dev` — used locally to create a new migration from a
+  schema change and apply it to the developer's own dev database.
+- `npx prisma migrate deploy` — a non-interactive apply, used in CI (against
+  the disposable test database) and for deploying to production. It only
+  applies migrations that don't already exist; it never generates new ones.
+
+Migration files are never hand-edited once committed — a mistake in an
+already-applied migration is corrected with a new migration, not a rewrite of
+history, so that every environment's migration history stays identical and
+replayable.
+
 <AiDeclaration
   action="generated"
-  tools="ChatGPT[GPT-5.6 Luna]"
-  purpose="drafting and structuring the database design documentation"
+  tools="ChatGPT[GPT-5.6 Luna], Claude-Code[Claude Sonnet 5]"
+  purpose="drafting and structuring the database design documentation, and updating it to cover the projects table's description/archived columns, the calendar_suggestions table, and database deployment"
 />
