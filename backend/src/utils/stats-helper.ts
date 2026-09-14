@@ -1,5 +1,11 @@
-import { prisma } from '../auth.js';
+import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { TERMS } from '../config/terms.js';
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({ adapter });
 
 export async function getUserDateRange(userId: string): Promise<{ start: Date; end: Date }> {
   const firstEntry = await prisma.entry.findFirst({
