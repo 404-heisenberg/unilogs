@@ -1,17 +1,11 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { authenticate } from '../middleware/authenticate.js';
 import { getWeeklyEntryCounts, getTermTotals } from '../utils/stats-helper.js';
 import { computeCurrentStreak } from '../services/stats-services.js';
+import { prisma } from '../auth.js';
 
 const router = Router();
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-const prisma = new PrismaClient({ adapter });
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
   try {
