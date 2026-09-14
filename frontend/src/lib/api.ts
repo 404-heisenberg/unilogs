@@ -58,6 +58,22 @@ export type FrequencyStats = {
   terms: { termName: string; total: number }[];
 };
 
+export type CalendarStatus = { connected: boolean };
+
+export type CalendarConnectResult = { url?: string; connected?: boolean };
+
+export type CalendarSuggestion = {
+  id: string;
+  title: string;
+  start?: string;
+  end?: string;
+};
+
+export type CalendarSuggestionsResponse = {
+  connected: boolean;
+  suggestions: CalendarSuggestion[];
+};
+
 export function getStatsSummary() {
   return api.get<StatsSummary>('/api/stats');
 }

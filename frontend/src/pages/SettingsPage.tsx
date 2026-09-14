@@ -1,40 +1,13 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useCalendarConnection } from '@/hooks/useCalendarConnection';
 import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
 
-type CalendarStatus = { connected: boolean };
-type CalendarConnectResult = { url?: string; connected?: boolean };
-
 function GoogleCalendarSection() {
-  const queryClient = useQueryClient();
-
-  const statusQuery = useQuery({
-    queryKey: ['calendar-status'],
-    queryFn: () => api.get<CalendarStatus>('/api/calendar/status'),
-  });
-
-  const invalidateStatus = () => queryClient.invalidateQueries({ queryKey: ['calendar-status'] });
-
-  const connect = useMutation({
-    mutationFn: () => api.post<CalendarConnectResult>('/api/calendar/connect'),
-    onSuccess: (result) => {
-      // The backend returns a Google consent URL to redirect to; if the
-      // account is already connected it just confirms that instead.
-      if (result.url) {
-        window.location.href = result.url;
-        return;
-      }
-      invalidateStatus();
-    },
-  });
-
-  const disconnect = useMutation({
-    mutationFn: () => api.delete<CalendarStatus>('/api/calendar/disconnect'),
-    onSuccess: invalidateStatus,
-  });
+  const { statusQuery, connect, disconnect } = useCalendarConnection();
 
   return (
     <div className="mb-8 rounded-md border border-[#d4a373]/40 bg-white p-4">
