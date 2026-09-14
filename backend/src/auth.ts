@@ -70,7 +70,7 @@ export const auth = betterAuth({
     defaultCookieAttributes: {
       sameSite: isProduction ? 'none' : 'lax',
       secure: isProduction,
-      partitioned: false,
+      partitioned: isProduction,
     },
   },
 });
