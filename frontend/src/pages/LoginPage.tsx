@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
+import { getEmailError } from '@/lib/validation';
 
 export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const oauthError = searchParams.get('oauthError') === '1';
+  const oauthErrorMessage = getGoogleOAuthErrorMessage(searchParams.get('error'));
 
   const signIn = useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
@@ -22,6 +25,9 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const error = getEmailError(email);
+    setEmailError(error);
+    if (error) return;
     signIn.mutate({ email, password });
   };
 
@@ -34,7 +40,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
-      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1c0d06] p=8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
+      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1c0d06] p-8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
         <span className="absolute left-3 right-3 top-6 border-t-2 border-[#d4af37] md:left-4 md:right-4 md:top-8" />
         <span className="absolute left-3 right-3 bottom-6 border-b-2 border-[#d4af37] md:left-4 md:right-4 md:bottom-8" />
         <span className="absolute top-3 bottom-3 left-6 border-l-2 border-[#d4af37] md:top-4 md:bottom-4 md:left-8" />
@@ -51,11 +57,7 @@ export const LoginPage: React.FC = () => {
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Sign in
           </h2>
-          {oauthError && (
-            <p className="text-sm text-red-700">
-              Google sign-in was cancelled or didn&apos;t complete. Please try again.
-            </p>
-          )}
+          {oauthErrorMessage && <p className="text-sm text-red-700">{oauthErrorMessage}</p>}
           <label htmlFor="email" className="text-sm font-semibold">
             Email<span className="text-red-600 ml-0.5">*</span>
           </label>
@@ -65,9 +67,18 @@ export const LoginPage: React.FC = () => {
             placeholder="name@example.com"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(null);
+            }}
+            onBlur={() => setEmailError(getEmailError(email))}
+            className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
+              emailError
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-[#d4a373] focus:ring-[#1c0d06]'
+            }`}
           />
+          {emailError && <p className="text-xs text-red-700">{emailError}</p>}
           <label htmlFor="password" className="text-sm font-semibold">
             Password<span className="text-red-600 ml-0.5">*</span>
           </label>
@@ -132,7 +143,20 @@ export const LoginPage: React.FC = () => {
               Reset
             </a>
           </p>
-          {signIn.isError && <p className="text-sm text-red-700">{signIn.error.message}</p>}
+          {signIn.isError &&
+            (signIn.error.message === 'Email not verified' ? (
+              <p className="text-sm text-red-700">
+                Your email isn&apos;t verified yet.{' '}
+                <Link
+                  to={`/verify-email?email=${encodeURIComponent(email)}`}
+                  className="font-semibold underline"
+                >
+                  Verify it now
+                </Link>
+              </p>
+            ) : (
+              <p className="text-sm text-red-700">{signIn.error.message}</p>
+            ))}
           <button
             type="submit"
             disabled={signIn.isPending}

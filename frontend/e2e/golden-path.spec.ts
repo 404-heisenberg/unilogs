@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import { verifyEmail } from './helpers';
 
 // The one test in this file that's worth running slowly and for real: sign up
 // through the actual UI, define a project's shape, log an entry against it,
@@ -21,6 +22,9 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await page.getByLabel(/confirm password/i).fill(password);
   await page.getByLabel(/i agree to the/i).check();
   await page.getByRole('button', { name: 'Sign Up' }).click();
+
+  await expect(page).toHaveURL(/\/verify-email/);
+  await verifyEmail(page, email);
 
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();

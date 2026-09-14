@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { getEmailError } from '@/lib/validation';
 
 const RequestResetForm: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const forgotPassword = useMutation({
     mutationFn: (input: { email: string }) =>
@@ -16,6 +18,9 @@ const RequestResetForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const error = getEmailError(email);
+    setEmailError(error);
+    if (error) return;
     forgotPassword.mutate({ email });
   };
 
@@ -66,11 +71,18 @@ const RequestResetForm: React.FC = () => {
         id="reset-email"
         type="email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => {
+          setEmail(e.target.value);
+          if (emailError) setEmailError(null);
+        }}
+        onBlur={() => setEmailError(getEmailError(email))}
         placeholder="name@example.com"
         required
-        className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+        className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
+          emailError ? 'border-red-500 focus:ring-red-500' : 'border-[#d4a373] focus:ring-[#1c0d06]'
+        }`}
       />
+      {emailError && <p className="text-xs text-red-700">{emailError}</p>}
 
       {forgotPassword.isError && (
         <p className="text-sm text-red-700">{forgotPassword.error.message}</p>

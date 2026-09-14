@@ -71,16 +71,16 @@ is the most common way React applications end up with stale data on screen.
 Smaller dependencies, pulled in to support the tools above rather than chosen as
 standalone decisions:
 
-| Package                        | Why this one                                                                                                                                                        |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **radix-ui**                    | The unstyled, accessible primitives shadcn/ui is built on. Handles focus trapping, keyboard navigation and ARIA attributes for components like dialogs and menus. |
-| **class-variance-authority**    | Defines the variant/size classes on generated shadcn/ui components (e.g. `button`'s `variant="outline"`). Required by the generator's own output, not chosen independently. |
-| **clsx** + **tailwind-merge**   | Compose the `cn()` helper (`frontend/src/lib/utils.ts`) that every shadcn/ui component calls to combine class names. `clsx` joins conditional classes; `tailwind-merge` resolves conflicts between them (e.g. a later `px-4` correctly overriding an earlier `px-2`). |
-| **tw-animate-css**              | Tailwind v4 has no built-in animation utilities. This restores the `animate-in`/`animate-out` classes shadcn/ui's generated components rely on, without pulling in a JS animation library. |
-| **lucide-react**                | Icon set. shadcn/ui's generated components and CLI assume Lucide icons by default, so using anything else means fighting the generator on every new component. |
-| **@fontsource-variable/geist**  | Self-hosts the Geist variable font instead of loading it from Google Fonts or Vercel's CDN, removing a render-blocking third-party request and keeping the page working if that CDN is unreachable. |
-| **@tailwindcss/vite**           | Official first-party Vite plugin for Tailwind v4. Compiles Tailwind as part of Vite's own build graph instead of a separate PostCSS pass, which is how Tailwind v4 expects to be integrated. |
-| **shadcn** (CLI)                | Generates the components in `frontend/src/components/ui/` — see [Vendored code](#vendored-code) below. Not imported at runtime; used only via `npx shadcn add`. |
+| Package                        | Why this one                                                                                                                                                                                                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **radix-ui**                   | The unstyled, accessible primitives shadcn/ui is built on. Handles focus trapping, keyboard navigation and ARIA attributes for components like dialogs and menus.                                                                                                     |
+| **class-variance-authority**   | Defines the variant/size classes on generated shadcn/ui components (e.g. `button`'s `variant="outline"`). Required by the generator's own output, not chosen independently.                                                                                           |
+| **clsx** + **tailwind-merge**  | Compose the `cn()` helper (`frontend/src/lib/utils.ts`) that every shadcn/ui component calls to combine class names. `clsx` joins conditional classes; `tailwind-merge` resolves conflicts between them (e.g. a later `px-4` correctly overriding an earlier `px-2`). |
+| **tw-animate-css**             | Tailwind v4 has no built-in animation utilities. This restores the `animate-in`/`animate-out` classes shadcn/ui's generated components rely on, without pulling in a JS animation library.                                                                            |
+| **lucide-react**               | Icon set. shadcn/ui's generated components and CLI assume Lucide icons by default, so using anything else means fighting the generator on every new component.                                                                                                        |
+| **@fontsource-variable/geist** | Self-hosts the Geist variable font instead of loading it from Google Fonts or Vercel's CDN, removing a render-blocking third-party request and keeping the page working if that CDN is unreachable.                                                                   |
+| **@tailwindcss/vite**          | Official first-party Vite plugin for Tailwind v4. Compiles Tailwind as part of Vite's own build graph instead of a separate PostCSS pass, which is how Tailwind v4 expects to be integrated.                                                                          |
+| **shadcn** (CLI)               | Generates the components in `frontend/src/components/ui/` — see [Vendored code](#vendored-code) below. Not imported at runtime; used only via `npx shadcn add`.                                                                                                       |
 
 ### Vendored code
 
@@ -110,13 +110,13 @@ importing it as a black box.
 
 ### Supporting backend packages
 
-| Package                          | Why this one                                                                                                                                                                                      |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Package                           | Why this one                                                                                                                                                                                                                                                   |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **@prisma/adapter-pg** + **pg**   | Prisma 7's driver adapter mode. Prisma no longer bundles its own query engine binary for every database; instead it delegates connection handling to the standard `pg` driver via this adapter. Required for Prisma to talk to Neon at all under this version. |
-| **cors**                          | The frontend (Vercel) and backend (Render) are on different origins, so the browser blocks API requests without CORS headers. This middleware sets them for the frontend's allowed origin.       |
-| **bcryptjs**                      | Hashes passwords for the email/password auth path. A pure-JavaScript implementation was chosen over the native `bcrypt` binding so installs do not depend on a C++ toolchain being available on every contributor's machine and on Render's build image.        |
-| **@scalar/express-api-reference** | Serves interactive API documentation (`/api/docs`) generated from our OpenAPI spec, mounted directly as Express middleware. Chosen over Swagger UI for a more readable default theme with no extra configuration.                                               |
-| **dotenv**                        | Loads `.env` into `process.env` for local development. Not used in production — Render injects environment variables directly.                                                                   |
+| **cors**                          | The frontend (Vercel) and backend (Render) are on different origins, so the browser blocks API requests without CORS headers. This middleware sets them for the frontend's allowed origin.                                                                     |
+| **bcryptjs**                      | Hashes passwords for the email/password auth path. A pure-JavaScript implementation was chosen over the native `bcrypt` binding so installs do not depend on a C++ toolchain being available on every contributor's machine and on Render's build image.       |
+| **@scalar/express-api-reference** | Serves interactive API documentation (`/api/docs`) generated from our OpenAPI spec, mounted directly as Express middleware. Chosen over Swagger UI for a more readable default theme with no extra configuration.                                              |
+| **dotenv**                        | Loads `.env` into `process.env` for local development. Not used in production — Render injects environment variables directly.                                                                                                                                 |
 
 ### A note on ESM
 
@@ -164,12 +164,12 @@ tool, and the simpler option was better.
 
 ## Testing
 
-| Tool                       | Why this one                                                                                                                                                                                                            |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vitest**                  | Vite-native test runner. Reuses Vite's own TypeScript/JSX transform pipeline instead of a separate Jest config that has to be kept in sync, and runs on both frontend and backend so the team learns one runner, not two. |
-| **React Testing Library**   | Queries components the way a user finds them — by role, label, and visible text — rather than through internal component state. Catches real usability regressions and survives refactors that break tests written against implementation details. |
-| **Supertest**                | Drives the real Express app over HTTP from inside a test rather than calling route handlers directly, so backend tests exercise the same middleware, auth, and validation pipeline that runs in production.           |
-| **Playwright**               | The layer above component tests: drives a real browser against the real frontend and backend together. Chosen over Cypress for first-party TypeScript support and because its own config can launch multiple dev servers directly (see `frontend/playwright.config.ts`), which fits this repo's two-server, no-workspaces layout without extra process-management tooling. |
+| Tool                      | Why this one                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vitest**                | Vite-native test runner. Reuses Vite's own TypeScript/JSX transform pipeline instead of a separate Jest config that has to be kept in sync, and runs on both frontend and backend so the team learns one runner, not two.                                                                                                                                                  |
+| **React Testing Library** | Queries components the way a user finds them — by role, label, and visible text — rather than through internal component state. Catches real usability regressions and survives refactors that break tests written against implementation details.                                                                                                                         |
+| **Supertest**             | Drives the real Express app over HTTP from inside a test rather than calling route handlers directly, so backend tests exercise the same middleware, auth, and validation pipeline that runs in production.                                                                                                                                                                |
+| **Playwright**            | The layer above component tests: drives a real browser against the real frontend and backend together. Chosen over Cypress for first-party TypeScript support and because its own config can launch multiple dev servers directly (see `frontend/playwright.config.ts`), which fits this repo's two-server, no-workspaces layout without extra process-management tooling. |
 
 Three layers, each catching what the one below it cannot: Vitest unit tests
 check logic in isolation, the component/integration tests above check that a
@@ -206,17 +206,17 @@ email and password authentication, which remains the primary login method.
 
 ## Considered and rejected
 
-| Instead of        | We considered              | Why not                                                                                                                                             |
-| ----------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vite              | Next.js                    | Server-side rendering solves problems a logged-in tool does not have, and adds deployment complexity.                                               |
-| Tailwind          | CSS Modules                | Slower to write and needs naming discipline across seven people.                                                                                    |
-| shadcn/ui (Radix) | Base UI                    | Newer and shadcn's current recommendation, but Radix has years of existing answers online, which matters more when six people are learning at once. |
-| Zustand           | Redux Toolkit              | More boilerplate than our state complexity justifies.                                                                                               |
-| Prisma            | Drizzle, raw SQL           | Drizzle is lighter but less familiar; raw SQL gives up type safety.                                                                                 |
-| Better Auth       | Auth.js, hand-rolled       | Auth.js is Next-oriented. Hand-rolling authentication is not a risk worth taking.                                                                   |
-| Docusaurus        | Markdown in the repository | Rejected on the grounds that the brief asks for a publicly accessible site with non-trivial content.                                                |
-| Express           | Fastify, NestJS            | Fastify is faster but the difference is irrelevant at our scale; NestJS imposes a learning curve for structure we can add ourselves.                |
-| Playwright        | Cypress                    | Both are solid; Playwright's config-driven multi-server startup better fits our two-server, no-workspaces layout, and its TypeScript support needs no extra setup.  |
+| Instead of        | We considered              | Why not                                                                                                                                                            |
+| ----------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Vite              | Next.js                    | Server-side rendering solves problems a logged-in tool does not have, and adds deployment complexity.                                                              |
+| Tailwind          | CSS Modules                | Slower to write and needs naming discipline across seven people.                                                                                                   |
+| shadcn/ui (Radix) | Base UI                    | Newer and shadcn's current recommendation, but Radix has years of existing answers online, which matters more when six people are learning at once.                |
+| Zustand           | Redux Toolkit              | More boilerplate than our state complexity justifies.                                                                                                              |
+| Prisma            | Drizzle, raw SQL           | Drizzle is lighter but less familiar; raw SQL gives up type safety.                                                                                                |
+| Better Auth       | Auth.js, hand-rolled       | Auth.js is Next-oriented. Hand-rolling authentication is not a risk worth taking.                                                                                  |
+| Docusaurus        | Markdown in the repository | Rejected on the grounds that the brief asks for a publicly accessible site with non-trivial content.                                                               |
+| Express           | Fastify, NestJS            | Fastify is faster but the difference is irrelevant at our scale; NestJS imposes a learning curve for structure we can add ourselves.                               |
+| Playwright        | Cypress                    | Both are solid; Playwright's config-driven multi-server startup better fits our two-server, no-workspaces layout, and its TypeScript support needs no extra setup. |
 
 <AiDeclaration
   tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Sonnet 5]"
