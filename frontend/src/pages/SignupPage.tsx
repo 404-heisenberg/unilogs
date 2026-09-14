@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
 import { getEmailError } from '@/lib/validation';
 
 export const SignupPage: React.FC = () => {
@@ -17,7 +18,7 @@ export const SignupPage: React.FC = () => {
   const [showMismatchError, setShowMismatchError] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const oauthError = searchParams.get('oauthError') === '1';
+  const oauthErrorMessage = getGoogleOAuthErrorMessage(searchParams.get('error'));
 
   const signUp = useMutation({
     mutationFn: (input: { name: string; email: string; password: string }) =>
@@ -96,11 +97,7 @@ export const SignupPage: React.FC = () => {
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Create an account
           </h2>
-          {oauthError && (
-            <p className="text-sm text-red-700">
-              Google sign-up was cancelled or didn&apos;t complete. Please try again.
-            </p>
-          )}
+          {oauthErrorMessage && <p className="text-sm text-red-700">{oauthErrorMessage}</p>}
 
           <label htmlFor="name" className="text-sm font-semibold">
             Name<span className="text-red-600 ml-0.5">*</span>

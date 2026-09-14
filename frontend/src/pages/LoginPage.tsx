@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
 import { getEmailError } from '@/lib/validation';
 
 export const LoginPage: React.FC = () => {
@@ -12,7 +13,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const oauthError = searchParams.get('oauthError') === '1';
+  const oauthErrorMessage = getGoogleOAuthErrorMessage(searchParams.get('error'));
 
   const signIn = useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
@@ -56,11 +57,7 @@ export const LoginPage: React.FC = () => {
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Sign in
           </h2>
-          {oauthError && (
-            <p className="text-sm text-red-700">
-              Google sign-in was cancelled or didn&apos;t complete. Please try again.
-            </p>
-          )}
+          {oauthErrorMessage && <p className="text-sm text-red-700">{oauthErrorMessage}</p>}
           <label htmlFor="email" className="text-sm font-semibold">
             Email<span className="text-red-600 ml-0.5">*</span>
           </label>
