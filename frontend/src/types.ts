@@ -2,6 +2,7 @@ export type Project = {
   id: number;
   name: string;
   description?: string;
+  archived: boolean;
   userId: string;
 };
 
@@ -12,9 +13,10 @@ export type FieldDefinition = {
   fieldType: string;
 };
 
-export type EntryContent = {
-  description?: string;
-  timeSpent?: string;
+export type EntryContent = Record<string, unknown>;
+
+export type EntryTag = {
+  tag: { id: number; name: string };
 };
 
 export type Entry = {
@@ -23,4 +25,6 @@ export type Entry = {
   date: string;
   createdAt: string;
   content: EntryContent;
+  tags?: EntryTag[];
+  project?: Project;
 };

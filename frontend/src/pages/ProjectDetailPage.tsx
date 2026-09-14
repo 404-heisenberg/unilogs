@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
-import type { FieldDefinition, Project } from '@/types';
+import type { Entry, FieldDefinition, Project } from '@/types';
 
 function FieldRow({
   field,
@@ -72,6 +72,17 @@ export default function ProjectDetailPage() {
     queryFn: () => api.get<FieldDefinition[]>(`/api/field-definitions?projectId=${projectId}`),
     enabled: !!projectId,
   });
+
+  const entriesQuery = useQuery({
+    queryKey: ['entries'],
+    queryFn: () => api.get<Entry[]>('/api/entries'),
+  });
+
+  // The entries endpoint returns every entry the user owns; narrow to this
+  // project client-side (see issue #85 for the Basic-tier scaling note).
+  const projectEntries = (entriesQuery.data ?? []).filter(
+    (entry) => entry.projectId === Number(projectId),
+  );
 
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldType>(FIELD_TYPES[0]);
@@ -211,6 +222,54 @@ export default function ProjectDetailPage() {
       {createField.isError && (
         <p className="mt-2 text-sm text-red-700">{createField.error.message}</p>
       )}
+
+      <h2 className="mt-10 mb-3 text-lg font-semibold text-[#1c0d06]">Entries</h2>
+
+      {entriesQuery.isPending && (
+        <div className="flex flex-col gap-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-[#d4a373]/20" />
+          ))}
+        </div>
+      )}
+
+      {entriesQuery.isError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Failed to load entries. Try refreshing the page.
+        </div>
+      )}
+
+      {entriesQuery.isSuccess && projectEntries.length === 0 && (
+        <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
+          <p className="text-sm text-[#4a3525]">No entries logged for this project yet.</p>
+          <Link to="/entries/new">
+            <Button className="mt-4 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">
+              Log an entry
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      <ul className="flex flex-col gap-3">
+        {projectEntries.map((entry) => (
+          <li key={entry.id}>
+            <Link
+              to={`/entries/${entry.id}`}
+              className="block rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+            >
+              <p className="text-sm text-[#7a5230]">{entry.date.slice(0, 10)}</p>
+              <dl className="mt-1 flex flex-col gap-0.5">
+                {Object.entries(entry.content).map(([name, value]) => (
+                  <div key={name} className="flex gap-2 text-sm">
+                    <dt className="font-medium text-[#1c0d06]">{name}:</dt>
+                    <dd className="text-[#4a3525]">{String(value)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

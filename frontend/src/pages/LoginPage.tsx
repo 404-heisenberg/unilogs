@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getEmailError } from '@/lib/validation';
 
@@ -11,6 +11,8 @@ export const LoginPage: React.FC = () => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const oauthError = searchParams.get('oauthError') === '1';
 
   const signIn = useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
@@ -27,9 +29,14 @@ export const LoginPage: React.FC = () => {
     if (error) return;
     signIn.mutate({ email, password });
   };
-  const handleOAuthSignIn = (provider: string) => {
-    console.log(`Signing in with ${provider}`);
-  };
+
+  const googleSignIn = useMutation({
+    mutationFn: () => api.post<{ url: string }>('/api/auth/social/google', { from: 'login' }),
+    onSuccess: (result) => {
+      window.location.href = result.url;
+    },
+  });
+
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
       <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1c0d06] p-8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
@@ -49,6 +56,11 @@ export const LoginPage: React.FC = () => {
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Sign in
           </h2>
+          {oauthError && (
+            <p className="text-sm text-red-700">
+              Google sign-in was cancelled or didn&apos;t complete. Please try again.
+            </p>
+          )}
           <label htmlFor="email" className="text-sm font-semibold">
             Email<span className="text-red-600 ml-0.5">*</span>
           </label>
@@ -172,8 +184,9 @@ export const LoginPage: React.FC = () => {
           <section className="flex gap-3">
             <button
               type="button"
-              onClick={() => handleOAuthSignIn('Google')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer"
+              onClick={() => googleSignIn.mutate()}
+              disabled={googleSignIn.isPending}
+              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -193,20 +206,12 @@ export const LoginPage: React.FC = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              Google
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleOAuthSignIn('GitHub')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer"
-            >
-              <svg className="h-4 w-4 fill-current text-slate-900" viewBox="0 0 24 24">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-              GitHub
+              {googleSignIn.isPending ? 'Connecting…' : 'Google'}
             </button>
           </section>
+          {googleSignIn.isError && (
+            <p className="text-sm text-red-700">{googleSignIn.error.message}</p>
+          )}
         </form>
       </section>
     </main>

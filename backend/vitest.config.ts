@@ -28,6 +28,12 @@ process.env.DATABASE_URL = testDatabaseUrl;
 export default defineConfig({
   test: {
     environment: 'node',
+    // Full process isolation per test file. Some tests (calendar.google.api)
+    // replace the exported `auth` singleton via vi.mock; forks guarantees
+    // that override can never bleed into or be affected by another file's
+    // module cache, which the lighter-weight threads pool does not guarantee
+    // to the same degree.
+    pool: 'forks',
     fileParallelism: false,
     globalSetup: ['./tests/global-setup.ts'],
     include: ['tests/**/*.test.ts'],

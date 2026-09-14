@@ -21,19 +21,33 @@ model User {
   createdAt     DateTime
   updatedAt     DateTime
 
-  projects Project[]
-  sessions Session[]
-  accounts Account[]
+  projects            Project[]
+  sessions            Session[]
+  accounts            Account[]
+  calendarSuggestions CalendarSuggestion[]
 
   @@map("user")
 }
 
+model CalendarSuggestion {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  eventId   String
+  status    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("calendar_suggestions")
+}
+
 model Project {
-  id     Int    @id @default(autoincrement())
-  name   String
+  id          Int     @id @default(autoincrement())
+  name        String
   description String?
-  archived Boolean @default(false)
-  userId String
+  archived    Boolean @default(false)
+  userId      String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

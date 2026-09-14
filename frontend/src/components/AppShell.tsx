@@ -5,6 +5,7 @@ import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
 
 const navItems = [
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/projects', label: 'Projects' },
   { to: '/projects/new', label: 'New Project' },
   { to: '/entries', label: 'Entries' },
@@ -72,6 +73,16 @@ export default function AppShell() {
               <p className="text-xs text-[#d4a373]">{data.user.email}</p>
             </div>
           )}
+          <Link
+            to="/settings"
+            className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+              location.pathname === '/settings'
+                ? 'bg-[#e6c687]/20 font-semibold text-[#e6c687]'
+                : 'text-[#d4a373] hover:bg-white/5 hover:text-[#e6c687]'
+            }`}
+          >
+            Settings
+          </Link>
           <button
             onClick={handleSignOut}
             className="w-full rounded-md px-3 py-2 text-left text-sm text-[#e6c687]/70 transition-colors hover:bg-white/5 hover:text-[#e6c687]"

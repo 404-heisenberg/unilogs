@@ -25,6 +25,14 @@ export const auth = betterAuth({
   emailVerification: {
     autoSignInAfterVerification: true,
   },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      accessType: 'offline',
+      prompt: 'select_account consent',
+    },
+  },
   email: {
     sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
       await sendEmail(
