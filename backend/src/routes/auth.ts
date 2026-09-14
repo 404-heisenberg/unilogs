@@ -67,7 +67,7 @@ router.post('/social/google', async (req, res) => {
         provider: 'google',
         disableRedirect: true,
         callbackURL: `${FRONTEND_URL}/dashboard`,
-        errorCallbackURL: `${FRONTEND_URL}/${from}?oauthError=1`,
+        errorCallbackURL: `${FRONTEND_URL}/${from}`,
       },
       headers: req.headers,
     });

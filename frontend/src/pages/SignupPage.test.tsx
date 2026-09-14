@@ -57,11 +57,21 @@ describe('SignupPage Google sign-up', () => {
     expect(await screen.findByText('Failed to start Google sign-in')).toBeInTheDocument();
   });
 
-  it('shows a cancellation notice when redirected back with an OAuth error', () => {
-    renderPage('/signup?oauthError=1');
+  it('shows a specific message when the email already has a password account', () => {
+    renderPage('/signup?error=account_not_linked');
 
     expect(
-      screen.getByText("Google sign-up was cancelled or didn't complete. Please try again."),
+      screen.getByText(
+        'An account with this email already exists. Sign in with your password, then connect Google from Settings.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a generic message for an unrecognised OAuth error code', () => {
+    renderPage('/signup?error=invalid_code');
+
+    expect(
+      screen.getByText("Google sign-in didn't complete. Please try again."),
     ).toBeInTheDocument();
   });
 });
