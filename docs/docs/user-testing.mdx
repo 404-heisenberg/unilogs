@@ -1,0 +1,100 @@
+---
+sidebar_position: 11
+title: User Testing
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# User Testing — Round 1
+
+:::note
+
+This page is a scaffold. Sections marked **[TODO]** need to be filled in with
+real session notes and form responses once round 1 testing has actually been
+run — see [issue #99](https://github.com/404-heisenberg/unilogs/issues/99).
+
+:::
+
+## Methodology
+
+Round 1 combines two things, so the results are both observed (what people
+actually struggle with) and self-reported (how they rate the experience):
+
+1. A short, task-based session with each tester, run over a screen-shared
+   Discord call. One team member reads out the tasks and times them; another
+   takes notes on where the tester hesitates, backtracks, or asks a question.
+   Testers are not helped unless they are fully stuck — the point is to see
+   where the product is unclear on its own.
+2. A short feedback form (Google Forms — no account required to respond),
+   filled in immediately after the session while it's fresh.
+
+Testers are a mix of people outside the immediate dev team where possible
+(classmates, friends) so the feedback isn't just the people who already know
+how the product works.
+
+### Task script
+
+| #   | Task                                                                                         | What we're watching for                                                              |
+| --- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 1   | Sign up for an account                                                                       | Friction in the signup form, validation errors, time to complete                     |
+| 2   | Create a new project and add one custom field (e.g. a "duration" field)                      | Whether the custom-field concept is understood without explanation                   |
+| 3   | Log an entry for that project                                                                | Whether the entry form is discoverable and the field they defined shows up correctly |
+| 4   | Open the dashboard and find their total logged time / stats                                  | Whether the stats are easy to locate and interpret                                   |
+| 5   | Add a tag to an entry                                                                        | Whether tagging is discoverable                                                      |
+| 6   | Connect Google Calendar (if the tester has a Google account) and check for suggested entries | Whether the value of the integration is obvious                                      |
+| 7   | Locate (without completing) the reset-password and delete-account flows                      | Whether account/security actions are easy to find                                    |
+
+For each task, record: time to complete, whether they got stuck (and where),
+and any direct quotes worth keeping.
+
+### Feedback form questions
+
+Copy these into a Google Form. Keep it to under 2 minutes to fill in so
+testers actually finish it.
+
+1. Name or pseudonym (optional — for our internal tracking only, never
+   published)
+2. On a scale of 1–5, how easy was it to sign up and get started?
+3. On a scale of 1–5, how intuitive was creating a project and defining your
+   own fields?
+4. On a scale of 1–5, how clear were the statistics on your dashboard?
+5. Did anything feel confusing or broken? (open text)
+6. Is there a feature you wish existed, or wish worked differently? (open
+   text)
+7. On a scale of 1–5, how likely are you to use this instead of a paper
+   logbook or notes app?
+8. Any other comments? (open text)
+
+**[TODO]** Link to the live form: _pending_
+
+## Testers
+
+**[TODO]**
+
+| Tester    | Background | Session date |
+| --------- | ---------- | ------------ |
+| _pending_ | _pending_  | _pending_    |
+
+## Findings
+
+**[TODO]** — fill in once sessions are run. For each task, summarise
+completion time, stuck points, and notable quotes across testers. Include the
+form's quantitative ratings (average per question) and a summary of the open-
+text responses.
+
+## Changes made as a result
+
+**[TODO]** — this is the section that matters most: for every notable finding
+above, record what was actually changed in the product (or explicitly, why
+nothing was changed). A finding with no corresponding action here is feedback
+that was collected but not integrated.
+
+| Finding   | Change made | Where     |
+| --------- | ----------- | --------- |
+| _pending_ | _pending_   | _pending_ |
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Sonnet 5]"
+  purpose="scaffolding the round 1 user testing methodology, task script, and feedback form questions ahead of running real sessions"
+/>
