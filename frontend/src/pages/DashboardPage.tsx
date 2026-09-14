@@ -140,7 +140,7 @@ export function Sidebar({ currentRoute, onNavigate, user, onSignOut }: SidebarPr
 
         <button
           onClick={() => onNavigate('settings')}
-          className={`flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-stone-300 hover:bg-[#1c1917] hover:text-white transition-colors cursor-pointer w-full`}
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-stone-300 hover:bg-[#1c1917] hover:text-white transition-colors cursor-pointer w-full"
           title={isCollapsed ? 'Settings' : undefined}
         >
           <Settings className="h-4 w-4 shrink-0" />
@@ -149,7 +149,7 @@ export function Sidebar({ currentRoute, onNavigate, user, onSignOut }: SidebarPr
 
         <button
           onClick={onSignOut}
-          className={`flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer w-full`}
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer w-full"
           title={isCollapsed ? 'Sign out' : undefined}
         >
           <LogOut className="h-4 w-4 shrink-0" />
@@ -336,37 +336,34 @@ export default function DashboardSection() {
 
   const hasPresetFields = !!fieldsQuery.data && fieldsQuery.data.length > 0;
 
-  useEffect(() => {
-    if (!selectedProject) {
+  // Render-phase state synchronization replacing the useEffect hook to avoid cascading renders
+  const [prevSelectedProject, setPrevSelectedProject] = useState(selectedProject);
+  const [prevFieldsData, setPrevFieldsData] = useState(fieldsQuery.data);
+
+  if (selectedProject !== prevSelectedProject || fieldsQuery.data !== prevFieldsData) {
+    setPrevSelectedProject(selectedProject);
+    setPrevFieldsData(fieldsQuery.data);
+
+    if (!selectedProject || !fieldsQuery.data || fieldsQuery.data.length === 0) {
       setCustomFields([
         { id: '1', label: 'Activity Details', type: 'textarea', value: '' },
         { id: '2', label: 'Time Spent', type: 'duration', value: '' },
       ]);
-      return;
+    } else {
+      setCustomFields((prev) =>
+        fieldsQuery.data!.map((f) => {
+          const existing = prev.find((p) => p.id === f.id.toString() || p.label === f.name);
+          return {
+            id: f.id.toString(),
+            label: f.name,
+            type: f.fieldType as CustomLogField['type'],
+            value: existing ? existing.value : '',
+            isPreset: true,
+          };
+        }),
+      );
     }
-
-    if (fieldsQuery.data) {
-      if (fieldsQuery.data.length > 0) {
-        setCustomFields((prev) =>
-          fieldsQuery.data.map((f) => {
-            const existing = prev.find((p) => p.id === f.id.toString() || p.label === f.name);
-            return {
-              id: f.id.toString(),
-              label: f.name,
-              type: f.fieldType as CustomLogField['type'],
-              value: existing ? existing.value : '',
-              isPreset: true,
-            };
-          }),
-        );
-      } else {
-        setCustomFields([
-          { id: '1', label: 'Activity Details', type: 'textarea', value: '' },
-          { id: '2', label: 'Time Spent', type: 'duration', value: '' },
-        ]);
-      }
-    }
-  }, [fieldsQuery.data, selectedProject]);
+  }
 
   const createEntryMutation = useMutation({
     mutationFn: (data: { projectId: number; date: string; content: Record<string, string> }) =>

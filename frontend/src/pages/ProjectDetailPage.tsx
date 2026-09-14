@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -59,13 +59,16 @@ function FieldRow({
   isDeleting: boolean;
 }) {
   const [name, setName] = useState(field.name);
+  const [prevFieldName, setPrevFieldName] = useState(field.name);
 
-  useEffect(() => {
+  // Render-phase state synchronization replacing the useEffect hook
+  if (field.name !== prevFieldName) {
+    setPrevFieldName(field.name);
     setName(field.name);
-  }, [field.name]);
+  }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md[cite: 2]">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -219,7 +222,6 @@ export default function ProjectDetailPage() {
 
       if (uniqueFieldsToCreate.size === 0) return;
 
-      // Sequentially create fields to prevent race conditions and duplicates
       for (const { name, fieldType } of uniqueFieldsToCreate.values()) {
         try {
           await api.post<FieldDefinition>('/api/field-definitions', {
@@ -235,36 +237,34 @@ export default function ProjectDetailPage() {
     onSuccess: invalidateFields,
   });
 
-  useEffect(() => {
-    if (
-      fieldsQuery.isSuccess &&
-      entriesQuery.isSuccess &&
-      projectEntries.length > 0 &&
-      !syncFieldsFromEntries.isPending
-    ) {
-      const existingNames = new Set(
-        (fieldsQuery.data ?? []).map((f) => f.name.trim().toLowerCase()),
-      );
-      const builtInKeys = new Set(['date', 'id', 'projectid', 'createdat', 'updatedat']);
+  // Render-phase check for syncing fields from entries without using setState in useEffect
+  const [prevEntriesLength, setPrevEntriesLength] = useState(projectEntries.length);
+  const [hasSynced, setHasSynced] = useState(false);
 
-      const hasUnregisteredKeys = projectEntries.some((entry) =>
-        Object.keys(entry.content || {}).some((k) => {
-          const norm = k.trim().toLowerCase();
-          return norm && !builtInKeys.has(norm) && !existingNames.has(norm);
-        }),
-      );
+  if (
+    fieldsQuery.isSuccess &&
+    entriesQuery.isSuccess &&
+    projectEntries.length > 0 &&
+    !syncFieldsFromEntries.isPending &&
+    (!hasSynced || projectEntries.length !== prevEntriesLength)
+  ) {
+    setPrevEntriesLength(projectEntries.length);
+    setHasSynced(true);
 
-      if (hasUnregisteredKeys) {
-        syncFieldsFromEntries.mutate();
-      }
+    const existingNames = new Set((fieldsQuery.data ?? []).map((f) => f.name.trim().toLowerCase()));
+    const builtInKeys = new Set(['date', 'id', 'projectid', 'createdat', 'updatedat']);
+
+    const hasUnregisteredKeys = projectEntries.some((entry) =>
+      Object.keys(entry.content || {}).some((k) => {
+        const norm = k.trim().toLowerCase();
+        return norm && !builtInKeys.has(norm) && !existingNames.has(norm);
+      }),
+    );
+
+    if (hasUnregisteredKeys) {
+      syncFieldsFromEntries.mutate();
     }
-  }, [
-    fieldsQuery.isSuccess,
-    fieldsQuery.data,
-    entriesQuery.isSuccess,
-    projectEntries,
-    syncFieldsFromEntries,
-  ]);
+  }
 
   const handleCreateField = (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,7 +288,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div>
-      <Link to="/projects" className="text-sm text-[#7a5230] hover:text-[#1c0d06]">
+      <Link to="/projects" className="text-sm text-[#7a5230] hover:text-[#1c0d06][cite: 2]">
         &larr; Projects
       </Link>
 
