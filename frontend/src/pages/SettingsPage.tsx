@@ -123,8 +123,6 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-md">
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
-
       {data?.user && (
         <div className="mb-8">
           <h2 className="text-sm font-semibold mb-1">Account</h2>
