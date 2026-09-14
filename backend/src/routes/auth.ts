@@ -4,6 +4,7 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { sendEmail } from '../lib/email.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
@@ -14,6 +15,21 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 const FRONTEND_URL = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+
+// Lets E2E tests read the verification OTP without a real inbox, the same
+// way backend/tests/helpers/api.ts does via a direct server-side call to
+// auth.api.getVerificationOTP. Playwright drives a real browser over HTTP, so
+// it has no equivalent server-side shortcut - this route is that shortcut,
+// deliberately unavailable outside production.
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/test/verification-otp', async (req, res) => {
+    const email = String(req.query.email ?? '');
+    const { otp } = await auth.api.getVerificationOTP({
+      query: { email, type: 'email-verification' },
+    });
+    return res.json({ otp });
+  });
+}
 
 router.post('/signup', async (req, res) => {
   try {
@@ -161,10 +177,23 @@ router.post('/forgot-password', async (req, res) => {
     } catch {
       console.log(`Verification table not found, using token: ${token}`);
     }
-    const resetUrl = `http://localhost:3000/reset-password?token=${token}`;
-    console.log(`Password reset for ${email}: ${resetUrl}`);
+    const frontendOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+    const resetUrl = `${frontendOrigin}/reset-password?token=${token}`;
+    const emailSent = await sendEmail(
+      email,
+      'Reset your UniLogs password',
+      `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p>`,
+    );
 
-    res.json({ message: 'Reset link sent if account exists', token: token, url: resetUrl });
+    const response: { message: string; token?: string; url?: string } = {
+      message: 'Reset link sent if account exists',
+    };
+    if (!emailSent) {
+      response.token = token;
+      response.url = resetUrl;
+    }
+
+    res.json(response);
   } catch {
     res.status(400).json({ error: 'Failed to send reset link' });
   }

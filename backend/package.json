@@ -23,6 +23,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "@sendgrid/mail": "^8.1.6",
     "@scalar/express-api-reference": "^0.10.18",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.7.1",
