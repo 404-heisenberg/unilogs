@@ -56,13 +56,11 @@ describe('DashboardPage', () => {
 
     renderPage();
 
-    expect(await screen.findByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Total logged')).toBeInTheDocument();
-    expect(screen.getByText('Top project')).toBeInTheDocument();
-    expect(screen.getByText('Thesis')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Week of 2026-09-01: 2 entries' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Current Streak')).toBeInTheDocument();
+    expect(screen.getByText('Total Hours')).toBeInTheDocument();
+    expect(screen.getByText('Top Project')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Thesis' })).toBeInTheDocument();
+    expect(screen.getByText('Activity Frequency')).toBeInTheDocument();
   });
 
   it("shows an error state when the stats can't be loaded", async () => {

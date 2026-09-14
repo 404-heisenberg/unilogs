@@ -1,7 +1,10 @@
-export const FIELD_TYPES = ['text', 'number', 'date', 'duration', 'boolean'] as const;
+export const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'duration', 'boolean'] as const;
 
 export const FIELD_VALIDATOR = {
   text: (value: unknown) => {
+    return typeof value === 'string';
+  },
+  textarea: (value: unknown) => {
     return typeof value === 'string';
   },
 

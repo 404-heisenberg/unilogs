@@ -69,13 +69,6 @@ export default function EntriesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Entries</h1>
-        <Link to="/entries/new">
-          <Button className="bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">New Entry</Button>
-        </Link>
-      </div>
-
       {hasEntries && (
         <div className="mb-6 flex flex-col gap-3 sm:flex-row">
           <input

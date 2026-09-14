@@ -120,13 +120,6 @@ export default function ProjectsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
-        <Link to="/projects/new">
-          <Button className="bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">New Project</Button>
-        </Link>
-      </div>
-
       <div className="mb-4">
         <button
           onClick={() => setArchivedView((v) => !v)}

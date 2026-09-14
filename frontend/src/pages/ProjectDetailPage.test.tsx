@@ -92,7 +92,7 @@ describe('ProjectDetailPage', () => {
 
     expect(
       await screen.findByText(
-        'No fields yet. Add your first field below to define what an entry for this project looks like.',
+        'No fields defined yet. Add your first field below to structure future log entries.',
       ),
     ).toBeInTheDocument();
   });
@@ -104,7 +104,7 @@ describe('ProjectDetailPage', () => {
     renderPage();
     await screen.findByText('Thesis');
 
-    await userEvent.type(screen.getByPlaceholderText('e.g. Time spent'), 'Hours');
+    await userEvent.type(screen.getByPlaceholderText('e.g. Exercises'), 'Hours');
     await userEvent.click(screen.getByRole('button', { name: 'Add field' }));
 
     expect(postMock).toHaveBeenCalledWith('/api/field-definitions', {
