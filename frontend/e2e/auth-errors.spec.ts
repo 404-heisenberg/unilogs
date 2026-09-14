@@ -1,11 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { test, expect } from '@playwright/test';
+import { verifyEmail } from './helpers';
 
 // Error paths that only exist once a real backend is in the loop — a
 // duplicate email rejected by the database, a login rejected by the real
 // password hash check. The component tests mock these responses; this
 // confirms the real ones actually happen.
-test('signing up twice with the same email is rejected', async ({ page }) => {
+test('signing up twice with the same email does not reveal the account exists', async ({
+  page,
+}) => {
   const email = `e2e-${randomUUID()}@example.test`;
   const password = 'Sup3r!Secret';
 
@@ -20,19 +23,22 @@ test('signing up twice with the same email is rejected', async ({ page }) => {
   }
 
   await signUp();
+  await expect(page).toHaveURL(/\/verify-email/);
+  await verifyEmail(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
 
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login$/);
 
+  // Signing up again with the same email does not error. With
+  // requireEmailVerification on, Better Auth deliberately returns a generic
+  // synthetic-user response instead of USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL
+  // (see shouldReturnGenericDuplicateResponse in better-auth's sign-up
+  // route), so the response can't be used to probe which emails are already
+  // registered — it looks identical to a brand-new signup.
   await signUp();
-  await expect(page).toHaveURL(/\/signup$/);
-  // Exact text Better Auth returns for USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL,
-  // given this project's config (no requireEmailVerification, autoSignIn not
-  // disabled) — see @better-auth/core/dist/error/codes.mjs. A generic
-  // synthetic-user response is only returned when one of those is set, which
-  // would make a duplicate email look like a success instead of an error.
-  await expect(page.getByText('User already exists. Use another email.')).toBeVisible();
+  await expect(page).toHaveURL(/\/verify-email/);
+  await expect(page.getByText(/user already exists/i)).not.toBeVisible();
 });
 
 test('logging in with the wrong password is rejected', async ({ page }) => {
@@ -45,6 +51,8 @@ test('logging in with the wrong password is rejected', async ({ page }) => {
   await page.getByLabel(/confirm password/i).fill('Correct1!Horse');
   await page.getByLabel(/i agree to the/i).check();
   await page.getByRole('button', { name: 'Sign Up' }).click();
+  await expect(page).toHaveURL(/\/verify-email/);
+  await verifyEmail(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
 
   await page.getByRole('button', { name: 'Sign out' }).click();

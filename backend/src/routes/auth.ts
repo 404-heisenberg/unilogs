@@ -16,6 +16,21 @@ const prisma = new PrismaClient({ adapter });
 
 const FRONTEND_URL = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
 
+// Lets E2E tests read the verification OTP without a real inbox, the same
+// way backend/tests/helpers/api.ts does via a direct server-side call to
+// auth.api.getVerificationOTP. Playwright drives a real browser over HTTP, so
+// it has no equivalent server-side shortcut - this route is that shortcut,
+// deliberately unavailable outside production.
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/test/verification-otp', async (req, res) => {
+    const email = String(req.query.email ?? '');
+    const { otp } = await auth.api.getVerificationOTP({
+      query: { email, type: 'email-verification' },
+    });
+    return res.json({ otp });
+  });
+}
+
 router.post('/signup', async (req, res) => {
   try {
     const { email, password, name } = req.body;
