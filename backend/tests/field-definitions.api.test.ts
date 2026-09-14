@@ -143,7 +143,8 @@ describe('field definition routes', () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        error: 'Invalid field type. Valid options are: text, number, date, duration, boolean',
+        error:
+          'Invalid field type. Valid options are: text, textarea, number, date, duration, boolean',
       });
     });
 
@@ -158,7 +159,8 @@ describe('field definition routes', () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        error: 'Invalid field type. Valid options are: text, number, date, duration, boolean',
+        error:
+          'Invalid field type. Valid options are: text, textarea, number, date, duration, boolean',
       });
     });
   });

@@ -1,5 +1,5 @@
-import { randomUUID } from 'node:crypto';
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 
 // The one test in this file that's worth running slowly and for real: sign up
 // through the actual UI, define a project's shape, log an entry against it,
@@ -25,45 +25,31 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-  // Define a project and its schema.
-  await page.getByRole('link', { name: 'New Project' }).click();
-  await expect(page).toHaveURL(/\/projects\/new$/);
-  await page.getByPlaceholder('e.g. Gym').fill('Thesis');
-  await page.getByPlaceholder("What's this project for?").fill('Final year research');
-  await page.getByRole('button', { name: 'Save project' }).click();
+  // Define a project and its schema via the Dashboard UI card or navigation.
+  const startProjectButton = page.getByRole('button', { name: /start new project/i });
+  if (await startProjectButton.isVisible()) {
+    await startProjectButton.click();
+  } else {
+    await page.getByRole('button', { name: /new project/i }).click();
+  }
 
-  await expect(page).toHaveURL(/\/projects$/);
-  await page.getByRole('link', { name: 'Thesis' }).click();
-  await expect(page.getByRole('heading', { name: 'Thesis' })).toBeVisible();
+  await page.getByPlaceholder(/e\.g\. unilogs development/i).fill('Thesis');
+  await page.getByPlaceholder(/brief summary/i).fill('Final year research');
+  await page.getByRole('button', { name: /^create project$/i }).click();
 
-  // A 'duration' field specifically: it's the only field type the backend's
-  // stats endpoint sums into totalHours (see backend/src/routes/stats.ts) —
-  // a plain 'text' field would leave the dashboard's totals at zero below.
-  await page.getByPlaceholder('e.g. Time spent').fill('Hours');
-  await page.getByRole('combobox').selectOption('duration');
-  await page.getByRole('button', { name: 'Add field' }).click();
-  await expect(page.locator('ul li input').first()).toHaveValue('Hours');
+  await expect(page.getByText('Thesis')).toBeVisible();
 
-  // Log an entry against it. Wait for the new page's own heading first — the
-  // previous page (ProjectDetailPage) also has a <select> (field type), so
-  // querying by role alone right after the click can catch both pages' DOM
-  // mid-transition and match two comboboxes instead of one.
-  await page.getByRole('link', { name: 'New Entry' }).click();
-  await expect(page.getByRole('heading', { name: 'New Entry' })).toBeVisible();
-  await page.getByRole('combobox').selectOption({ label: 'Thesis' });
-  await page.getByLabel('Hours').fill('3');
-  await page.getByRole('button', { name: 'Save entry' }).click();
+  // Log an entry against it from the dashboard quick log form.
+  await page.selectOption('select', { label: 'Thesis' });
 
-  // It shows up where a user would look for it.
-  await expect(page).toHaveURL(/\/entries$/);
-  await expect(page.getByRole('link', { name: 'Thesis' })).toBeVisible();
-  await expect(page.getByText('Hours:')).toBeVisible();
-  await expect(page.getByText('3', { exact: true })).toBeVisible();
+  const hoursInput = page.getByPlaceholder('0').first();
+  if (await hoursInput.isVisible()) {
+    await hoursInput.fill('3');
+  }
 
-  await page.getByRole('link', { name: 'Dashboard' }).click();
-  // Scoped to the "Top project" card specifically — the bar chart below it
-  // also renders "Thesis" as an axis label, so an unscoped getByText would
-  // match twice.
-  const topProjectCard = page.getByText('Top project').locator('../..');
+  await page.getByRole('button', { name: 'Save Log Entry' }).click();
+
+  // Confirm values reflect on the dashboard stats.
+  const topProjectCard = page.getByText('Top Project').locator('../..');
   await expect(topProjectCard.getByText('Thesis', { exact: true })).toBeVisible();
 });

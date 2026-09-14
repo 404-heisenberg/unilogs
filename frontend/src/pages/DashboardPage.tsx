@@ -896,7 +896,7 @@ export default function DashboardSection() {
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
             <div className="h-2 w-2 rounded-full bg-amber-600" />
-            <span>{summary?.streakText || 'Keep pushing your daily goals!'}</span>
+            <span>Keep pushing your daily goals!</span>
           </div>
         </div>
 
