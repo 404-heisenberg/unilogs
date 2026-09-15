@@ -86,9 +86,18 @@ router.post('/social/google', async (req, res) => {
         errorCallbackURL: `${FRONTEND_URL}/${from}`,
       },
       headers: req.headers,
+      asResponse: true,
     });
 
-    return res.status(200).json({ url: result.url });
+    // Forward the OAuth state cookie set by better-auth so it can be
+    // validated against the `state` query parameter on the callback.
+    const setCookies = result.headers.getSetCookie();
+    if (setCookies.length > 0) {
+      res.setHeader('Set-Cookie', setCookies);
+    }
+
+    const data = await result.json();
+    return res.status(result.status).json(data);
   } catch (error) {
     console.error('Google sign-in start error:', error);
     return res.status(400).json({ error: 'Failed to start Google sign-in' });
