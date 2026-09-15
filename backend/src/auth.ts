@@ -33,6 +33,11 @@ export const auth = betterAuth({
       prompt: 'select_account consent',
     },
   },
+  account: {
+    accountLinking: {
+      requireLocalEmailVerified: false,
+    },
+  },
   email: {
     sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
       await sendEmail(

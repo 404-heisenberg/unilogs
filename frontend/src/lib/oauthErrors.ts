@@ -4,7 +4,7 @@
 // message for; anything else falls back to a generic one.
 const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   account_not_linked:
-    'An account with this email already exists. Sign in with your password, then connect Google from Settings.',
+    "We couldn't link this Google account to your UniLogs account. Please try again or use your password to sign in.",
   email_does_not_match:
     "The Google account you used doesn't match the email on your signed-in account.",
   account_already_linked_to_different_user:
