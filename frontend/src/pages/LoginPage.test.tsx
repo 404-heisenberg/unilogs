@@ -62,7 +62,7 @@ describe('LoginPage Google sign-in', () => {
 
     expect(
       screen.getByText(
-        'An account with this email already exists. Sign in with your password, then connect Google from Settings.',
+        "We couldn't link this Google account to your UniLogs account. Please try again or use your password to sign in.",
       ),
     ).toBeInTheDocument();
   });
