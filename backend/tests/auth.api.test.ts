@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import {
   createAuthenticatedUser,
@@ -7,6 +7,29 @@ import {
   getApiClient,
 } from './helpers/api.js';
 import { auth } from '../src/auth.js';
+
+// /social/google talks to better-auth, not to Google directly, so signInSocial
+// is mocked here the same way calendar.google.api.test.ts mocks the calendar
+// OAuth calls - otherwise the test would need live Google credentials.
+const { signInSocial } = vi.hoisted(() => ({ signInSocial: vi.fn() }));
+
+vi.mock('../src/auth.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/auth.js')>();
+  return {
+    ...actual,
+    auth: {
+      ...actual.auth,
+      api: {
+        ...actual.auth.api,
+        signInSocial,
+      },
+    },
+  };
+});
+
+beforeEach(() => {
+  signInSocial.mockReset();
+});
 
 afterEach(deleteTestUsers);
 afterAll(disconnectTestDatabase);
@@ -204,6 +227,48 @@ describe('auth routes', () => {
       expect(response.body).toEqual({
         error: 'Password is required to delete your account',
       });
+    });
+  });
+
+  describe('POST /api/auth/social/google', () => {
+    it('starts Google OAuth and forwards the state cookie to the browser', async () => {
+      // asResponse: true (see auth.ts) makes signInSocial resolve a raw
+      // Response-like object rather than a parsed body, so the route can read
+      // and forward its Set-Cookie headers untouched.
+      signInSocial.mockResolvedValue({
+        status: 200,
+        headers: { getSetCookie: () => ['better-auth.state=s3cret; HttpOnly; Path=/'] },
+        json: async () => ({ url: 'https://accounts.google.com/o/oauth2/v2/auth' }),
+      });
+
+      const api = await getApiClient();
+      const response = await api.post('/api/auth/social/google').send({ from: 'login' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ url: 'https://accounts.google.com/o/oauth2/v2/auth' });
+      expect(response.headers['set-cookie']).toEqual(
+        expect.arrayContaining([expect.stringContaining('better-auth.state=s3cret')]),
+      );
+      expect(signInSocial).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({
+            provider: 'google',
+            disableRedirect: true,
+            callbackURL: expect.stringContaining('/dashboard'),
+          }),
+          asResponse: true,
+        }),
+      );
+    });
+
+    it('refuses to start Google sign-in when better-auth fails', async () => {
+      signInSocial.mockRejectedValue(new Error('boom'));
+
+      const api = await getApiClient();
+      const response = await api.post('/api/auth/social/google').send({ from: 'login' });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Failed to start Google sign-in' });
     });
   });
 });
