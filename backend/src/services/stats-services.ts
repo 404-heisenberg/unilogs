@@ -11,6 +11,7 @@ async function getDistinctEntryDates(userId: string): Promise<string[]> {
     where: {
       project: {
         userId: userId,
+        archived: false,
       },
     },
     select: {

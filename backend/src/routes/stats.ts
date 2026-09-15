@@ -21,7 +21,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     }
 
     const projects = await prisma.project.findMany({
-      where: { userId },
+      where: { userId, archived: false },
       include: {
         fields: {
           where: { fieldType: 'duration' },
@@ -83,7 +83,7 @@ router.get('/project/:projectId', authenticate, async (req: Request, res: Respon
     }
 
     const perProject = await prisma.project.findMany({
-      where: { userId },
+      where: { userId, archived: false },
       include: {
         fields: {
           where: { fieldType: 'duration' },

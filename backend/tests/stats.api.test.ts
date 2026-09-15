@@ -188,6 +188,120 @@ describe('stats routes', () => {
     });
   });
 
+  describe('archived projects', () => {
+    it('excludes archived projects from dashboard totals', async () => {
+      const { agent } = await createAuthenticatedUser();
+
+      const activeProject = await createProject(agent, { name: 'Active project' });
+      await createFieldDefinition(agent, activeProject.id, {
+        name: 'Hours',
+        fieldType: 'duration',
+      });
+      await createEntry(agent, activeProject.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { Hours: 8 },
+      });
+
+      const archivedProject = await createProject(agent, { name: 'Archived project' });
+      await createFieldDefinition(agent, archivedProject.id, {
+        name: 'Hours',
+        fieldType: 'duration',
+      });
+      await createEntry(agent, archivedProject.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { Hours: 10 },
+      });
+
+      const archiveResponse = await agent.post(`/api/projects/${archivedProject.id}/archive`);
+      expect(archiveResponse.status).toBe(200);
+
+      const response = await agent.get('/api/stats');
+
+      expect(response.status).toBe(200);
+      expect(response.body.totalHours).toBe(8);
+      expect(response.body.perProject).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ projectId: activeProject.id, totalHours: 8 }),
+        ]),
+      );
+      expect(response.body.perProject).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ projectId: archivedProject.id })]),
+      );
+    });
+
+    it('returns 404 for an archived project', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await agent.post(`/api/projects/${project.id}/archive`);
+
+      const response = await agent.get(`/api/stats/project/${project.id}`);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('excludes archived projects from frequency and term totals', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: {},
+      });
+      await agent.post(`/api/projects/${project.id}/archive`);
+
+      const response = await agent.get('/api/stats/frequency');
+
+      expect(response.status).toBe(200);
+      const totalEntries = response.body.weekly.reduce(
+        (sum: number, week: { count: number }) => sum + week.count,
+        0,
+      );
+      const totalTerms = response.body.terms.reduce(
+        (sum: number, term: { total: number }) => sum + term.total,
+        0,
+      );
+      expect(totalEntries).toBe(0);
+      expect(totalTerms).toBe(0);
+    });
+
+    it('does not count archived entries towards the streak', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const archivedProject = await createProject(agent);
+      await createEntry(agent, archivedProject.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: {},
+      });
+      await agent.post(`/api/projects/${archivedProject.id}/archive`);
+
+      const response = await agent.get('/api/stats/streak');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ streak: 0 });
+    });
+
+    it('keeps the streak when archiving a project with older entries', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const activeProject = await createProject(agent);
+      await createEntry(agent, activeProject.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: {},
+      });
+
+      const archivedProject = await createProject(agent);
+      const yesterday = new Date();
+      yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+      await createEntry(agent, archivedProject.id, {
+        date: yesterday.toISOString().slice(0, 10),
+        content: {},
+      });
+      await agent.post(`/api/projects/${archivedProject.id}/archive`);
+
+      const response = await agent.get('/api/stats/streak');
+
+      expect(response.status).toBe(200);
+      expect(response.body.streak).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   describe('ownership', () => {
     it('hides project stats owned by another user', async () => {
       const owner = await createAuthenticatedUser();
