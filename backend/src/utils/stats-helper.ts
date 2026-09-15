@@ -9,7 +9,7 @@ const prisma = new PrismaClient({ adapter });
 
 export async function getUserDateRange(userId: string): Promise<{ start: Date; end: Date }> {
   const firstEntry = await prisma.entry.findFirst({
-    where: { project: { userId } },
+    where: { project: { userId, archived: false } },
     orderBy: { date: 'asc' },
     select: { date: true },
   });
@@ -35,7 +35,7 @@ export async function getWeeklyEntryCounts(
 
   const entries = await prisma.entry.findMany({
     where: {
-      project: { userId },
+      project: { userId, archived: false },
       date: {
         gte: start,
         lte: end,
