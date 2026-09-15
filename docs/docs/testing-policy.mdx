@@ -1,0 +1,114 @@
+---
+sidebar_position: 12
+title: Testing Policy and Procedure
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Testing Policy and Procedure
+
+What UniLogs tests, how to run each suite, what the CI-enforced bar is, and what
+is deliberately left uncovered and why. Written against the real setup, not
+aspirationally — see [Automated Testing](/tech-stack#testing) on the Tech Stack
+page for why each tool was chosen.
+
+## The three layers
+
+| Layer             | Tool                           | What it exercises                                                                                       | Where                                  |
+| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Unit / component  | Vitest + React Testing Library | Frontend pages in isolation, with the API mocked                                                        | `frontend/src/pages/*.test.tsx`        |
+| Pure logic        | Vitest                         | Backend validation logic with no HTTP or database involved                                              | `backend/tests/validate-entry.test.ts` |
+| API / integration | Vitest + Supertest             | The real Express app over HTTP — routing, auth, validation and a real Postgres database, nothing mocked | `backend/tests/*.api.test.ts`          |
+| End-to-end        | Playwright                     | A real browser against the real frontend and backend together                                           | `frontend/e2e/*.spec.ts`               |
+
+Each layer catches what the one below it cannot. A mocked component test
+confirms a page renders and calls the right endpoint; it cannot catch a
+duplicate-email error the database itself rejects, or two route handlers
+disagreeing about a response shape. That is what the API and E2E layers are
+for, and why the suite is not just one giant pile of component tests.
+
+## How to run each suite
+
+```bash
+# Frontend component tests (no backend needed)
+cd frontend
+npm test
+
+# Backend API tests (needs a disposable Postgres — see below)
+cd backend
+npm run test:db:up        # starts the test database via Docker
+npm test                  # runs with coverage enforced
+
+# End-to-end (needs backend/.env.test — copy from .env.test.example)
+cd frontend
+npx playwright install chromium
+npm run test:e2e
+```
+
+The backend suite refuses to run against anything that isn't obviously a test
+database: `backend/vitest.config.ts` checks `TEST_DATABASE_URL` for the
+substring `test` in the database name and throws before a single test runs if
+it isn't there. This is deliberate — these tests create and delete real rows,
+so accidentally pointing them at the Neon development or production database
+would be destructive, not just wrong.
+
+## Coverage threshold
+
+Backend only, enforced by `backend/vitest.config.ts` and checked on every
+`npm test` run (including in CI — see the `backend` job in
+`.github/workflows/ci.yml`):
+
+| Metric     | Threshold |
+| ---------- | --------- |
+| Statements | 50%       |
+| Branches   | 40%       |
+| Functions  | 50%       |
+| Lines      | 50%       |
+
+Scoped to `src/routes/**`, `src/lib/**` and `src/middleware/**` — the code that
+actually handles a request, not generated Prisma output or type-only files.
+Vitest fails the run (and therefore CI) if coverage drops below any of these
+numbers, so the threshold cannot silently rot; a pull request that drops
+coverage below the bar fails before a human has to notice.
+
+## What is deliberately not covered, and why
+
+- **Frontend has no enforced coverage threshold.** Every page has a test file,
+  but nothing gates a percentage in CI the way the backend does. Component
+  tests here are about catching real regressions in specific behaviour, not
+  hitting a number — a threshold on JSX-heavy UI code tends to reward testing
+  trivial render paths just to move the percentage, which is worse than no
+  threshold at all.
+- **End-to-end runs Chromium only**, not Firefox or Safari. Playwright
+  supports all three, but running the full suite across browsers roughly
+  triples CI time for a codebase with no browser-specific rendering code (no
+  canvas, no exotic CSS). Not worth the wait for this project.
+- **End-to-end is deliberately narrow** — the golden path (signup through
+  logging an entry) and the two failure modes that only exist once a real
+  backend is in the loop (duplicate signup, wrong password). Every other
+  interaction is already covered more cheaply by the component layer.
+  Playwright is the slowest suite by far; using it to re-test what Vitest
+  already covers would just make CI slower for no new safety.
+- **No load, performance, or visual regression testing.** Out of proportion to
+  a project at this scale and timeline — this would be the next investment if
+  the project kept growing past submission.
+- **`VerifyEmailPage` has no dedicated test file yet.** A real, current gap
+  rather than a deliberate choice — it shipped with the email-verification
+  work late in Sprint 2 and testing it was not caught up before the deadline.
+  Tracked for Sprint 3, not hidden here.
+
+## Policy for new work
+
+- A new API route needs a Supertest suite in `backend/tests/` before it merges.
+  This is what keeps the coverage threshold meaningful rather than a number
+  chased after the fact.
+- A new page needs a component test file covering at minimum: the happy path,
+  and the error state shown when the API call fails.
+- End-to-end is reserved for new failure modes that genuinely cannot be
+  reached by a mock — not a default requirement for every feature.
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Sonnet 5]"
+  purpose="documenting the testing scope, run commands, CI-enforced coverage threshold, and what is deliberately not covered, against the real test setup"
+/>

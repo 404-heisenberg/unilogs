@@ -1,0 +1,118 @@
+---
+sidebar_position: 13
+title: User Testing
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# User Testing — Round 1
+
+## Methodology
+
+A structured feedback form (Google Forms), distributed to 17 university
+students — a mix of the team's own year-groups and people outside the
+immediate dev team, so the results reflect more than just people who already
+know how UniLogs works. Responses were collected 14–15 September 2026.
+
+Rather than asking testers to rate the finished product in the abstract, the
+form asks two things: how they currently track their university work (so the
+logbook has something real to be compared against, not a vacuum), and how
+important six specific UniLogs features are to them on a 1–5 scale, with a
+free-text field for anything they'd change. This is deliberately closer to a
+feature-prioritisation survey than a moderated usability test — it tells us
+what to build next and what to double down on, which matters for a product
+that's still mid-sprint, more than a report on where one tester's cursor
+hesitated.
+
+## Respondents
+
+17 responses. Year of study was reasonably spread across the degree:
+
+![Year of study — 17 responses](/img/user-testing-year.png)
+
+How they currently track their work — the baseline UniLogs is competing
+against:
+
+![Current tracking method — 17 responses](/img/user-testing-tracking-method.png)
+
+![Logging frequency — 17 responses](/img/user-testing-logging-frequency.png)
+
+Two things worth noting: over a third use a plain notes app and nearly a
+fifth use nothing at all, and 41% who do track something do it daily — both
+support the brief's core premise that people want to log regularly but the
+tools available to them are not built for it.
+
+## Feature ratings
+
+Each feature rated 1 (not important) to 5 (very important):
+
+![Quick logging](/img/user-testing-quick-logging.png)
+![Custom log templates](/img/user-testing-custom-templates.png)
+![Search and filter](/img/user-testing-search-filter.png)
+![Dashboard with streaks and stats](/img/user-testing-dashboard-stats.png)
+![Exporting as PDF/Markdown/CSV](/img/user-testing-export.png)
+![Sharing a read-only report link](/img/user-testing-share-link.png)
+
+| Feature                                           | Rated 4 or 5 |
+| ------------------------------------------------- | ------------ |
+| Search / filter through past entries              | 88.2%        |
+| Quick logging (type an entry in seconds)          | 70.6%        |
+| Custom log templates per subject                  | 70.6%        |
+| Dashboard with streaks and progress stats         | 64.7%        |
+| Sharing a read-only report link with a supervisor | 47.1%        |
+| Exporting as PDF/Markdown/CSV                     | 41.2%        |
+
+**Search/filter and quick logging are the clearest priorities** — both are
+already built (`GET /api/entries` supports filtering; entry creation is a
+single form). Export and the shareable report link rated lowest and are
+correspondingly not yet built, which the data supports rather than
+contradicts as a sequencing choice.
+
+## What testers actually said
+
+A sample of the free-text responses (light copy-editing only, for an
+encoding artefact in the original export — content unchanged):
+
+> "Entries currently don't allow me to actually write down my thoughts or
+> notes for the entry. I also want stats for each project individually."
+
+> "I'd add reminders or notifications so I don't forget to log things. The
+> app is simple and easy to understand."
+
+> "I'd improve the filtering options so I can easily sort entries by subject,
+> date and type of activity. The export and sharing features would be
+> especially useful."
+
+> "The google suggestions should work for multiple calendars."
+
+> "I'd make the subject templates really flexible because different courses
+> need different information. Being able to edit previous entries and quickly
+> find old logs would also be useful."
+
+One of these is a discoverability problem rather than a missing feature: free
+text in an entry is possible today via a custom `text`-type field on a
+project's field definitions, but nothing in the entry-creation flow suggests
+that to a first-time user. Worth fixing in the UI, not the data model.
+
+## Changes made as a result
+
+Honestly: **feedback collection happened, but nothing has been built off it
+yet** — this round ran on 14–15 September, inside the same 48 hours as the
+Sprint 2 deadline, which left no real runway to implement anything from it
+before submission without rushing something risky in. Recorded here rather
+than skipped or backdated to look otherwise.
+
+Prioritised for Sprint 3, in the order the ratings support:
+
+| Finding                                                         | Planned change                                                                                                                             |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Free-text notes on an entry aren't discoverable                 | Surface a default "Notes" field (or a prompt to add one) when a project has none, rather than requiring a user to know custom fields exist |
+| Per-project stats, not just global totals                       | Extend the stats endpoint to accept a `projectId` filter                                                                                   |
+| Notifications/reminders requested by three separate respondents | Scope as a Sprint 3 candidate — needs a decision on push vs. email first                                                                   |
+| Google Calendar suggestions should support multiple calendars   | Backend already lists one calendar per connected account; extend to iterate all calendars the OAuth grant can see                          |
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Sonnet 5]"
+  purpose="writing up round 1 user testing findings from the Google Form export (17 responses) and the team's chart screenshots, and identifying follow-up changes for Sprint 3"
+/>
