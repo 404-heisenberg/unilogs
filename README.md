@@ -86,12 +86,12 @@ repository. All four must pass before a pull request can be merged.
 
 ## Hosting
 
-| Service | Purpose             | URL                                                         | Owner | Backup |
-| ------- | ------------------- | ----------------------------------------------------------- | ----- | ------ |
-| Vercel  | Frontend            | [unilogs.vercel.app](https://unilogs.vercel.app/)           |       |        |
-| Render  | Backend API         | [unilogs.onrender.com](https://unilogs.onrender.com)        |       |        |
-| Vercel  | Docs site           | [unilogs-docs.vercel.app](https://unilogs-docs.vercel.app/) |       |        |
-| Neon    | PostgreSQL database |                                                             |       |        |
+| Service | Purpose             | URL                                                                                             | Owner | Backup |
+| ------- | ------------------- | ----------------------------------------------------------------------------------------------- | ----- | ------ |
+| Vercel  | Frontend            | [unilogs.vercel.app](https://unilogs.vercel.app/)                                               |       |        |
+| Render  | Backend API         | [unilogs.onrender.com/api/docs](https://unilogs.onrender.com/api/docs#description/introduction) |       |        |
+| Vercel  | Docs site           | [unilogs-docs.vercel.app](https://unilogs-docs.vercel.app/)                                     |       |        |
+| Neon    | PostgreSQL database |                                                                                                 |       |        |
 
 Deploys are automatic on merge to `main`. Dashboard access is not needed for
 normal development — ask the owner if something needs changing.
