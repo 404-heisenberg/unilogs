@@ -5,7 +5,7 @@ title: Client Meetings
 
 import AiDeclaration from '@site/src/components/AiDeclaration';
 
-# Client Meetings — Sprint 1
+# Client Meetings
 
 Our tutor-client acts as Product Owner. Meetings are held over Discord voice, with
 questions prepared in advance and minutes recorded afterwards.
@@ -31,7 +31,7 @@ Ozuko Mabongo, Renda Mudau, Thato Chuene
 
 We came prepared with a written question list covering three areas: repository and
 marking logistics, project requirements, and process. The full list is in
-*UniLogs — Questions for the Tutor / Client*, prepared 13 August 2026.
+_UniLogs — Questions for the Tutor / Client_, prepared 13 August 2026.
 
 ### Questions raised
 
@@ -88,11 +88,11 @@ Deferred pending the client's own briefing:
 
 ### Actions
 
-| Action | Owner | Status |
-| --- | --- | --- |
+| Action                                                      | Owner        | Status               |
+| ----------------------------------------------------------- | ------------ | -------------------- |
 | Client to confirm requirements once briefed by the convenor | Tutor-client | Carried to Meeting 2 |
-| Team to proceed on documented assumptions rather than wait | Team | Done |
-| Re-raise deferred questions at the next meeting | Mosey | Done |
+| Team to proceed on documented assumptions rather than wait  | Team         | Done                 |
+| Re-raise deferred questions at the next meeting             | Mosey        | Done                 |
 
 ---
 
@@ -129,10 +129,47 @@ forward to the next meeting.
 
 ### Actions
 
-| Action | Owner | Status |
-| --- | --- | --- |
+| Action                                                         | Owner        | Status                  |
+| -------------------------------------------------------------- | ------------ | ----------------------- |
 | Requirements sign-off, again pending the client's own briefing | Tutor-client | Carried to next meeting |
-| Review and apply the tutor's library recommendations | Team | Ongoing |
+| Review and apply the tutor's library recommendations           | Team         | Ongoing                 |
+
+---
+
+## Meeting 3 — 14 September 2026, 20:29–20:58
+
+**Present:** Dikeledi Mokoatle, Lethabo Sekgobela, Mosey (McAtaaji Andongndou),
+Ozuko Mabongo, Renda Mudau, Thato Chuene
+**Client:** Tutor-client
+**Duration:** 28 minutes
+
+![Meeting 3 — Discord voice call, 14 September](/img/client-meeting-3-14-sep.png)
+
+### Agenda
+
+A Sprint 2 review: demonstrating the working increment to the client and getting
+their read on what counts as genuinely done, per the Sprint Review ceremony
+described in [Project Methodology](/methodology). Renda screen-shared a
+live walkthrough of the deployed application.
+
+### Outcome
+
+**[CONFIRM]** Specific feedback from the demo and any new or adjusted
+requirements raised during the walkthrough — team to fill in from memory or the
+Discord recording while it is still fresh.
+
+One open question from Meeting 1 was resolved directly in this meeting: the
+client confirmed that he independently records every stakeholder meeting on his
+own side, via a Google Form the course requires tutors to submit per session.
+That means the client-side evidence of these interactions exists independently
+of this page, in addition to what is logged here.
+
+### Actions
+
+| Action                                                                    | Owner        | Status                                      |
+| ------------------------------------------------------------------------- | ------------ | ------------------------------------------- |
+| Fill in specific demo feedback and any new requirements from this meeting | Team         | **[CONFIRM]**                               |
+| Requirements sign-off carried from Meetings 1–2                           | Tutor-client | **[CONFIRM]** whether resolved this meeting |
 
 ---
 
@@ -142,12 +179,12 @@ Waiting for requirements that had not yet been briefed would have stalled Sprint
 entirely. Instead we proceeded on explicit assumptions, recorded them, and flagged
 them for confirmation. Each is reversible.
 
-| Open question | Our assumption | Why | Where it is implemented |
-| --- | --- | --- | --- |
-| How customisable should entries be? | Fully user-defined fields, not fixed templates | The brief states the student wants to "customise the format". Templates would be a narrower reading. This is the harder option, so building it now avoids a rewrite if the client confirms it later. | `FieldDefinition` and `Entry` models in the Prisma schema |
-| Should there be a record of what an entry said before it changed? | Yes — entry changes are audited | The brief emphasises "a record of what they do". A record that can be silently rewritten is a weaker record. | Audit logging on the entries CRUD endpoints |
-| Which external integration? | Google Calendar | The core problem in the brief is forgetting to log. Reading yesterday's calendar events and offering them as entry suggestions attacks that directly, rather than adding an unrelated capability. | Planned for Sprint 3 |
-| Is a single repository acceptable? | Yes, with `frontend/` and `backend/` as separate applications deployed to separate URLs | The requirement is that the applications are not monolithic, not that they live in separate repositories. Deployed separately to Vercel and Render. | Repository structure |
+| Open question                                                     | Our assumption                                                                          | Why                                                                                                                                                                                                  | Where it is implemented                                    |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| How customisable should entries be?                               | Fully user-defined fields, not fixed templates                                          | The brief states the student wants to "customise the format". Templates would be a narrower reading. This is the harder option, so building it now avoids a rewrite if the client confirms it later. | `FieldDefinition` and `Entry` models in the Prisma schema  |
+| Should there be a record of what an entry said before it changed? | Yes — entry changes are audited                                                         | The brief emphasises "a record of what they do". A record that can be silently rewritten is a weaker record.                                                                                         | Audit logging on the entries CRUD endpoints                |
+| Which external integration?                                       | Google Calendar                                                                         | The core problem in the brief is forgetting to log. Reading yesterday's calendar events and offering them as entry suggestions attacks that directly, rather than adding an unrelated capability.    | Implemented in Sprint 2 — `backend/src/routes/calendar.ts` |
+| Is a single repository acceptable?                                | Yes, with `frontend/` and `backend/` as separate applications deployed to separate URLs | The requirement is that the applications are not monolithic, not that they live in separate repositories. Deployed separately to Vercel and Render.                                                  | Repository structure                                       |
 
 Each assumption remains open and will be re-raised at the next meeting. If the
 client confirms something different, the affected work is scoped to a single area
@@ -155,15 +192,19 @@ of the codebase in each case.
 
 ## Next meeting
 
-Agenda carried forward:
+Statistics priorities and the Google Calendar integration (both carried from
+Meeting 2) shipped during Sprint 2 regardless of formal sign-off, on the
+assumptions recorded above. Agenda for the next meeting, going into Sprint 3:
 
-- Requirements sign-off, now that briefing material should be available
-- Confirmation or correction of the four assumptions above
-- Statistics priorities, which block the Sprint 2 statistics work
-- Agreement on a recurring weekly slot
+- Confirm or correct the assumptions table above, now that there is a working
+  increment to react to instead of a hypothetical
+- Sprint 3 priorities: intermediate-tier features and further external API
+  depth
+- Whether a recurring weekly slot is workable given the client's own reporting
+  load
 
 <AiDeclaration
   action="generated"
-  tools="Claude-Web[Claude Opus 5]"
-  purpose="structuring meeting minutes from the team's prepared question list and meeting records"
+  tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Sonnet 5]"
+  purpose="structuring meeting minutes from the team's prepared question list and meeting records, and adding the Sprint 2 client meeting from a screenshot and the team's recollection"
 />

@@ -1,0 +1,199 @@
+---
+sidebar_position: 11
+title: Sprint 2 Standups
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Sprint 2 — Standup Log
+
+Standups are held over Discord voice in `#meetings`. Each member covers what they
+did, what they are doing next, and what is blocking them.
+
+Minutes below were written up from the meetings and cross-checked against the
+commit history. **Team members: please confirm or correct your own lines.**
+
+---
+
+## Standup 1 — 30 August 2026, 21:18
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda
+**Apologies:** Thato
+
+![Standup 1 — Discord voice call, 30 August](/img/standup-1-30-aug.png)
+
+This was Sprint 2 planning rather than a progress check-in — no code had landed
+since Sprint 1 closed on 25 August. The team reviewed the Sprint 2 backlog against
+the client's requirement tiers and split the sprint's focus into three tracks:
+finishing basic-tier CRUD and validation, statistics and the dashboard, and the
+Google Calendar integration.
+
+**Agreed**
+
+Basic-tier work (field validation, entry CRUD hardening) takes priority over
+starting the Calendar integration, since later work depends on the entry model
+being solid.
+
+---
+
+## Standup 2 — 31 August 2026, 20:53
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 2 — Discord voice call, 31 August](/img/standup-2-31-aug.png)
+
+**Updates**
+
+- **Renda** — Done: reworked the issue templates to YAML forms with effort/date
+  fields and a dedicated bug report template, wired CI to route bug-labelled
+  issues straight to the board's Bugs column, and automated populating the
+  project backlog from new issues (with several follow-up fixes to the bash/jq
+  parsing). Next: keep hardening the backlog automation as edge cases turn up.
+  Blocked: none.
+- **Others** — picked up their Sprint 2 issues from Standup 1; nothing merged yet
+  by meeting time.
+
+**Agreed**
+
+The new issue-form fields (severity, effort) are what later let the Bugs column
+and Sprint 2/3 milestones track real severity data, not just open/closed counts.
+
+---
+
+## Standup 3 — 7 September 2026, 20:23
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 3 — Discord voice call, 7 September](/img/standup-3-7-sep.png)
+
+No standup was held between 31 August and this one — the longest gap of the
+sprint — but the commit history shows the week was not idle.
+
+**Updates**
+
+- **Ozuko** — Done: field definition CRUD (#123), then time accumulation,
+  weekly/term entry frequency buckets and streak calculation for the stats
+  endpoint. Next: wire the remaining stats views to the frontend.
+- **Dikeledi** — Done: exportable field types and field type validators, then
+  backend field-type validation on field definitions using Zod. Also reviewed
+  and merged the stats streak calculation PR.
+- **Renda** — Done: validate entry payloads against field definitions, project
+  edit/archive endpoints, Vitest coverage reporting for the backend, owner-scoped
+  item endpoints, and a project API test suite — the single busiest day of the
+  sprint by commit count.
+- **Lethabo** — Done: sign-out added to the app shell, project description now
+  persists, app shell and core pages restyled, keyboard-first entry capture.
+- **Mosey** — Done: merged the entry-payload-validation and sign-out PRs, fixed
+  forgot-password to actually call the API instead of failing silently.
+
+**Blockers raised**
+
+None blocking, but the team noted six days between standups is too long to
+usefully track blockers — several small issues (Prisma/Zod version questions)
+got resolved ad hoc in Discord rather than waiting for a meeting.
+
+**Agreed**
+
+Standups should not go longer than 2–3 days apart during a busy week, even if
+short.
+
+---
+
+## Standup 4 — 9 September 2026, 20:47
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 4 — Discord voice call, 9 September](/img/standup-4-9-sep.png)
+
+**Updates**
+
+- **Dikeledi** — Done: Google OAuth provider configured, Calendar connect,
+  disconnect and events endpoints, then the OpenAPI spec wired up to Scalar for
+  live API docs at `/api/docs`. Next: calendar event suggestions.
+- **Renda** — Done: Supertest suites covering auth, entries, field-definitions
+  and projects, a CI status badge on the README, and a stats API test suite.
+  This is most of the backend's real API test coverage landing in one sprint.
+- **Lethabo** — Done: entry form now defaults date and last-used project.
+- **Mosey** — Done: per-project field editor UI, dynamic entry form built from
+  field definitions.
+
+This was the sprint's biggest day for two rubric-relevant tracks at once — real
+Supertest API coverage, and the external Google Calendar integration going from
+config to working endpoints.
+
+---
+
+## Standup 5 — 10 September 2026, 20:49
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda
+**Apologies:** Thato
+
+![Standup 5 — Discord voice call, 10 September](/img/standup-5-10-sep.png)
+
+**Updates**
+
+- **Mosey** — Done: account deletion UI, removed the GitHub sign-in button
+  (Google Calendar needs broader OAuth scopes that don't mix well with GitHub's),
+  search across entries, a timeline view, filtering entries by project, exposing
+  project edit/archive controls in the UI, and component tests for the capture
+  flow — seven merged PRs in a single day.
+- **Dikeledi** — Done: merged the latest `main` into the Google Calendar OAuth
+  branch to keep it from drifting. Next: finish the calendar connect flow.
+
+**Agreed**
+
+Dikeledi's merge is a direct example of the "merge `main` into your branch daily"
+action the team agreed to at the end of Sprint 1 (see Sprint 1 Standup 4) —
+worth calling out because it is exactly the discipline that standup was meant to
+fix.
+
+---
+
+## Standup 6 — 11 September 2026, 20:41
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 6 — Discord voice call, 11 September](/img/standup-6-11-sep.png)
+
+**Updates**
+
+- **Lethabo** — Done: basic stats dashboard (#91).
+- **Mosey** — Done: merged the Google Calendar OAuth connection PR and the stats
+  dashboard PR, enabled Google sign-in/sign-up on top of the existing
+  email/password flow, added a calendar connection status endpoint, and built
+  the frontend controls for connecting/disconnecting Calendar from Settings.
+- **Dikeledi** — Done: merged the calendar settings UI PR and the Google OAuth
+  sign-in PR, then preserved OAuth cookies through the calendar connect
+  redirect, limited the calendar event range pulled from Google, and added
+  calendar event suggestions with their own routes.
+
+Two features that had been in progress all sprint — Google sign-in and the
+Calendar-to-entry suggestions — both landed today.
+
+---
+
+## After the last standup
+
+No further standups were screenshotted after 11 September, but the commit
+history shows the sprint did not stop there: the calendar suggestions table and
+migration landed on 12 September, the automated testing coverage work (backend
+route coverage, frontend page tests, and the first Playwright end-to-end suite)
+merged on 13 September, and email verification, the Google sign-in bug fix, and
+the SendGrid and database documentation updates landed on 14 September, the day
+the sprint closes. The team kept shipping and reviewing pull requests right up
+to the deadline rather than stopping work once the last recorded meeting ended.
+
+## Actions carried into Sprint 3
+
+- Keep standups to no more than 2–3 days apart, even during a busy week —
+  Standup 3's six-day gap was too long to usefully track blockers.
+- Continue the daily-merge-from-`main` habit that started paying off this
+  sprint (see Standup 5).
+- Write up a Sprint 2 retrospective — this was missed and should not repeat in
+  Sprint 3.
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Sonnet 5]"
+  purpose="writing up Sprint 2 standup minutes from the meeting screenshots and the commit history"
+/>
