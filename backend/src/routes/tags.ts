@@ -10,9 +10,6 @@ const adapter = new PrismaPg({
 });
 const prisma = new PrismaClient({ adapter });
 
-router.get('/test', (req, res) => {
-  res.json({ message: 'Tags router is loaded!' });
-});
 router.get('/', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
