@@ -346,7 +346,7 @@ describe('entry routes', () => {
 
       const list = await agent.get('/api/entries');
       expect(list.status).toBe(200);
-      expect(list.body).toEqual(
+      expect(list.body.entries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             id: created.body.id,
