@@ -206,7 +206,228 @@ describe('entry routes', () => {
       expect(response.body.errors).toContain("Field 'Hours' must be a number");
     });
   });
+  describe('title and body (A-02)', () => {
+    it('creates an entry with title and Markdown body', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
 
+      const response = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Fixed the login bug',
+        body: '## What I did\n\n- Wrote unit tests\n- Fixed the bug',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          id: expect.any(Number),
+          title: 'Fixed the login bug',
+          body: '## What I did\n\n- Wrote unit tests\n- Fixed the bug',
+          content: {},
+        }),
+      );
+    });
+
+    it('creates an entry with only a title', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      const response = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Title only',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          title: 'Title only',
+          body: null,
+        }),
+      );
+    });
+
+    it('creates an entry with only a body', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      const response = await agent.post('/api/entries').send({
+        projectId: project.id,
+        body: 'Just a body, no title',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          title: null,
+          body: 'Just a body, no title',
+        }),
+      );
+    });
+
+    it('creates an entry with only content (no title or body)', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createFieldDefinition(agent, project.id, { name: 'Hours', fieldType: 'number' });
+
+      const response = await agent.post('/api/entries').send({
+        projectId: project.id,
+        content: { Hours: 2 },
+        date: '2025-09-01',
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          title: null,
+          body: null,
+          content: { Hours: 2 },
+        }),
+      );
+    });
+
+    it('rejects a wholly empty entry (no title, body, or content values)', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      const response = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: '   ',
+        body: '   ',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toEqual(expect.any(Array));
+      expect(response.body.errors.length).toBeGreaterThan(0);
+    });
+
+    it('round-trips title and body through GET /api/entries/:id', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      const created = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Round trip',
+        body: 'Body content here',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      const read = await agent.get(`/api/entries/${created.body.id}`);
+      expect(read.status).toBe(200);
+      expect(read.body).toEqual(
+        expect.objectContaining({
+          title: 'Round trip',
+          body: 'Body content here',
+        }),
+      );
+    });
+
+    it('includes title and body in the list endpoint', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      const created = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Listed entry',
+        body: 'Body for list',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      const list = await agent.get('/api/entries');
+      expect(list.status).toBe(200);
+      expect(list.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: created.body.id,
+            title: 'Listed entry',
+            body: 'Body for list',
+          }),
+        ]),
+      );
+    });
+
+    it('updates only the title without clobbering body or content', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createFieldDefinition(agent, project.id, { name: 'Hours', fieldType: 'number' });
+
+      const created = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Original title',
+        body: 'Original body',
+        content: { Hours: 3 },
+        date: '2025-09-01',
+      });
+
+      const updated = await agent.put(`/api/entries/${created.body.id}`).send({
+        title: 'Updated title',
+      });
+
+      expect(updated.status).toBe(200);
+      expect(updated.body).toEqual(
+        expect.objectContaining({
+          title: 'Updated title',
+          body: 'Original body',
+          content: { Hours: 3 },
+        }),
+      );
+    });
+
+    it('updates only the body without clobbering title or content', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      const created = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Keep this title',
+        body: 'Old body',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      const updated = await agent.put(`/api/entries/${created.body.id}`).send({
+        body: 'New body content',
+      });
+
+      expect(updated.status).toBe(200);
+      expect(updated.body).toEqual(
+        expect.objectContaining({
+          title: 'Keep this title',
+          body: 'New body content',
+        }),
+      );
+    });
+
+    it('rejects a PUT that would leave the entry wholly empty', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      const created = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Has a title',
+        content: {},
+        date: '2025-09-01',
+      });
+
+      const response = await agent.put(`/api/entries/${created.body.id}`).send({
+        title: '   ',
+        body: '   ',
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toEqual(expect.any(Array));
+      expect(response.body.errors.length).toBeGreaterThan(0);
+    });
+  });
   describe('ownership', () => {
     it('hides entries owned by another user', async () => {
       const owner = await createAuthenticatedUser();
