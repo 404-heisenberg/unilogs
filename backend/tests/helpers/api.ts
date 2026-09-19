@@ -113,12 +113,16 @@ export async function createFieldDefinition(
 type EntryInput = {
   date?: string;
   content?: Record<string, unknown>;
+  title?: string;
+  body?: string;
 };
 
 export async function createEntry(agent: TestAgent, projectId: number, input: EntryInput = {}) {
   const response = await agent.post('/api/entries').send({
     projectId,
     date: input.date ?? new Date().toISOString().slice(0, 10),
+    title: input.title ?? 'Test entry',
+    body: input.body,
     content: input.content ?? {},
   });
 
