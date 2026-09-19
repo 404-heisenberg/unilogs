@@ -76,6 +76,9 @@ model Entry {
   createdAt DateTime @default(now())
   content   Json
 
+  title String?
+  body  String?
+  
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   tags      EntryTag[]
