@@ -24,6 +24,7 @@ model User {
   projects            Project[]
   sessions            Session[]
   accounts            Account[]
+  tags     Tag[]
   calendarSuggestions CalendarSuggestion[]
 
   @@map("user")
@@ -84,11 +85,14 @@ model Entry {
 }
 
 model Tag {
-  id   Int    @id @default(autoincrement())
-  name String
+  id     Int    @id @default(autoincrement())
+  name   String
+  userId String
 
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   entries EntryTag[]
 
+  @@unique([userId, name])
   @@map("tags")
 }
 
