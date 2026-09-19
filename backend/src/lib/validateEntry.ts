@@ -44,3 +44,21 @@ export function validateEntryContent(content: unknown, fields: FieldDef[]): stri
 
   return errors;
 }
+export function isWhollyEmpty(
+  title: string | null | undefined,
+  body: string | null | undefined,
+  content: Record<string, unknown> | null | undefined,
+): boolean {
+  const hasTitle = (title ?? '').trim().length > 0;
+  const hasBody = (body ?? '').trim().length > 0;
+  const hasContent =
+    content != null &&
+    Object.values(content).some((v) => {
+      if (v === null || v === undefined) return false;
+      if (typeof v === 'string') return v.trim().length > 0;
+      if (Array.isArray(v)) return v.length > 0;
+      return true;
+    });
+
+  return !hasTitle && !hasBody && !hasContent;
+}

@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { authenticate } from '../middleware/authenticate.js';
-import { validateEntryContent } from '../lib/validateEntry.js';
+import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -48,7 +48,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { projectId, content, date, tagIds } = req.body;
+    const { projectId, content, date, tagIds, title, body } = req.body;
 
     if (!projectId || !content) {
       return res.status(400).json({ error: 'projectId and content are required' });
@@ -80,12 +80,19 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     if (contentErrors.length > 0) {
       return res.status(400).json({ errors: contentErrors });
     }
+    if (isWhollyEmpty(title, body, content)) {
+      return res.status(400).json({
+        errors: ['Entry must have a title, body, or at least one field value'],
+      });
+    }
 
     const entry = await prisma.entry.create({
       data: {
         projectId: projectIdInt,
         content,
         date: date ? new Date(date) : new Date(),
+        title: title ?? null,
+        body: body ?? null,
         tags:
           tagIds && tagIds.length
             ? { create: tagIds.map((tagId: number) => ({ tag: { connect: { id: tagId } } })) }
@@ -157,7 +164,7 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
     if (Number.isNaN(id)) {
       return res.status(400).json({ error: 'id must be a valid integer' });
     }
-    const { content, date, tagIds } = req.body;
+    const { content, date, tagIds, title, body } = req.body;
 
     const existing = await prisma.entry.findUnique({
       where: { id },
@@ -190,12 +197,23 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
         return res.status(400).json({ errors: contentErrors });
       }
     }
+    const mergedTitle = title !== undefined ? title : existing.title;
+    const mergedBody = body !== undefined ? body : existing.body;
+    const mergedContent =
+      content !== undefined ? content : (existing.content as Record<string, unknown>);
 
+    if (isWhollyEmpty(mergedTitle, mergedBody, mergedContent)) {
+      return res.status(400).json({
+        errors: ['Entry must have a title, body, or at least one field value'],
+      });
+    }
     const updated = await prisma.entry.update({
       where: { id },
       data: {
         content: content ?? undefined,
         date: date ? new Date(date) : undefined,
+        title: title ?? undefined,
+        body: body ?? undefined,
         tags: tagIds
           ? {
               deleteMany: {},

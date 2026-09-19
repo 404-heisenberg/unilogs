@@ -100,6 +100,18 @@ export const openapiSpec = {
             format: 'date-time',
             example: '2026-09-09T14:00:00.000Z',
           },
+          title: {
+            type: 'string',
+            nullable: true,
+            description: 'Optional entry title',
+            example: 'Fixed the login bug',
+          },
+          body: {
+            type: 'string',
+            nullable: true,
+            description: 'Markdown body content',
+            example: '## What I did\n\n- Wrote unit tests\n- Fixed the bug',
+          },
           content: {
             type: 'object',
             additionalProperties: true,
@@ -789,6 +801,18 @@ export const openapiSpec = {
                     type: 'integer',
                     example: 1,
                   },
+                  title: {
+                    type: 'string',
+                    nullable: true,
+                    description: 'Optional title for the entry',
+                    example: 'Fixed the login bug',
+                  },
+                  body: {
+                    type: 'string',
+                    nullable: true,
+                    description: 'Markdown body content',
+                    example: '## What I did\n\n- Wrote unit tests\n- Fixed the bug',
+                  },
                   content: {
                     type: 'object',
                     example: {
@@ -828,7 +852,7 @@ export const openapiSpec = {
 
           '400': {
             description:
-              'Required fields are missing, the project ID is invalid, or the entry content is invalid.',
+              'Required fields are missing, the project ID is invalid, or the entry content is invalid, or the entry is wholly empty (no title, body, or field values).',
           },
 
           '401': {
@@ -920,6 +944,19 @@ export const openapiSpec = {
               schema: {
                 type: 'object',
                 properties: {
+                  title: {
+                    type: 'string',
+                    nullable: true,
+                    description: 'Updated entry title',
+                    example: 'Updated: Fixed the login bug',
+                  },
+                  body: {
+                    type: 'string',
+                    nullable: true,
+                    description: 'Updated Markdown body content',
+                    example:
+                      '## What I did\n\n- Wrote unit tests\n- Fixed the bug\n- Added integration tests',
+                  },
                   content: {
                     type: 'object',
                     example: {
@@ -958,7 +995,8 @@ export const openapiSpec = {
           },
 
           '400': {
-            description: 'Entry ID must be a valid integer or the entry content is invalid.',
+            description:
+              'Entry ID must be a valid integer or the entry content is invalid, or the update would make the entry wholly empty.',
           },
 
           '401': {
