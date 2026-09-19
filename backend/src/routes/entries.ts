@@ -63,7 +63,19 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     if (!project) {
       return res.status(403).json({ error: 'You do not have access to this project' });
     }
+    if (tagIds && tagIds.length > 0) {
+      const ownedTags = await prisma.tag.findMany({
+        where: {
+          id: { in: tagIds },
+          userId: userId,
+        },
+        select: { id: true },
+      });
 
+      if (ownedTags.length !== tagIds.length) {
+        return res.status(403).json({ error: 'One or more tags do not belong to you' });
+      }
+    }
     const contentErrors = validateEntryContent(content, project.fields);
     if (contentErrors.length > 0) {
       return res.status(400).json({ errors: contentErrors });
@@ -159,7 +171,19 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
     if (existing.project.userId !== userId) {
       return res.status(403).json({ error: 'You do not have access to this entry' });
     }
+    if (tagIds && tagIds.length > 0) {
+      const ownedTags = await prisma.tag.findMany({
+        where: {
+          id: { in: tagIds },
+          userId: userId,
+        },
+        select: { id: true },
+      });
 
+      if (ownedTags.length !== tagIds.length) {
+        return res.status(403).json({ error: 'One or more tags do not belong to you' });
+      }
+    }
     if (content !== undefined) {
       const contentErrors = validateEntryContent(content, existing.project.fields);
       if (contentErrors.length > 0) {
