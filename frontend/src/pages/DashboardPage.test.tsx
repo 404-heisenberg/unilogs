@@ -82,7 +82,7 @@ describe('DashboardPage', () => {
     expect(
       screen.getByRole('button', { name: 'Week of 2026-09-01: 2 entries' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Continue' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue Logging' })).toBeInTheDocument();
     expect(screen.getByText('Recent entries')).toBeInTheDocument();
     expect(screen.getByText('Literature review notes')).toBeInTheDocument();
   });
