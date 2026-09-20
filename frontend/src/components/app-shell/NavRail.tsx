@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { PanelLeft, Settings } from 'lucide-react';
 import { primaryNavItems, isNavActive, type NavItem } from './nav-items';
+import NotificationBell from './NotificationBell';
 
 const RailLink = memo(function RailLink({ to, label, icon: Icon }: NavItem) {
   const { pathname } = useLocation();
@@ -56,7 +57,10 @@ export default function NavRail({
         </nav>
       </div>
 
-      <RailLink {...settingsItem} />
+      <div className="flex w-full flex-col items-center gap-2">
+        <NotificationBell />
+        <RailLink {...settingsItem} />
+      </div>
     </aside>
   );
 }

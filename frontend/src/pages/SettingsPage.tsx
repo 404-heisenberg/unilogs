@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import NotificationsSettings from '@/components/settings/NotificationsSettings';
+import TagsSettings from '@/components/settings/TagsSettings';
 import { useCalendarConnection } from '@/hooks/useCalendarConnection';
 import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
@@ -10,7 +12,7 @@ function GoogleCalendarSection() {
   const { statusQuery, connect, disconnect } = useCalendarConnection();
 
   return (
-    <div className="mb-8 rounded-md border border-[#d4a373]/40 bg-white p-4">
+    <div className="rounded-md border border-[#d4a373]/40 bg-white p-4">
       <h2 className="text-sm font-semibold text-[#1c0d06]">Google Calendar</h2>
 
       {statusQuery.isPending && <p className="mt-1 text-sm text-[#7a5230]">Checking connection…</p>}
@@ -95,18 +97,22 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-md">
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+    <div className="flex max-w-200 flex-col gap-8">
+      <h1 className="text-2xl font-bold">Settings</h1>
 
       {data?.user && (
-        <div className="mb-8">
-          <h2 className="text-sm font-semibold mb-1">Account</h2>
+        <div>
+          <h2 className="mb-1 text-sm font-semibold">Account</h2>
           <p className="text-sm">{data.user.name}</p>
           <p className="text-sm text-[#7a5230]">{data.user.email}</p>
         </div>
       )}
 
+      <NotificationsSettings />
+
       <GoogleCalendarSection />
+
+      <TagsSettings />
 
       <div className="rounded-md border border-red-300 bg-red-50 p-4">
         <h2 className="text-sm font-semibold text-red-800">Delete account</h2>
