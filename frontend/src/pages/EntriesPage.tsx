@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
-import type { Entry, EntryContent, Project } from '@/types';
+import type { EntryContent, PagedEntries, Project } from '@/types';
 
 // Search and the project filter run client-side over the entries already loaded
 // for this view. That is fine at Basic-tier scale (see issue #85). If entry
@@ -24,14 +24,12 @@ export default function EntriesPage() {
   const [search, setSearch] = useState('');
   const [projectFilter, setProjectFilter] = useState('all');
 
-  const {
-    data: entries,
-    isPending,
-    isError,
-  } = useQuery({
+  const { data, isPending, isError } = useQuery({
     queryKey: ['entries'],
-    queryFn: () => api.get<Entry[]>('/api/entries'),
+    queryFn: () => api.get<PagedEntries>('/api/entries'),
   });
+
+  const entries = useMemo(() => data?.entries ?? [], [data]);
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
@@ -50,7 +48,7 @@ export default function EntriesPage() {
   const projectFilterId = projectFilter === 'all' ? null : Number(projectFilter);
 
   const filteredEntries = useMemo(() => {
-    return (entries ?? []).filter((entry) => {
+    return entries.filter((entry) => {
       if (projectFilterId !== null && entry.projectId !== projectFilterId) return false;
       if (!term) return true;
       const projectName = projectNames.get(entry.projectId)?.toLowerCase() ?? '';
@@ -58,7 +56,7 @@ export default function EntriesPage() {
     });
   }, [entries, projectNames, term, projectFilterId]);
 
-  const hasEntries = (entries?.length ?? 0) > 0;
+  const hasEntries = entries.length > 0;
   const isFiltering = term.length > 0 || projectFilterId !== null;
   const noResults = hasEntries && isFiltering && filteredEntries.length === 0;
 
@@ -116,7 +114,7 @@ export default function EntriesPage() {
         </div>
       )}
 
-      {entries?.length === 0 && (
+      {entries.length === 0 && (
         <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
           <p className="text-sm text-[#4a3525]">No entries yet.</p>
           <Link to="/entries/new">

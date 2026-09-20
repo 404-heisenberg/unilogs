@@ -4,6 +4,7 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { authenticate } from '../middleware/authenticate.js';
 import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
+import { parseEntryListQuery } from '../lib/entryFilters.js';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -24,17 +25,43 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const entries = await prisma.entry.findMany({
-      where: {
-        project: { userId },
+    const parsed = parseEntryListQuery(
+      {
+        q: req.query.q as string | undefined,
+        projectId: req.query.projectId as string | undefined,
+        tagIds: req.query.tagIds as string | undefined,
+        dateFrom: req.query.dateFrom as string | undefined,
+        dateTo: req.query.dateTo as string | undefined,
+        page: req.query.page as string | undefined,
+        limit: req.query.limit as string | undefined,
       },
-      include: {
-        tags: { include: { tag: true } },
-      },
-      orderBy: { date: 'desc' },
-    });
+      userId,
+    );
 
-    return res.status(200).json(entries);
+    if ('error' in parsed) {
+      return res.status(400).json({ error: parsed.error });
+    }
+
+    const [entries, total] = await Promise.all([
+      prisma.entry.findMany({
+        where: parsed.where,
+        include: {
+          tags: { include: { tag: true } },
+          project: { select: { id: true, name: true } },
+        },
+        orderBy: [{ date: 'desc' }, { id: 'desc' }],
+        skip: parsed.skip,
+        take: parsed.take,
+      }),
+      prisma.entry.count({ where: parsed.where }),
+    ]);
+
+    return res.status(200).json({
+      entries,
+      total,
+      page: parsed.page,
+      limit: parsed.limit,
+    });
   } catch (err) {
     console.error('GET /api/entries error:', err);
     return res.status(500).json({ error: 'Failed to fetch entries' });

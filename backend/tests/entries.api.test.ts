@@ -4,6 +4,7 @@ import {
   createEntry,
   createFieldDefinition,
   createProject,
+  createTag,
   deleteTestUsers,
   disconnectTestDatabase,
   getApiClient,
@@ -63,9 +64,10 @@ describe('entry routes', () => {
       const response = await agent.get('/api/entries');
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual(
+      expect(response.body.entries).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: entry.id })]),
       );
+      expect(response.body.total).toBeGreaterThanOrEqual(1);
     });
 
     it('updates an entry', async () => {
@@ -344,7 +346,7 @@ describe('entry routes', () => {
 
       const list = await agent.get('/api/entries');
       expect(list.status).toBe(200);
-      expect(list.body).toEqual(
+      expect(list.body.entries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             id: created.body.id,
@@ -426,6 +428,177 @@ describe('entry routes', () => {
       expect(response.status).toBe(400);
       expect(response.body.errors).toEqual(expect.any(Array));
       expect(response.body.errors.length).toBeGreaterThan(0);
+    });
+  });
+  describe('search, filters, and pagination (A-03)', () => {
+    it('filters by projectId', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const p1 = await createProject(agent);
+      const p2 = await createProject(agent);
+      const e1 = await createEntry(agent, p1.id, { title: 'In project 1' });
+      await createEntry(agent, p2.id, { title: 'In project 2' });
+
+      const response = await agent.get(`/api/entries?projectId=${p1.id}`);
+      expect(response.status).toBe(200);
+      expect(response.body.entries.length).toBe(1);
+      expect(response.body.entries[0].id).toBe(e1.id);
+      expect(response.body.total).toBe(1);
+    });
+
+    it('filters by dateFrom and dateTo (inclusive)', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createEntry(agent, project.id, { date: '2025-09-01' });
+      const mid = await createEntry(agent, project.id, { date: '2025-09-05' });
+      await createEntry(agent, project.id, { date: '2025-09-10' });
+
+      const response = await agent.get('/api/entries?dateFrom=2025-09-05&dateTo=2025-09-05');
+      expect(response.status).toBe(200);
+      expect(response.body.entries.length).toBe(1);
+      expect(response.body.entries[0].id).toBe(mid.id);
+    });
+
+    it('filters by tagIds (entry must have ALL tags)', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      const t1 = await createTag(agent, 'research');
+      const t2 = await createTag(agent, 'study');
+
+      const both = await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Both tags',
+        content: {},
+        tagIds: [t1.id, t2.id],
+      });
+      await agent.post('/api/entries').send({
+        projectId: project.id,
+        title: 'Only one',
+        content: {},
+        tagIds: [t1.id],
+      });
+
+      const response = await agent.get(`/api/entries?tagIds=${t1.id},${t2.id}`);
+      expect(response.status).toBe(200);
+      expect(response.body.entries.length).toBe(1);
+      expect(response.body.entries[0].id).toBe(both.body.id);
+    });
+
+    it('searches by title (case-insensitive)', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createEntry(agent, project.id, { title: 'Fixed the INTERFERENCE bug' });
+      await createEntry(agent, project.id, { title: 'Unrelated' });
+
+      const response = await agent.get('/api/entries?q=interference');
+      expect(response.status).toBe(200);
+      expect(response.body.entries.length).toBe(1);
+    });
+
+    it('searches by body', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createEntry(agent, project.id, {
+        title: 'A',
+        body: 'This body mentions refactoring',
+      });
+      await createEntry(agent, project.id, { title: 'B', body: 'Something else' });
+
+      const response = await agent.get('/api/entries?q=refactoring');
+      expect(response.status).toBe(200);
+      expect(response.body.entries.length).toBe(1);
+    });
+
+    it('searches by project name', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await agent.post('/api/projects').send({ name: 'Quantum Physics' });
+      await createEntry(agent, project.body.id, { title: 'A' });
+      const other = await createProject(agent);
+      await createEntry(agent, other.id, { title: 'B' });
+
+      const response = await agent.get('/api/entries?q=quantum');
+      expect(response.status).toBe(200);
+      expect(response.body.entries.length).toBe(1);
+      expect(response.body.entries[0].project.name).toBe('Quantum Physics');
+    });
+
+    it('returns empty results for no matches', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createEntry(agent, project.id, { title: 'Something' });
+
+      const response = await agent.get('/api/entries?q=zzzznotfoundzzzz');
+      expect(response.status).toBe(200);
+      expect(response.body.entries).toEqual([]);
+      expect(response.body.total).toBe(0);
+    });
+
+    it('combines search + filters', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      await createEntry(agent, project.id, {
+        title: 'Interference notes',
+        date: '2025-09-05',
+      });
+      await createEntry(agent, project.id, {
+        title: 'Interference older',
+        date: '2025-08-01',
+      });
+
+      const response = await agent.get(
+        `/api/entries?q=interference&projectId=${project.id}&dateFrom=2025-09-01`,
+      );
+      expect(response.status).toBe(200);
+      expect(response.body.entries.length).toBe(1);
+    });
+
+    it('paginates and returns a stable total', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+      for (let i = 0; i < 5; i++) {
+        await createEntry(agent, project.id, {
+          title: `Entry ${i}`,
+          date: `2025-09-0${i + 1}`,
+        });
+      }
+
+      const p1 = await agent.get('/api/entries?limit=2&page=1');
+      const p2 = await agent.get('/api/entries?limit=2&page=2');
+
+      expect(p1.body.entries.length).toBe(2);
+      expect(p2.body.entries.length).toBe(2);
+      expect(p1.body.total).toBe(5);
+      expect(p2.body.total).toBe(5);
+
+      const ids1 = p1.body.entries.map((e: { id: number }) => e.id);
+      const ids2 = p2.body.entries.map((e: { id: number }) => e.id);
+      expect(ids1.filter((id: number) => ids2.includes(id))).toEqual([]);
+    });
+
+    it('caps limit at 100', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const response = await agent.get('/api/entries?limit=9999');
+      expect(response.status).toBe(200);
+      expect(response.body.limit).toBe(100);
+    });
+
+    it('rejects invalid pagination input', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const r1 = await agent.get('/api/entries?page=0');
+      const r2 = await agent.get('/api/entries?limit=-5');
+      expect(r1.status).toBe(400);
+      expect(r2.status).toBe(400);
+    });
+
+    it('does not leak entries across users when querying a foreign projectId', async () => {
+      const owner = await createAuthenticatedUser();
+      const other = await createAuthenticatedUser();
+      const project = await createProject(owner.agent);
+      await createEntry(owner.agent, project.id, { title: 'Private' });
+
+      const response = await other.agent.get(`/api/entries?projectId=${project.id}`);
+      expect(response.status).toBe(200);
+      expect(response.body.entries).toEqual([]);
+      expect(response.body.total).toBe(0);
     });
   });
   describe('ownership', () => {

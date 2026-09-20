@@ -104,7 +104,7 @@ model EntryTag {
   tagId   Int
 
   entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  tag   Tag   @relation(fields: [tagId], references: [id])
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([entryId, tagId])
   @@map("entry_tags")

@@ -50,7 +50,8 @@ function mockData({
   getMock.mockImplementation((path: string) => {
     if (path === '/api/projects/1') return Promise.resolve(project);
     if (path === '/api/field-definitions?projectId=1') return Promise.resolve(fields);
-    if (path === '/api/entries') return Promise.resolve(entries);
+    if (path === '/api/entries')
+      return Promise.resolve({ entries, total: entries.length, page: 1, limit: 50 });
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });
 }

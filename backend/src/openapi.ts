@@ -758,30 +758,76 @@ export const openapiSpec = {
     '/api/entries': {
       get: {
         summary: 'Get entries',
-        description: 'Returns all entries belonging to the authenticated user.',
-
+        description:
+          'Returns entries belonging to the authenticated user, with optional search, filters, and pagination.',
+        parameters: [
+          {
+            name: 'q',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Free-text search across title, body, and project name.',
+          },
+          {
+            name: 'projectId',
+            in: 'query',
+            schema: { type: 'integer' },
+            description: 'Filter by project ID (must be owned by the user).',
+          },
+          {
+            name: 'tagIds',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Comma-separated tag IDs. Entry must have ALL listed tags.',
+          },
+          {
+            name: 'dateFrom',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+            description: 'Inclusive lower bound on entry date.',
+          },
+          {
+            name: 'dateTo',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+            description: 'Inclusive upper bound on entry date.',
+          },
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer', default: 1, minimum: 1 },
+            description: '1-based page number.',
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', default: 50, maximum: 100 },
+            description: 'Page size (max 100).',
+          },
+        ],
         responses: {
           '200': {
             description: 'Entries retrieved successfully.',
             content: {
               'application/json': {
                 schema: {
-                  type: 'array',
-                  items: {
-                    $ref: '#/components/schemas/Entry',
+                  type: 'object',
+                  properties: {
+                    entries: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/EntryWithProject' },
+                    },
+                    total: { type: 'integer', example: 42 },
+                    page: { type: 'integer', example: 1 },
+                    limit: { type: 'integer', example: 50 },
                   },
+                  required: ['entries', 'total', 'page', 'limit'],
                 },
               },
             },
           },
-
-          '401': {
-            description: 'Unauthorized.',
-          },
-
-          '500': {
-            description: 'Failed to fetch entries.',
-          },
+          '400': { description: 'Invalid query parameters.' },
+          '401': { description: 'Unauthorized.' },
+          '500': { description: 'Failed to fetch entries.' },
         },
       },
 

@@ -132,6 +132,13 @@ export async function createEntry(agent: TestAgent, projectId: number, input: En
 
   return response.body;
 }
+export async function createTag(agent: TestAgent, name: string) {
+  const response = await agent.post('/api/tags').send({ name });
+  if (response.status !== 201) {
+    throw new Error(`Test tag creation failed with status ${response.status}`);
+  }
+  return response.body;
+}
 
 export async function deleteTestUsers() {
   await getCleanupPrisma().user.deleteMany({
@@ -148,4 +155,19 @@ export async function disconnectTestDatabase() {
 
   const { prisma } = await import('../../src/auth.js');
   await prisma.$disconnect();
+}
+
+export async function listEntries(agent: TestAgent, query: Record<string, string | number> = {}) {
+  const qs = new URLSearchParams(Object.entries(query).map(([k, v]) => [k, String(v)])).toString();
+  const url = qs ? `/api/entries?${qs}` : '/api/entries';
+  const response = await agent.get(url);
+  if (response.status !== 200) {
+    throw new Error(`List entries failed with status ${response.status}`);
+  }
+  return response.body as {
+    entries: Array<{ id: number; [key: string]: unknown }>;
+    total: number;
+    page: number;
+    limit: number;
+  };
 }
