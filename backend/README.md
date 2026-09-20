@@ -51,6 +51,11 @@ Stop and remove the disposable test data when finished:
 docker compose -f docker-compose.test.yml down -v
 ```
 
+## Performance
+
+Indexes, before/after response times and the `EXPLAIN ANALYZE` plans for the hot
+query paths live in [`docs/performance.md`](./docs/performance.md).
+
 ## Environment
 
 | Variable       | Purpose                                 |
