@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
-import type { Entry, FieldDefinition, Project } from '@/types';
+import type { FieldDefinition, PagedEntries, Project } from '@/types';
 
 function FieldRow({
   field,
@@ -75,12 +75,12 @@ export default function ProjectDetailPage() {
 
   const entriesQuery = useQuery({
     queryKey: ['entries'],
-    queryFn: () => api.get<Entry[]>('/api/entries'),
+    queryFn: () => api.get<PagedEntries>('/api/entries'),
   });
 
   // The entries endpoint returns every entry the user owns; narrow to this
   // project client-side (see issue #85 for the Basic-tier scaling note).
-  const projectEntries = (entriesQuery.data ?? []).filter(
+  const projectEntries = (entriesQuery.data?.entries ?? []).filter(
     (entry) => entry.projectId === Number(projectId),
   );
 

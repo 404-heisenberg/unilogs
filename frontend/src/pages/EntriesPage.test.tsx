@@ -37,7 +37,8 @@ const ENTRIES: Entry[] = [
 
 function mockEntries(entries: Entry[], projects: Project[] = PROJECTS) {
   getMock.mockImplementation((path: string) => {
-    if (path === '/api/entries') return Promise.resolve(entries);
+    if (path === '/api/entries')
+      return Promise.resolve({ entries, total: entries.length, page: 1, limit: 50 });
     if (path === '/api/projects') return Promise.resolve(projects);
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });

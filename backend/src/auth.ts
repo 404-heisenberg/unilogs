@@ -3,7 +3,7 @@ import { emailOTP } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from './generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { sendEmail } from './lib/email.js';
+import { resetPasswordEmail, sendEmail, verifyEmailTemplate } from './services/email-service.js';
 
 export const prisma = new PrismaClient({
   adapter: new PrismaPg({
@@ -40,11 +40,8 @@ export const auth = betterAuth({
   },
   email: {
     sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
-      await sendEmail(
-        user.email,
-        'Reset your UniLogs password',
-        `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${url}">${url}</a></p>`,
-      );
+      const { subject, html } = resetPasswordEmail(url);
+      await sendEmail(user.email, subject, html);
     },
   },
   plugins: [
@@ -54,11 +51,8 @@ export const auth = betterAuth({
       sendVerificationOnSignUp: true,
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type === 'email-verification') {
-          await sendEmail(
-            email,
-            'Verify your UniLogs email',
-            `<p>Your verification code is:</p><h1 style="letter-spacing:6px">${otp}</h1><p>This code expires in 5 minutes.</p>`,
-          );
+          const { subject, html } = verifyEmailTemplate(otp);
+          await sendEmail(email, subject, html);
         }
       },
     }),

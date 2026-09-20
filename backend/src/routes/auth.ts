@@ -4,7 +4,7 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { sendEmail } from '../lib/email.js';
+import { resetPasswordEmail, sendEmail } from '../services/email-service.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
@@ -188,11 +188,8 @@ router.post('/forgot-password', async (req, res) => {
     }
     const frontendOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
     const resetUrl = `${frontendOrigin}/reset-password?token=${token}`;
-    const emailSent = await sendEmail(
-      email,
-      'Reset your UniLogs password',
-      `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p>`,
-    );
+    const { subject, html } = resetPasswordEmail(resetUrl);
+    const emailSent = await sendEmail(email, subject, html);
 
     const response: { message: string; token?: string; url?: string } = {
       message: 'Reset link sent if account exists',

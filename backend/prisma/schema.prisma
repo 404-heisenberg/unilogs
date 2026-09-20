@@ -13,21 +13,29 @@ datasource db {
 }
 
 model User {
-  id            String   @id
-  name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  id               String   @id
+  name             String
+  email            String   @unique
+  emailVerified    Boolean  @default(false)
+  image            String?
+  createdAt        DateTime
+  updatedAt        DateTime
+  remindersEnabled Boolean  @default(true)
 
   projects            Project[]
   sessions            Session[]
   accounts            Account[]
   tags     Tag[]
   calendarSuggestions CalendarSuggestion[]
+  notifications       Notification[]
 
   @@map("user")
+}
+
+enum ReminderFrequency {
+  DAILY
+  WEEKLY
+  OFF
 }
 
 model CalendarSuggestion {
@@ -44,18 +52,44 @@ model CalendarSuggestion {
 }
 
 model Project {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
-  archived    Boolean @default(false)
-  userId      String
+  id                Int               @id @default(autoincrement())
+  name              String
+  description       String?
+  archived          Boolean           @default(false)
+  reminderFrequency ReminderFrequency @default(WEEKLY)
+  lastDigestSentAt  DateTime?
+  userId            String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  fields  FieldDefinition[]
-  entries Entry[]
+  fields        FieldDefinition[]
+  entries       Entry[]
+  notifications Notification[]
 
+  @@index([userId])
   @@map("projects")
+}
+
+enum NotificationType {
+  REMINDER
+  SYSTEM
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    String
+  projectId Int?
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
 }
 
 model FieldDefinition {
@@ -66,6 +100,7 @@ model FieldDefinition {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([projectId])
   @@map("field_definitions")
 }
 
@@ -84,6 +119,8 @@ model Entry {
   tags      EntryTag[]
   auditLogs AuditLog[]
 
+  @@index([date])
+  @@index([projectId])
   @@map("entries")
 }
 
@@ -107,6 +144,7 @@ model EntryTag {
   tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([entryId, tagId])
+  @@index([tagId])
   @@map("entry_tags")
 }
 
