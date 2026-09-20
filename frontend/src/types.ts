@@ -24,7 +24,16 @@ export type Entry = {
   projectId: number;
   date: string;
   createdAt: string;
+  title?: string | null;
+  body?: string | null;
   content: EntryContent;
   tags?: EntryTag[];
   project?: Project;
+};
+
+export type PagedEntries = {
+  entries: Entry[];
+  total: number;
+  page: number;
+  limit: number;
 };
