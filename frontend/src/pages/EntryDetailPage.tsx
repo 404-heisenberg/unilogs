@@ -22,7 +22,10 @@ export default function EntryDetailPage() {
 
   return (
     <div>
-      <Link to="/entries" className="text-sm text-[#7a5230] hover:text-[#1c0d06]">
+      <Link
+        to="/entries"
+        className="inline-block -my-3 py-3 text-sm text-[#7a5230] hover:text-[#1c0d06]"
+      >
         &larr; Timeline
       </Link>
 
@@ -41,7 +44,7 @@ export default function EntryDetailPage() {
           </p>
           <Link
             to="/entries"
-            className="mt-4 inline-block rounded-md bg-[#1c0d06] px-4 py-2 text-sm font-semibold text-[#f5ebe0] hover:opacity-90"
+            className="mt-4 inline-flex min-h-11 items-center rounded-md bg-[#1c0d06] px-4 py-2 text-sm font-semibold text-[#f5ebe0] hover:opacity-90"
           >
             Back to timeline
           </Link>

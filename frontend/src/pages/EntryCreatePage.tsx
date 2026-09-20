@@ -126,7 +126,7 @@ export default function EntryCreatePage() {
             ref={firstFieldRef}
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="border rounded px-3 py-2 w-full bg-white"
+            className="min-h-11 border rounded px-3 py-2 w-full bg-white md:min-h-0"
             required
           >
             <option value="">Select a project…</option>
@@ -144,7 +144,7 @@ export default function EntryCreatePage() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
+            className="min-h-11 border rounded px-3 py-2 w-full md:min-h-0"
             required
           />
         </div>
@@ -156,7 +156,7 @@ export default function EntryCreatePage() {
         {projectId && !fieldsQuery.isPending && fields.length === 0 && (
           <p className="text-sm text-[#7a5230]">
             This project has no fields yet.{' '}
-            <Link to={`/projects/${projectId}`} className="underline">
+            <Link to={`/projects/${projectId}`} className="inline-block -my-3 py-3 underline">
               Add some
             </Link>{' '}
             before logging an entry.
@@ -175,7 +175,11 @@ export default function EntryCreatePage() {
 
         {formError && <p className="text-sm text-red-700">{formError}</p>}
 
-        <Button type="submit" disabled={createEntry.isPending || !projectId || fields.length === 0}>
+        <Button
+          type="submit"
+          className="min-h-11 md:min-h-0"
+          disabled={createEntry.isPending || !projectId || fields.length === 0}
+        >
           {createEntry.isPending ? 'Saving…' : 'Save entry'}
         </Button>
       </form>

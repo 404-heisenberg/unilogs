@@ -36,12 +36,23 @@ function TagRow({ tag }: { tag: Tag }) {
           onChange={(e) => setName(e.target.value)}
           autoFocus
           aria-label={`Rename ${tag.name}`}
-          className="min-w-0 flex-1 rounded-md border border-[#d4c4b0] px-2 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+          className="min-h-11 min-w-0 flex-1 rounded-md border border-[#d4c4b0] px-2 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
         />
-        <Button size="sm" onClick={save} disabled={renameTag.isPending || !name.trim()}>
+        <Button
+          size="sm"
+          className="min-h-11 md:min-h-0"
+          onClick={save}
+          disabled={renameTag.isPending || !name.trim()}
+        >
           {renameTag.isPending ? 'Saving…' : 'Save'}
         </Button>
-        <Button size="sm" variant="outline" onClick={cancel} disabled={renameTag.isPending}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="min-h-11 md:min-h-0"
+          onClick={cancel}
+          disabled={renameTag.isPending}
+        >
           Cancel
         </Button>
       </div>
@@ -66,7 +77,7 @@ function TagRow({ tag }: { tag: Tag }) {
           type="button"
           onClick={() => setEditing(true)}
           aria-label={`Rename ${tag.name}`}
-          className="flex size-7 items-center justify-center rounded-lg border border-[#d4c4b0] bg-white text-[#1c0d06] hover:bg-[#f0e7db]"
+          className="flex size-11 items-center justify-center rounded-lg border border-[#d4c4b0] bg-white text-[#1c0d06] hover:bg-[#f0e7db] md:size-7"
         >
           <Pencil size={14} strokeWidth={1.75} />
         </button>
@@ -75,7 +86,7 @@ function TagRow({ tag }: { tag: Tag }) {
           onClick={() => deleteTag.mutate(tag.id)}
           disabled={deleteTag.isPending && deleteTag.variables === tag.id}
           aria-label={`Delete ${tag.name}`}
-          className="flex size-7 items-center justify-center rounded-lg border border-[#d4c4b0] bg-white text-red-700 hover:bg-red-50 disabled:opacity-50"
+          className="flex size-11 items-center justify-center rounded-lg border border-[#d4c4b0] bg-white text-red-700 hover:bg-red-50 disabled:opacity-50 md:size-7"
         >
           <Trash2 size={14} strokeWidth={1.75} />
         </button>
@@ -102,9 +113,14 @@ function CreateTagRow() {
         onChange={(e) => setName(e.target.value)}
         placeholder="New tag name"
         aria-label="New tag name"
-        className="min-w-0 flex-1 rounded-md border border-[#d4c4b0] px-2 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+        className="min-h-11 min-w-0 flex-1 rounded-md border border-[#d4c4b0] px-2 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
       />
-      <Button type="submit" size="sm" disabled={createTag.isPending || !name.trim()}>
+      <Button
+        type="submit"
+        size="sm"
+        className="min-h-11 md:min-h-0"
+        disabled={createTag.isPending || !name.trim()}
+      >
         {createTag.isPending ? 'Adding…' : 'Add tag'}
       </Button>
       {createTag.isError && <p className="text-xs text-red-700">{createTag.error.message}</p>}

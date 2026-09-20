@@ -38,7 +38,7 @@ export default function ProjectCreatePage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Gym"
-            className="border rounded px-3 py-2 w-full"
+            className="min-h-11 border rounded px-3 py-2 w-full md:min-h-0"
             required
           />
         </div>
@@ -50,7 +50,7 @@ export default function ProjectCreatePage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What's this project for?"
-            className="border rounded px-3 py-2 w-full"
+            className="min-h-11 border rounded px-3 py-2 w-full md:min-h-0"
           />
         </div>
 
@@ -58,7 +58,7 @@ export default function ProjectCreatePage() {
           <p className="text-sm text-red-700">{createProject.error.message}</p>
         )}
 
-        <Button type="submit" disabled={createProject.isPending}>
+        <Button type="submit" className="min-h-11 md:min-h-0" disabled={createProject.isPending}>
           {createProject.isPending ? 'Saving…' : 'Save project'}
         </Button>
       </form>

@@ -31,12 +31,12 @@ function FieldRow({
           if (trimmed && trimmed !== field.name) onRename(trimmed);
           else setName(field.name);
         }}
-        className="min-w-[8rem] flex-1 rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+        className="min-h-11 min-w-[8rem] flex-1 rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
       />
       <select
         value={field.fieldType}
         onChange={(e) => onRetype(e.target.value as FieldType)}
-        className="rounded-md border border-[#d4a373]/60 bg-white px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+        className="min-h-11 rounded-md border border-[#d4a373]/60 bg-white px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
       >
         {FIELD_TYPES.map((type) => (
           <option key={type} value={type}>
@@ -48,6 +48,7 @@ function FieldRow({
         type="button"
         variant="destructive"
         size="sm"
+        className="min-h-11 md:min-h-0"
         onClick={onDelete}
         disabled={isDeleting}
       >
@@ -131,7 +132,10 @@ export default function ProjectDetailPage() {
 
   return (
     <div>
-      <Link to="/projects" className="text-sm text-[#7a5230] hover:text-[#1c0d06]">
+      <Link
+        to="/projects"
+        className="inline-block -my-3 py-3 text-sm text-[#7a5230] hover:text-[#1c0d06]"
+      >
         &larr; Projects
       </Link>
 
@@ -193,7 +197,7 @@ export default function ProjectDetailPage() {
             value={newFieldName}
             onChange={(e) => setNewFieldName(e.target.value)}
             placeholder="e.g. Time spent"
-            className="w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            className="min-h-11 w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
             required
           />
         </div>
@@ -202,7 +206,7 @@ export default function ProjectDetailPage() {
           <select
             value={newFieldType}
             onChange={(e) => setNewFieldType(e.target.value as FieldType)}
-            className="rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            className="min-h-11 rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
           >
             {FIELD_TYPES.map((type) => (
               <option key={type} value={type}>
@@ -213,7 +217,7 @@ export default function ProjectDetailPage() {
         </div>
         <Button
           type="submit"
-          className="bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90"
+          className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
           disabled={createField.isPending}
         >
           {createField.isPending ? 'Adding…' : 'Add field'}
@@ -243,7 +247,7 @@ export default function ProjectDetailPage() {
         <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
           <p className="text-sm text-[#4a3525]">No entries logged for this project yet.</p>
           <Link to="/entries/new">
-            <Button className="mt-4 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">
+            <Button className="mt-4 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
               Log an entry
             </Button>
           </Link>

@@ -26,7 +26,7 @@ function GoogleCalendarSection() {
             type="button"
             variant="outline"
             size="sm"
-            className="mt-2"
+            className="mt-2 min-h-11 md:min-h-0"
             onClick={() => statusQuery.refetch()}
           >
             Try again
@@ -46,7 +46,7 @@ function GoogleCalendarSection() {
             <Button
               type="button"
               variant="outline"
-              className="mt-2"
+              className="mt-2 min-h-11 md:min-h-0"
               onClick={() => disconnect.mutate()}
               disabled={disconnect.isPending}
             >
@@ -55,7 +55,7 @@ function GoogleCalendarSection() {
           ) : (
             <Button
               type="button"
-              className="mt-2 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90"
+              className="mt-2 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
               onClick={() => connect.mutate()}
               disabled={connect.isPending}
             >
@@ -125,7 +125,7 @@ export default function SettingsPage() {
           <Button
             type="button"
             variant="destructive"
-            className="mt-3"
+            className="mt-3 min-h-11 md:min-h-0"
             onClick={() => setConfirming(true)}
           >
             Delete account
@@ -144,7 +144,7 @@ export default function SettingsPage() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 required
-                className="w-full rounded border border-red-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-red-500"
+                className="min-h-11 w-full rounded border border-red-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-red-500 md:min-h-0"
               />
             </div>
 
@@ -153,12 +153,18 @@ export default function SettingsPage() {
             )}
 
             <div className="flex gap-2">
-              <Button type="submit" variant="destructive" disabled={deleteAccount.isPending}>
+              <Button
+                type="submit"
+                variant="destructive"
+                className="min-h-11 md:min-h-0"
+                disabled={deleteAccount.isPending}
+              >
                 {deleteAccount.isPending ? 'Deleting…' : 'Permanently delete'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
+                className="min-h-11 md:min-h-0"
                 onClick={() => {
                   setConfirming(false);
                   setPassword('');
