@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Trash2 } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { FieldInput } from '@/components/FieldInput';
 import TagPicker from '@/components/entries/TagPicker';
@@ -112,12 +112,21 @@ export default function EntryEditSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
+        showCloseButton={false}
         className="flex max-h-[85vh] flex-col gap-0 rounded-t-2xl bg-[#fffcf7] p-0"
       >
-        <SheetHeader className="p-0">
+        <SheetHeader className="flex-row items-center justify-between p-0">
           <SheetTitle className="px-4 pt-2 pb-1 text-lg font-bold text-[#1c0d05]">
             Properties
           </SheetTitle>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+            className="mr-3 flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f5ebe0] text-[#7a5230]"
+          >
+            <X size={16} strokeWidth={2} />
+          </button>
         </SheetHeader>
 
         <form onSubmit={handleSave} className="flex flex-col gap-4 overflow-y-auto px-4 pt-3 pb-4">
