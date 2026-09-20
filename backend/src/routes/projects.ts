@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/authenticate.js';
 import { prisma } from '../auth.js';
 import { ReminderFrequency } from '../generated/prisma/client.js';
 import type { RequestHandler } from 'express';
-
+import { revokeProjectShares } from '../services/share-service.js';
 const router = Router();
 
 router.post('/', authenticate, async (req, res) => {
@@ -138,6 +138,8 @@ router.delete('/:id', authenticate, async (req, res) => {
     if (!project) {
       return res.status(404).json({ error: 'project not found' });
     }
+
+    await revokeProjectShares(id);
 
     await prisma.project.delete({ where: { id } });
     return res.status(204).send();
