@@ -37,7 +37,9 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await page.getByRole('button', { name: 'Save project' }).click();
 
   await expect(page).toHaveURL(/\/projects$/);
-  await page.getByRole('link', { name: 'Thesis' }).click();
+  // Scoped to main: the explorer pane in the app shell also lists every
+  // project by name, so an unscoped query would match twice.
+  await page.getByRole('main').getByRole('link', { name: 'Thesis' }).click();
   await expect(page.getByRole('heading', { name: 'Thesis' })).toBeVisible();
 
   // A 'duration' field specifically: it's the only field type the backend's
@@ -52,7 +54,7 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   // previous page (ProjectDetailPage) also has a <select> (field type), so
   // querying by role alone right after the click can catch both pages' DOM
   // mid-transition and match two comboboxes instead of one.
-  await page.getByRole('link', { name: 'New Entry' }).click();
+  await page.getByRole('link', { name: 'Log entry' }).click();
   await expect(page.getByRole('heading', { name: 'New Entry' })).toBeVisible();
   await page.getByRole('combobox').selectOption({ label: 'Thesis' });
   await page.getByLabel('Hours').fill('3');
@@ -60,7 +62,8 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
 
   // It shows up where a user would look for it.
   await expect(page).toHaveURL(/\/entries$/);
-  await expect(page.getByRole('link', { name: 'Thesis' })).toBeVisible();
+  // Same explorer-pane ambiguity as above.
+  await expect(page.getByRole('main').getByRole('link', { name: 'Thesis' })).toBeVisible();
   await expect(page.getByText('Hours:')).toBeVisible();
   await expect(page.getByText('3', { exact: true })).toBeVisible();
 
