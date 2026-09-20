@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { api } from '@/lib/api';
@@ -15,10 +16,9 @@ const STEPS: { key: Step; label: string }[] = [
 
 type DraftField = { name: string; fieldType: FieldType };
 
-const TEMPLATES: { name: string; description: string; fields: DraftField[] }[] = [
+const TEMPLATES: { name: string; description?: string; fields: DraftField[] }[] = [
   {
     name: 'Study log',
-    description: 'Time spent — duration, Pages read — number, Mood — text',
     fields: [
       { name: 'Time spent', fieldType: 'duration' },
       { name: 'Pages read', fieldType: 'number' },
@@ -27,7 +27,6 @@ const TEMPLATES: { name: string; description: string; fields: DraftField[] }[] =
   },
   {
     name: 'Workout',
-    description: 'Duration — duration, Sets — number, Feel — text',
     fields: [
       { name: 'Duration', fieldType: 'duration' },
       { name: 'Sets', fieldType: 'number' },
@@ -95,6 +94,10 @@ export default function ProjectCreatePage() {
     setTemplate(null);
   };
 
+  const retypeField = (index: number, fieldType: FieldType) => {
+    setFields((f) => f.map((field, i) => (i === index ? { ...field, fieldType } : field)));
+  };
+
   const handleCreate = () => {
     createProject.mutate({
       name: name.trim(),
@@ -103,21 +106,31 @@ export default function ProjectCreatePage() {
     });
   };
 
+  const stepIndex = STEPS.findIndex((s) => s.key === step);
+
   return (
     <div className="max-w-lg">
-      <div className="mb-6 flex items-center gap-2">
-        {STEPS.map((s, i) => (
-          <div key={s.key} className="flex flex-1 items-center gap-2">
+      <div className="mb-6 flex flex-col gap-1.5">
+        <div className="flex gap-1.5">
+          {STEPS.map((s, i) => (
             <span
-              className={`text-sm font-medium ${
-                s.key === step ? 'text-[#1c0d06]' : 'text-[#a68c73]'
+              key={s.key}
+              className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-[#d4a843]' : 'bg-[#e8ddd0]'}`}
+            />
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          {STEPS.map((s, i) => (
+            <span
+              key={s.key}
+              className={`flex-1 text-center text-[11px] ${
+                i === stepIndex ? 'font-bold text-[#7a5230]' : 'font-normal text-[#4a3525]'
               }`}
             >
               {s.label}
             </span>
-            {i < STEPS.length - 1 && <span className="h-px flex-1 bg-[#d4a373]/40" />}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {step === 'details' && (
@@ -163,42 +176,70 @@ export default function ProjectCreatePage() {
           </p>
 
           <div className="flex flex-col gap-2">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.name}
-                type="button"
-                onClick={() => applyTemplate(t)}
-                className={`rounded-xl border p-3 text-left ${
-                  template === t.name
-                    ? 'border-[#d4a843] bg-[#d4a843]/10'
-                    : 'border-[#d4a373]/40 bg-white'
-                }`}
-              >
-                <p className="font-semibold text-[#1c0d06]">{t.name}</p>
-                <p className="mt-0.5 text-xs text-[#7a5230]">{t.description}</p>
-              </button>
-            ))}
+            {TEMPLATES.map((t) => {
+              const selected = template === t.name;
+              return (
+                <button
+                  key={t.name}
+                  type="button"
+                  onClick={() => applyTemplate(t)}
+                  className={`relative rounded-xl border p-4 text-left ${
+                    selected ? 'border-2 border-[#d4a843] bg-white' : 'border-[#d4c4b0] bg-white'
+                  }`}
+                >
+                  {selected && (
+                    <span className="absolute top-2.5 right-2.5 flex size-5 items-center justify-center rounded-full bg-[#d4a843] text-[#1c0d06]">
+                      <Check size={12} strokeWidth={3} />
+                    </span>
+                  )}
+                  <p className="font-bold text-[#1c0d05]">{t.name}</p>
+                  {t.fields.length > 0 ? (
+                    <div className="mt-1.5 flex flex-col gap-0.5">
+                      {t.fields.map((field) => (
+                        <p key={field.name} className="text-[11px] text-[#4a3525]">
+                          {field.name} — {field.fieldType}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-1.5 text-[11px] text-[#4a3525]">{t.description}</p>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {fields.length > 0 && (
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-[#4a3525]">Custom fields</p>
+              <p className="text-sm font-medium text-[#1c0d05]">Custom fields</p>
               {fields.map((field, i) => (
                 <div
                   key={`${field.name}-${i}`}
-                  className="flex items-center justify-between gap-2 rounded-md border border-[#d4a373]/40 bg-white px-3 py-2"
+                  className="flex h-11 items-center justify-between gap-2 rounded-lg border border-[#d4c4b0] bg-white px-3"
                 >
-                  <span className="text-sm text-[#1c0d06]">
-                    {field.name} — {field.fieldType}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeField(i)}
-                    aria-label={`Remove ${field.name}`}
-                    className="flex size-11 shrink-0 items-center justify-center text-[#8c2121]"
-                  >
-                    ✕
-                  </button>
+                  <span className="truncate text-sm text-[#1c0d05]">{field.name}</span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <select
+                      value={field.fieldType}
+                      onChange={(e) => retypeField(i, e.target.value as FieldType)}
+                      aria-label={`${field.name} type`}
+                      className="min-h-9 rounded-md border border-[#d4c4b0] bg-white px-2 text-sm text-[#1c0d05]"
+                    >
+                      {FIELD_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeField(i)}
+                      aria-label={`Remove ${field.name}`}
+                      className="flex size-9 shrink-0 items-center justify-center text-[#7a5230] hover:text-[#8c2121]"
+                    >
+                      <X size={16} strokeWidth={1.75} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -230,11 +271,11 @@ export default function ProjectCreatePage() {
             </Button>
           </form>
 
-          <div className="flex gap-2">
+          <div className="sticky bottom-0 -mx-4 mt-2 flex gap-3 border-t border-[#f5ebe0] bg-[#fffcf7] px-4 py-3 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
             <Button
               type="button"
               variant="outline"
-              className="min-h-11 flex-1 md:min-h-0"
+              className="min-h-11 w-25 flex-none md:min-h-0 md:flex-1"
               onClick={() => setStep('details')}
             >
               Back
@@ -278,11 +319,11 @@ export default function ProjectCreatePage() {
             <p className="text-sm text-red-700">{createProject.error.message}</p>
           )}
 
-          <div className="flex gap-2">
+          <div className="sticky bottom-0 -mx-4 mt-2 flex gap-3 border-t border-[#f5ebe0] bg-[#fffcf7] px-4 py-3 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
             <Button
               type="button"
               variant="outline"
-              className="min-h-11 flex-1 md:min-h-0"
+              className="min-h-11 w-25 flex-none md:min-h-0 md:flex-1"
               onClick={() => setStep('fields')}
               disabled={createProject.isPending}
             >

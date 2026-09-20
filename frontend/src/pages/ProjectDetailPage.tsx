@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
-import { Download } from 'lucide-react';
+import { Download, EllipsisVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { api } from '@/lib/api';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { formatRelativeTime } from '@/lib/time';
@@ -98,6 +99,10 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('overview');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState('');
+  const [renameDescription, setRenameDescription] = useState('');
 
   const projectQuery = useQuery({
     queryKey: ['project', projectId],
@@ -143,6 +148,35 @@ export default function ProjectDetailPage() {
 
   const invalidateFields = () =>
     queryClient.invalidateQueries({ queryKey: ['field-definitions', projectId] });
+
+  const invalidateProject = () => {
+    queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+  };
+
+  const updateProject = useMutation({
+    mutationFn: (input: { name: string; description: string | null }) =>
+      api.patch<Project>(`/api/projects/${projectId}`, input),
+    onSuccess: () => {
+      invalidateProject();
+      setRenaming(false);
+    },
+  });
+
+  const archiveToggle = useMutation({
+    mutationFn: () =>
+      api.post<Project>(
+        `/api/projects/${projectId}/${projectQuery.data?.archived ? 'unarchive' : 'archive'}`,
+      ),
+    onSuccess: invalidateProject,
+  });
+
+  const startRenaming = () => {
+    setRenameName(projectQuery.data?.name ?? '');
+    setRenameDescription(projectQuery.data?.description ?? '');
+    setRenaming(true);
+    setMenuOpen(false);
+  };
 
   const createField = useMutation({
     mutationFn: (input: { name: string; fieldType: FieldType }) =>
@@ -207,41 +241,131 @@ export default function ProjectDetailPage() {
         &larr; Projects
       </Link>
 
-      <div className="mt-2 mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#1c0d06]">
-            {projectQuery.data?.name ?? 'Project'}
-          </h1>
-          {projectQuery.data?.description && (
-            <p className="mt-1 text-sm text-[#7a5230]">{projectQuery.data.description}</p>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            disabled={entries.length === 0}
-            className="flex min-h-11 items-center gap-1.5 rounded-md border border-[#d4a373]/50 px-3 text-sm font-medium text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
-          >
-            <Download size={14} strokeWidth={1.75} />
-            CSV
-          </button>
-          <button
-            type="button"
-            onClick={handleExportMarkdown}
-            disabled={entries.length === 0}
-            className="flex min-h-11 items-center gap-1.5 rounded-md border border-[#d4a373]/50 px-3 text-sm font-medium text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
-          >
-            <Download size={14} strokeWidth={1.75} />
-            Markdown
-          </button>
-          <Link to="/entries/new" onClick={handleLogEntry}>
-            <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
-              Log
+      {renaming ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateProject.mutate({
+              name: renameName.trim(),
+              description: renameDescription.trim() || null,
+            });
+          }}
+          className="mt-2 mb-4 flex flex-col gap-2 rounded-xl border border-[#d4a373]/40 bg-white p-4"
+        >
+          <input
+            value={renameName}
+            onChange={(e) => setRenameName(e.target.value)}
+            aria-label="Project name"
+            className="min-h-11 rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
+            required
+          />
+          <input
+            value={renameDescription}
+            onChange={(e) => setRenameDescription(e.target.value)}
+            placeholder="Description"
+            aria-label="Project description"
+            className="min-h-11 rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
+          />
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              size="sm"
+              className="min-h-11 md:min-h-0"
+              disabled={updateProject.isPending || !renameName.trim()}
+            >
+              {updateProject.isPending ? 'Saving…' : 'Save'}
             </Button>
-          </Link>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="min-h-11 md:min-h-0"
+              onClick={() => setRenaming(false)}
+              disabled={updateProject.isPending}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="mt-2 mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1c0d06]">
+                {projectQuery.data?.name ?? 'Project'}
+              </h1>
+              {projectQuery.data?.archived && (
+                <span className="rounded-full bg-[#f5ebe0] px-2 py-0.5 text-xs font-medium text-[#7a5230]">
+                  Archived
+                </span>
+              )}
+            </div>
+            {projectQuery.data?.description && (
+              <p className="mt-1 text-sm text-[#7a5230]">{projectQuery.data.description}</p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              disabled={entries.length === 0}
+              className="flex min-h-11 items-center gap-1.5 rounded-md border border-[#d4a373]/50 px-3 text-sm font-medium text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
+            >
+              <Download size={14} strokeWidth={1.75} />
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={handleExportMarkdown}
+              disabled={entries.length === 0}
+              className="flex min-h-11 items-center gap-1.5 rounded-md border border-[#d4a373]/50 px-3 text-sm font-medium text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
+            >
+              <Download size={14} strokeWidth={1.75} />
+              Markdown
+            </button>
+            <Link to="/entries/new" onClick={handleLogEntry}>
+              <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+                Log
+              </Button>
+            </Link>
+            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Project actions"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-md text-[#7a5230] hover:bg-[#f5ebe0] md:size-9"
+                >
+                  <EllipsisVertical size={18} strokeWidth={1.75} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                sideOffset={4}
+                className="w-44 rounded-xl border border-[#d4c4b0] bg-[#fffcf7] p-1 shadow-[0px_4px_16px_0px_rgba(0,0,0,0.12)]"
+              >
+                <button
+                  type="button"
+                  onClick={startRenaming}
+                  className="flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm text-[#1c0d06] hover:bg-[#f5ebe0]"
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    archiveToggle.mutate();
+                    setMenuOpen(false);
+                  }}
+                  disabled={archiveToggle.isPending}
+                  className="flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
+                >
+                  {projectQuery.data?.archived ? 'Unarchive' : 'Archive'}
+                </button>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mb-6 flex gap-1 border-b border-[#d4a373]/30">
         {TABS.map((t) => (
@@ -268,7 +392,7 @@ export default function ProjectDetailPage() {
               <p className="mt-1 text-2xl font-bold text-[#1c0d06]">{totalEntries}</p>
             </div>
             <div className="rounded-xl border border-[#d4a373]/40 bg-white p-4">
-              <p className="text-xs text-[#7a5230]">Tracked time</p>
+              <p className="text-xs text-[#7a5230]">Tracked</p>
               <p className="mt-1 text-2xl font-bold text-[#1c0d06]">
                 {trackedHours}h {trackedRemainderMinutes}m
               </p>
