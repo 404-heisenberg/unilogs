@@ -14,8 +14,8 @@ vi.mock('@/lib/api', async (importOriginal) => {
 });
 
 const PROJECTS: Project[] = [
-  { id: 1, name: 'Thesis', archived: false, userId: 'u1' },
-  { id: 2, name: 'Gym Log', archived: false, userId: 'u1' },
+  { id: 1, name: 'Thesis', archived: false, userId: 'u1', reminderFrequency: 'WEEKLY' },
+  { id: 2, name: 'Gym Log', archived: false, userId: 'u1', reminderFrequency: 'WEEKLY' },
 ];
 
 const ENTRIES: Entry[] = [

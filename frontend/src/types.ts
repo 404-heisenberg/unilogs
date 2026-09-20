@@ -1,9 +1,12 @@
+export type ReminderFrequency = 'DAILY' | 'WEEKLY' | 'OFF';
+
 export type Project = {
   id: number;
   name: string;
   description?: string;
   archived: boolean;
   userId: string;
+  reminderFrequency: ReminderFrequency;
 };
 
 export type FieldDefinition = {
@@ -36,4 +39,26 @@ export type PagedEntries = {
   total: number;
   page: number;
   limit: number;
+};
+
+export type Notification = {
+  id: number;
+  userId: string;
+  projectId: number | null;
+  type: 'REMINDER' | 'SYSTEM';
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type NotificationFeed = {
+  notifications: Notification[];
+  unreadCount: number;
+};
+
+export type Tag = {
+  id: number;
+  name: string;
+  usageCount: number;
 };

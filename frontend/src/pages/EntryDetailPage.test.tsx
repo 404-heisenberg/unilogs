@@ -19,7 +19,7 @@ const ENTRY: Entry = {
   date: '2026-09-01T00:00:00.000Z',
   createdAt: '2026-09-01T08:00:00.000Z',
   content: { Notes: 'Read chapter 3' },
-  project: { id: 1, name: 'Thesis', archived: false, userId: 'u1' },
+  project: { id: 1, name: 'Thesis', archived: false, userId: 'u1', reminderFrequency: 'WEEKLY' },
   tags: [{ tag: { id: 1, name: 'reading' } }],
 };
 
