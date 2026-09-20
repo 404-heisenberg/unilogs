@@ -68,9 +68,6 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await expect(page.getByText('3', { exact: true })).toBeVisible();
 
   await page.getByRole('link', { name: 'Dashboard' }).click();
-  // Scoped to the "Top project" card specifically — the bar chart below it
-  // also renders "Thesis" as an axis label, so an unscoped getByText would
-  // match twice.
-  const topProjectCard = page.getByText('Top project').locator('../..');
-  await expect(topProjectCard.getByText('Thesis', { exact: true })).toBeVisible();
+  await expect(page.getByText('Top project:')).toContainText('Thesis (100%)');
+  await expect(page.getByText('3h total')).toBeVisible();
 });
