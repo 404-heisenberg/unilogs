@@ -43,6 +43,7 @@ export default function ProjectExplorer() {
         <p className="text-xs font-bold text-[#7a5230] uppercase">Projects</p>
         <Link
           to="/projects/new"
+          aria-label="New Project"
           className="rounded-[6px] border border-[#baa38c] px-2 py-[3px] text-[11px] font-medium text-[#7a5230] transition-colors hover:bg-[#f0e7db]"
         >
           New

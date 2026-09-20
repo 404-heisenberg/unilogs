@@ -21,7 +21,9 @@ export default function AppHeader() {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#5c4a3a] bg-[#faf7f2] px-4 md:px-6">
-      <h1 className="truncate text-lg font-bold text-[#1c0d06]">{titleFor(pathname)}</h1>
+      {/* Not a heading: each page already renders its own <h1> for this same
+          section name, and a page must have only one. */}
+      <p className="truncate text-lg font-bold text-[#1c0d06]">{titleFor(pathname)}</p>
       <Link
         to="/entries/new"
         aria-label="Log entry"
