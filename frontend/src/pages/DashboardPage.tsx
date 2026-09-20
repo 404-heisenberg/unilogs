@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -11,7 +12,9 @@ import {
   Cell,
 } from 'recharts';
 import { Flame, Folder, Award } from 'lucide-react';
-import { getStatsSummary, getFrequencyStats } from '../lib/api';
+import { api, getStatsSummary, getFrequencyStats } from '../lib/api';
+import { formatRelativeTime } from '@/lib/time';
+import type { PagedEntries } from '@/types';
 
 const BAR_COLORS = ['#e8a33d', '#4d9b8f', '#c1666b', '#7c9c6b', '#8a7ca8'];
 
@@ -56,6 +59,13 @@ export default function DashboardPage() {
     queryKey: ['stats-frequency'],
     queryFn: getFrequencyStats,
   });
+
+  const recentEntriesQuery = useQuery({
+    queryKey: ['entries', 'recent'],
+    queryFn: () => api.get<PagedEntries>('/api/entries?limit=5'),
+  });
+  const recentEntries = recentEntriesQuery.data?.entries ?? [];
+  const lastEntry = recentEntries[0];
 
   const summary = summaryQuery.data;
   const hasEntries = !!summary && summary.totalHours > 0 && summary.perProject.length > 0;
@@ -208,6 +218,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {lastEntry && (
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#e8a33d]/15 bg-[#2e1a0c]/70 p-5 shadow-lg">
+            <div className="flex items-center gap-3">
+              <span className="size-2.5 shrink-0 rounded-full bg-[#e8a33d]" aria-hidden />
+              <div>
+                <p className="font-bold text-white">
+                  {lastEntry.project?.name ?? 'Continue logging'}
+                </p>
+                <p className="text-xs text-[#c2a480]">
+                  Last logged {formatRelativeTime(lastEntry.date)}
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/entries/new"
+              className="flex min-h-11 shrink-0 items-center rounded-full bg-[#e8a33d] px-5 text-sm font-semibold text-[#241407] hover:opacity-90"
+            >
+              Continue
+            </Link>
+          </div>
+        )}
+
         <div className="rounded-2xl border border-[#e8a33d]/15 bg-[#2e1a0c]/70 p-6 shadow-lg transition-colors duration-300 hover:border-[#e8a33d]/30">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white">Weekly activity</h2>
@@ -278,6 +310,32 @@ export default function DashboardPage() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        {recentEntries.length > 0 && (
+          <div className="rounded-2xl border border-[#e8a33d]/15 bg-[#2e1a0c]/70 p-6 shadow-lg transition-colors duration-300 hover:border-[#e8a33d]/30">
+            <h2 className="mb-4 text-lg font-semibold text-white">Recent entries</h2>
+            <ul className="flex flex-col gap-3">
+              {recentEntries.map((entry) => (
+                <li key={entry.id} className="border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                  <Link
+                    to={`/entries/${entry.id}`}
+                    className="flex min-h-11 items-center justify-between gap-3 py-1"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-white">
+                        {entry.title ?? Object.keys(entry.content)[0] ?? 'Untitled entry'}
+                      </p>
+                      <p className="text-xs text-[#c2a480]">{entry.project?.name}</p>
+                    </div>
+                    <p className="shrink-0 text-xs text-[#c2a480]">
+                      {formatRelativeTime(entry.date)}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
