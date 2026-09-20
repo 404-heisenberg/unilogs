@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/authenticate.js';
 import { prisma } from '../auth.js';
+import { ReminderFrequency } from '../generated/prisma/client.js';
 import type { RequestHandler } from 'express';
 
 const router = Router();
@@ -85,7 +86,7 @@ router.patch('/:id', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'id must be a valid integer' });
     }
 
-    const { name, description } = req.body;
+    const { name, description, reminderFrequency } = req.body;
 
     if (name !== undefined && (typeof name !== 'string' || name.trim() === '')) {
       return res.status(400).json({ error: 'name must be a string and non empty' });
@@ -93,6 +94,13 @@ router.patch('/:id', authenticate, async (req, res) => {
 
     if (description !== undefined && description !== null && typeof description !== 'string') {
       return res.status(400).json({ error: 'description must be a string' });
+    }
+
+    if (
+      reminderFrequency !== undefined &&
+      !Object.values(ReminderFrequency).includes(reminderFrequency)
+    ) {
+      return res.status(400).json({ error: 'reminderFrequency must be DAILY, WEEKLY, or OFF' });
     }
 
     const project = await getOwnedProject(id, userId);
@@ -103,6 +111,7 @@ router.patch('/:id', authenticate, async (req, res) => {
       data: {
         name: name ?? undefined,
         description: description,
+        reminderFrequency: reminderFrequency ?? undefined,
       },
     });
 
