@@ -23,6 +23,7 @@ const PROJECT: Project = {
   description: 'Final year research',
   archived: false,
   userId: 'u1',
+  reminderFrequency: 'WEEKLY',
 };
 const FIELDS: FieldDefinition[] = [{ id: 1, projectId: 1, name: 'Notes', fieldType: 'text' }];
 const ENTRIES: Entry[] = [
