@@ -1,23 +1,20 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
-
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/suggestions', label: 'Suggestions' },
-  { to: '/projects', label: 'Projects' },
-  { to: '/projects/new', label: 'New Project' },
-  { to: '/entries', label: 'Entries' },
-  { to: '/entries/new', label: 'New Entry' },
-];
+import NavRail from './app-shell/NavRail';
+import ExplorerPane from './app-shell/ExplorerPane';
+import AppHeader from './app-shell/AppHeader';
+import MobileBottomNav from './app-shell/MobileBottomNav';
+import MoreSheet from './app-shell/MoreSheet';
 
 export default function AppShell() {
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const { data } = useSession();
+  const [explorerCollapsed, setExplorerCollapsed] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const handleSignOut = async () => {
     await api.post('/api/auth/sign-out');
@@ -41,60 +38,27 @@ export default function AppShell() {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen bg-[#f5ebe0]">
-      <aside className="flex w-64 flex-col justify-between bg-[#1c0d06] p-4 text-[#f5ebe0]">
-        <div>
-          <div className="mb-6 px-2 py-2">
-            <span className="text-lg font-bold tracking-tight text-[#e6c687]">UniLogs</span>
-          </div>
-          <nav className="flex flex-col gap-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`rounded-md px-3 py-2 text-sm transition-colors ${
-                    isActive
-                      ? 'bg-[#e6c687]/20 font-semibold text-[#e6c687]'
-                      : 'text-[#d4a373] hover:bg-white/5 hover:text-[#e6c687]'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+    <div className="flex h-screen flex-col bg-[#faf7f2] md:flex-row">
+      <NavRail
+        explorerCollapsed={explorerCollapsed}
+        onToggleExplorer={() => setExplorerCollapsed((v) => !v)}
+      />
+      <ExplorerPane collapsed={explorerCollapsed} user={data?.user} onSignOut={handleSignOut} />
 
-        <div className="border-t border-[#d4a373]/20 pt-4">
-          {data?.user && (
-            <div className="mb-3 rounded-md bg-white/5 px-3 py-2">
-              <p className="text-sm font-medium text-[#f5ebe0]">{data.user.name}</p>
-              <p className="text-xs text-[#d4a373]">{data.user.email}</p>
-            </div>
-          )}
-          <Link
-            to="/settings"
-            className={`block rounded-md px-3 py-2 text-sm transition-colors ${
-              location.pathname === '/settings'
-                ? 'bg-[#e6c687]/20 font-semibold text-[#e6c687]'
-                : 'text-[#d4a373] hover:bg-white/5 hover:text-[#e6c687]'
-            }`}
-          >
-            Settings
-          </Link>
-          <button
-            onClick={handleSignOut}
-            className="w-full rounded-md px-3 py-2 text-left text-sm text-[#e6c687]/70 transition-colors hover:bg-white/5 hover:text-[#e6c687]"
-          >
-            Sign out
-          </button>
-        </div>
-      </aside>
-      <main className="flex-1 overflow-y-auto p-8 text-[#1c0d06]">
-        <Outlet />
-      </main>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <AppHeader />
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 text-[#1c0d06] md:p-8">
+          <Outlet />
+        </main>
+        <MobileBottomNav moreOpen={moreOpen} onMoreClick={() => setMoreOpen(true)} />
+      </div>
+
+      <MoreSheet
+        open={moreOpen}
+        onOpenChange={setMoreOpen}
+        user={data?.user}
+        onSignOut={handleSignOut}
+      />
     </div>
   );
 }
