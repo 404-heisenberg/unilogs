@@ -2,10 +2,14 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import {
   createAuthenticatedUser,
   createProject,
+  createFieldDefinition,
+  createEntry,
+  createTag,
   deleteTestUsers,
   disconnectTestDatabase,
   getApiClient,
 } from './helpers/api.js';
+import { prisma } from '../src/auth.js';
 
 afterEach(deleteTestUsers);
 afterAll(disconnectTestDatabase);
@@ -172,5 +176,60 @@ describe('project routes', () => {
     expect(deletion.status).toBe(204);
     expect(deletion.text).toBe('');
     expect(read.status).toBe(404);
+  });
+
+  it('deletes a project and cascades to its related data', async () => {
+    const { agent } = await createAuthenticatedUser();
+    const project = await createProject(agent);
+
+    const field = await createFieldDefinition(agent, project.id);
+    const entry = await createEntry(agent, project.id, {
+      content: { Hours: 1 },
+    });
+    const tag = await createTag(agent, 'testing');
+
+    await prisma.entryTag.create({
+      data: {
+        entryId: entry.id,
+        tagId: tag.id,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        entryId: entry.id,
+        action: 'CREATE',
+        newData: { title: 'Test entry' },
+      },
+    });
+
+    const deletion = await agent.delete(`/api/projects/${project.id}`);
+
+    expect(deletion.status).toBe(204);
+
+    const fieldCount = await prisma.fieldDefinition.count({
+      where: { id: field.id },
+    });
+
+    const entryCount = await prisma.entry.count({
+      where: { id: entry.id },
+    });
+
+    const entryTagCount = await prisma.entryTag.count({
+      where: { entryId: entry.id },
+    });
+
+    const auditLogCount = await prisma.auditLog.count({
+      where: { entryId: entry.id },
+    });
+
+    expect(fieldCount).toBe(0);
+    expect(entryCount).toBe(0);
+    expect(entryTagCount).toBe(0);
+    expect(auditLogCount).toBe(0);
+
+    const secondDeletion = await agent.delete(`/api/projects/${project.id}`);
+
+    expect(secondDeletion.status).toBe(404);
   });
 });
