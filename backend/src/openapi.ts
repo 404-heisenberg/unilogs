@@ -41,11 +41,30 @@ export const openapiSpec = {
             type: 'boolean',
             example: false,
           },
+          reminderFrequency: {
+            type: 'string',
+            enum: ['DAILY', 'WEEKLY', 'OFF'],
+            default: 'WEEKLY',
+            description: 'How often reminder emails are sent for this project.',
+            example: 'WEEKLY',
+          },
           userId: {
             type: 'string',
             example: 'userId-example123',
           },
         },
+      },
+
+      ReminderSettings: {
+        type: 'object',
+        properties: {
+          remindersEnabled: {
+            type: 'boolean',
+            description: 'Global reminder kill switch for the user.',
+            example: true,
+          },
+        },
+        required: ['remindersEnabled'],
       },
 
       Tag: {
@@ -751,6 +770,63 @@ export const openapiSpec = {
           '500': {
             description: 'Failed to update archive status of project.',
           },
+        },
+      },
+    },
+
+    '/api/settings': {
+      get: {
+        summary: 'Get reminder settings',
+        description: 'Returns the authenticated user reminder preferences.',
+        responses: {
+          '200': {
+            description: 'Settings retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ReminderSettings',
+                },
+              },
+            },
+          },
+          '401': { description: 'Not authenticated.' },
+          '500': { description: 'Failed to fetch settings.' },
+        },
+      },
+
+      patch: {
+        summary: 'Update reminder settings',
+        description: 'Updates the authenticated user global reminder kill switch.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  remindersEnabled: {
+                    type: 'boolean',
+                    example: false,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Settings updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ReminderSettings',
+                },
+              },
+            },
+          },
+          '400': { description: 'remindersEnabled must be a boolean.' },
+          '401': { description: 'Not authenticated.' },
+          '500': { description: 'Failed to update settings.' },
         },
       },
     },

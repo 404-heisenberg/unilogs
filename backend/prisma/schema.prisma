@@ -13,13 +13,14 @@ datasource db {
 }
 
 model User {
-  id            String   @id
-  name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  id               String   @id
+  name             String
+  email            String   @unique
+  emailVerified    Boolean  @default(false)
+  image            String?
+  createdAt        DateTime
+  updatedAt        DateTime
+  remindersEnabled Boolean  @default(true)
 
   projects            Project[]
   sessions            Session[]
@@ -28,6 +29,12 @@ model User {
   calendarSuggestions CalendarSuggestion[]
 
   @@map("user")
+}
+
+enum ReminderFrequency {
+  DAILY
+  WEEKLY
+  OFF
 }
 
 model CalendarSuggestion {
@@ -44,11 +51,12 @@ model CalendarSuggestion {
 }
 
 model Project {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
-  archived    Boolean @default(false)
-  userId      String
+  id                Int               @id @default(autoincrement())
+  name              String
+  description       String?
+  archived          Boolean           @default(false)
+  reminderFrequency ReminderFrequency @default(WEEKLY)
+  userId            String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
