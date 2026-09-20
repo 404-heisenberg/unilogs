@@ -67,6 +67,33 @@ export const openapiSpec = {
         required: ['remindersEnabled'],
       },
 
+      Notification: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          userId: { type: 'string', example: 'userId-example123' },
+          projectId: { type: 'integer', nullable: true, example: 3 },
+          type: {
+            type: 'string',
+            enum: ['REMINDER', 'SYSTEM'],
+            example: 'REMINDER',
+          },
+          title: { type: 'string', example: "Don't forget to log Thesis" },
+          body: { type: 'string', example: 'No entries in the last 7 days.' },
+          readAt: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            example: null,
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time',
+            example: '2026-09-20T08:00:00.000Z',
+          },
+        },
+      },
+
       Tag: {
         type: 'object',
         properties: {
@@ -770,6 +797,89 @@ export const openapiSpec = {
           '500': {
             description: 'Failed to update archive status of project.',
           },
+        },
+      },
+    },
+
+    '/api/notifications': {
+      get: {
+        summary: 'Get notification feed',
+        description:
+          'Returns the authenticated user latest 50 notifications, newest first, with the unread count.',
+        responses: {
+          '200': {
+            description: 'Feed retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    notifications: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Notification' },
+                    },
+                    unreadCount: { type: 'integer', example: 2 },
+                  },
+                  required: ['notifications', 'unreadCount'],
+                },
+              },
+            },
+          },
+          '401': { description: 'Not authenticated.' },
+          '500': { description: 'Failed to fetch notifications.' },
+        },
+      },
+    },
+
+    '/api/notifications/read-all': {
+      post: {
+        summary: 'Mark every notification read',
+        description: 'Marks all of the authenticated user notifications as read.',
+        responses: {
+          '200': {
+            description: 'Notifications marked read.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: { updated: { type: 'integer', example: 3 } },
+                  required: ['updated'],
+                },
+              },
+            },
+          },
+          '401': { description: 'Not authenticated.' },
+          '500': { description: 'Failed to mark notifications read.' },
+        },
+      },
+    },
+
+    '/api/notifications/{id}/read': {
+      post: {
+        summary: 'Mark one notification read',
+        description: 'Marks a single notification owned by the authenticated user as read.',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'integer' },
+            description: 'The notification ID.',
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Notification marked read.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Notification' },
+              },
+            },
+          },
+          '400': { description: 'The notification ID must be a valid integer.' },
+          '401': { description: 'Not authenticated.' },
+          '404': { description: 'Notification not found.' },
+          '500': { description: 'Failed to mark notification read.' },
         },
       },
     },
