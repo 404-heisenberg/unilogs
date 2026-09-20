@@ -1,8 +1,16 @@
-# Backend performance
+---
+sidebar_position: 14
+title: Backend Performance
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Backend Performance
 
 E-02 (issue #213). This pass adds the indexes behind the hot query paths, removes
 one full scan from the streak calculation, and records before/after response
-times so the numbers can be reproduced.
+times so the numbers can be reproduced. Everything here is in the backend; the
+frontend performance work lives in the D-issues.
 
 ## Dataset and method
 
@@ -24,9 +32,9 @@ each, and the **median** is reported (min/max are noisy on a shared laptop). The
 | `GET /api/entries?q=…&dateFrom=…`  | 24.8 ms  | 23.7 ms   | 30.5 ms                |
 | `GET /api/stats/frequency` (extra) | 304.2 ms | 185.8 ms  | 258.0 ms               |
 
-Targets from the issue: `GET /api/stats` under 200 ms and `GET /api/entries`
-search under 100 ms on this dataset — both met. The entries numbers move a few
-milliseconds between runs but stay an order of magnitude under budget.
+Targets from the issue — `GET /api/stats` under 200 ms and `GET /api/entries`
+search under 100 ms on this dataset — are both met. The entries numbers move a
+few milliseconds between runs but stay an order of magnitude under budget.
 
 `GET /api/stats` is the sum of two parts. After the fix: streak **43.6 ms**
 (down from ~129.8 ms) and the projects-with-entries query **103.7 ms**.
@@ -47,7 +55,7 @@ Added in migration `20260920085933_add_performance_indexes`:
 
 Before the migration — full sequential scans:
 
-```
+```text
 # project-scoped entries
 Seq Scan on entries  (cost=0.00..502.88 rows=82 width=12) (actual time=0.022..2.967 rows=500 loops=1)
   Filter: ("projectId" = 1)
@@ -63,7 +71,7 @@ Execution Time: 3.139 ms
 
 After — index scans:
 
-```
+```text
 # project-scoped entries
 Bitmap Heap Scan on entries  (cost=4.92..189.56 rows=82 width=12) (actual time=0.068..0.164 rows=500 loops=1)
   Recheck Cond: ("projectId" = 1)
@@ -123,3 +131,8 @@ paginate long lists; the backend pagination is already in place on
 - `scheduler.runSweep` issues a handful of queries per project. It is an hourly
   background job, not an HTTP path, but it can be batched (groupBy latest entry,
   `createMany`, `updateMany`) in a later pass.
+
+<AiDeclaration
+  tools="opencode[deepseek-v4.1-flash]"
+  purpose="drafting this page from the backend benchmark results, the index migration and the EXPLAIN ANALYZE plans"
+/>

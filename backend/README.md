@@ -54,7 +54,8 @@ docker compose -f docker-compose.test.yml down -v
 ## Performance
 
 Indexes, before/after response times and the `EXPLAIN ANALYZE` plans for the hot
-query paths live in [`docs/performance.md`](./docs/performance.md).
+query paths live on the documentation site:
+[Backend Performance](https://unilogs-docs.vercel.app/performance).
 
 ## Environment
 
