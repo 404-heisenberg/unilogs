@@ -51,6 +51,12 @@ Stop and remove the disposable test data when finished:
 docker compose -f docker-compose.test.yml down -v
 ```
 
+## Performance
+
+Indexes, before/after response times and the `EXPLAIN ANALYZE` plans for the hot
+query paths live on the documentation site:
+[Backend Performance](https://unilogs-docs.vercel.app/performance).
+
 ## Environment
 
 | Variable       | Purpose                                 |
