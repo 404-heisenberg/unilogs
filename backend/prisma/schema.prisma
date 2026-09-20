@@ -27,6 +27,7 @@ model User {
   accounts            Account[]
   tags     Tag[]
   calendarSuggestions CalendarSuggestion[]
+  notifications       Notification[]
 
   @@map("user")
 }
@@ -56,14 +57,38 @@ model Project {
   description       String?
   archived          Boolean           @default(false)
   reminderFrequency ReminderFrequency @default(WEEKLY)
+  lastDigestSentAt  DateTime?
   userId            String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  fields  FieldDefinition[]
-  entries Entry[]
+  fields        FieldDefinition[]
+  entries       Entry[]
+  notifications Notification[]
 
   @@map("projects")
+}
+
+enum NotificationType {
+  REMINDER
+  SYSTEM
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    String
+  projectId Int?
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
 }
 
 model FieldDefinition {
