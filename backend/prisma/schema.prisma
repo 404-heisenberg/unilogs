@@ -65,9 +65,25 @@ model Project {
   fields        FieldDefinition[]
   entries       Entry[]
   notifications Notification[]
+  shareTokens   ShareToken[]
 
   @@index([userId])
   @@map("projects")
+}
+
+model ShareToken {
+  token            String    @id
+  projectId        Int
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  includeBodies    Boolean   @default(false)
+  defaultRangeDays Int       @default(30)
+  createdAt        DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("share_tokens")
 }
 
 enum NotificationType {
