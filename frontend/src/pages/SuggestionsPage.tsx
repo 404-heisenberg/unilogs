@@ -12,6 +12,7 @@ import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
 import { useCalendarConnection } from '@/hooks/useCalendarConnection';
 import type { FieldDefinition, Project } from '@/types';
+import { toast } from '@/lib/toast';
 
 function eventDate(suggestion: CalendarSuggestion): string {
   const start = suggestion.start;
@@ -42,7 +43,6 @@ function AcceptForm({
   const [date, setDate] = useState(eventDate(suggestion));
   const [values, setValues] = useState<Record<string, FieldValue>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
@@ -67,7 +67,6 @@ function AcceptForm({
     }
     setValues(initial);
     setFieldErrors({});
-    setFormError(null);
   }
 
   const accept = useMutation({
@@ -89,7 +88,7 @@ function AcceptForm({
         }
       }
       setFieldErrors(nextFieldErrors);
-      setFormError(general.length > 0 ? general.join(' ') : null);
+      if (general.length > 0) toast.error(general.join(' '));
     },
   });
 
@@ -182,8 +181,6 @@ function AcceptForm({
         />
       ))}
 
-      {formError && <p className="text-sm text-red-700">{formError}</p>}
-
       <div className="flex gap-2">
         <Button
           type="submit"
@@ -219,6 +216,8 @@ export default function SuggestionsPage() {
     mutationFn: (eventId: string) =>
       api.post<{ message: string }>(`/api/calendar/events/suggestions/${eventId}/reject`),
     onSuccess: invalidateSuggestions,
+    onError: (error) => toast.error(error),
+    onSettled: () => setRejectingId(null),
   });
 
   const suggestions = suggestionsQuery.data?.suggestions ?? [];
@@ -262,7 +261,6 @@ export default function SuggestionsPage() {
           >
             {connect.isPending ? 'Connecting…' : 'Connect Google Calendar'}
           </Button>
-          {connect.isError && <p className="mt-2 text-sm text-red-700">{connect.error.message}</p>}
         </div>
       )}
 

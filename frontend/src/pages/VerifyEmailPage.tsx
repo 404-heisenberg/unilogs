@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { toast } from '@/lib/toast';
 
 export const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -20,6 +21,7 @@ export const VerifyEmailPage: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: ['session'] });
       navigate('/dashboard');
     },
+    onError: (error) => toast.error(error),
   });
 
   const resend = useMutation({
@@ -28,6 +30,8 @@ export const VerifyEmailPage: React.FC = () => {
         ...input,
         type: 'email-verification',
       }),
+    onSuccess: () => toast.success('A new code has been sent.'),
+    onError: (error) => toast.error(error),
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -90,8 +94,6 @@ export const VerifyEmailPage: React.FC = () => {
             className="w-full rounded-md border border-[#d4a373] bg-white p-3 tracking-[0.5em] text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
           />
 
-          {verify.isError && <p className="text-sm text-red-700">{verify.error.message}</p>}
-
           <button
             type="submit"
             disabled={verify.isPending || !email || otp.length !== 6}
@@ -108,10 +110,6 @@ export const VerifyEmailPage: React.FC = () => {
           >
             {resend.isPending ? 'Resending…' : 'Resend code'}
           </button>
-          {resend.isSuccess && (
-            <p className="text-sm text-emerald-800">A new code has been sent.</p>
-          )}
-          {resend.isError && <p className="text-sm text-red-700">{resend.error.message}</p>}
 
           <p className="mt-2 text-center text-sm text-[#4a3525]">
             Return back to sign in{' '}

@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
 import { getEmailError } from '@/lib/validation';
+import { toast } from '@/lib/toast';
 
 export const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,12 +21,17 @@ export const SignupPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const oauthErrorMessage = getGoogleOAuthErrorMessage(searchParams.get('error'));
 
+  useEffect(() => {
+    if (oauthErrorMessage) toast.error(oauthErrorMessage);
+  }, [oauthErrorMessage]);
+
   const signUp = useMutation({
     mutationFn: (input: { name: string; email: string; password: string }) =>
       api.post('/api/auth/signup', input),
     onSuccess: (_result, variables) => {
       navigate(`/verify-email?email=${encodeURIComponent(variables.email)}`);
     },
+    onError: (error) => toast.error(error),
   });
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,6 +77,7 @@ export const SignupPage: React.FC = () => {
     onSuccess: (result) => {
       window.location.href = result.url;
     },
+    onError: (error) => toast.error(error),
   });
 
   const shouldShowRequirements = isPasswordFocused || showValidationError;
@@ -97,8 +104,6 @@ export const SignupPage: React.FC = () => {
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Create an account
           </h2>
-          {oauthErrorMessage && <p className="text-sm text-red-700">{oauthErrorMessage}</p>}
-
           <label htmlFor="name" className="text-sm font-semibold">
             Name<span className="text-red-600 ml-0.5">*</span>
           </label>
@@ -283,7 +288,6 @@ export const SignupPage: React.FC = () => {
             </label>
           </div>
 
-          {signUp.isError && <p className="text-sm text-red-700">{signUp.error.message}</p>}
           <button
             type="submit"
             disabled={signUp.isPending}
@@ -339,9 +343,6 @@ export const SignupPage: React.FC = () => {
               {googleSignUp.isPending ? 'Connecting…' : 'Google'}
             </button>
           </section>
-          {googleSignUp.isError && (
-            <p className="text-sm text-red-700">{googleSignUp.error.message}</p>
-          )}
         </form>
       </section>
     </main>

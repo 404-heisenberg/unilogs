@@ -10,6 +10,7 @@ import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { formatRelativeTime } from '@/lib/time';
 import { downloadTextFile, entriesToCSV, entriesToMarkdown } from '@/lib/exportEntries';
 import type { Entry, FieldDefinition, PagedEntries, Project } from '@/types';
+import { toast } from '@/lib/toast';
 
 const LAST_PROJECT_KEY = 'unilogs:last-project-id';
 
@@ -161,6 +162,7 @@ export default function ProjectDetailPage() {
       invalidateProject();
       setRenaming(false);
     },
+    onError: (error) => toast.error(error),
   });
 
   const archiveToggle = useMutation({
@@ -169,6 +171,7 @@ export default function ProjectDetailPage() {
         `/api/projects/${projectId}/${projectQuery.data?.archived ? 'unarchive' : 'archive'}`,
       ),
     onSuccess: invalidateProject,
+    onError: (error) => toast.error(error),
   });
 
   const startRenaming = () => {
@@ -185,12 +188,14 @@ export default function ProjectDetailPage() {
         ...input,
       }),
     onSuccess: invalidateFields,
+    onError: (error) => toast.error(error),
   });
 
   const renameField = useMutation({
     mutationFn: (input: { id: number; name: string }) =>
       api.put<FieldDefinition>(`/api/field-definitions/${input.id}`, { name: input.name }),
     onSuccess: invalidateFields,
+    onError: (error) => toast.error(error),
   });
 
   const retypeField = useMutation({
@@ -199,11 +204,13 @@ export default function ProjectDetailPage() {
         fieldType: input.fieldType,
       }),
     onSuccess: invalidateFields,
+    onError: (error) => toast.error(error),
   });
 
   const deleteField = useMutation({
     mutationFn: (id: number) => api.delete(`/api/field-definitions/${id}`),
     onSuccess: invalidateFields,
+    onError: (error) => toast.error(error),
   });
 
   const [newFieldName, setNewFieldName] = useState('');
@@ -589,9 +596,6 @@ export default function ProjectDetailPage() {
               {createField.isPending ? 'Adding…' : 'Add field'}
             </Button>
           </form>
-          {createField.isError && (
-            <p className="mt-2 text-sm text-red-700">{createField.error.message}</p>
-          )}
         </div>
       )}
     </div>

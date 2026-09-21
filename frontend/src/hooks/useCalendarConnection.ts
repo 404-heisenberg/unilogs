@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type CalendarConnectResult, type CalendarStatus } from '@/lib/api';
+import { toast } from '@/lib/toast';
 
 export function useCalendarConnection() {
   const queryClient = useQueryClient();
@@ -22,11 +23,13 @@ export function useCalendarConnection() {
       }
       invalidateStatus();
     },
+    onError: (error) => toast.error(error),
   });
 
   const disconnect = useMutation({
     mutationFn: () => api.delete<CalendarStatus>('/api/calendar/disconnect'),
     onSuccess: invalidateStatus,
+    onError: (error) => toast.error(error),
   });
 
   return { statusQuery, connect, disconnect };

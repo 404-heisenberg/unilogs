@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import SignupPage from './SignupPage';
 
 const { postMock } = vi.hoisted(() => ({ postMock: vi.fn() }));
@@ -17,6 +18,7 @@ function renderPage(initialEntry = '/signup') {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
+        <Toaster />
         <SignupPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -57,21 +59,21 @@ describe('SignupPage Google sign-up', () => {
     expect(await screen.findByText('Failed to start Google sign-in')).toBeInTheDocument();
   });
 
-  it('shows a specific message when the email already has a password account', () => {
+  it('shows a specific message when the email already has a password account', async () => {
     renderPage('/signup?error=account_not_linked');
 
     expect(
-      screen.getByText(
+      await screen.findByText(
         "We couldn't link this Google account to your UniLogs account. Please try again or use your password to sign in.",
       ),
     ).toBeInTheDocument();
   });
 
-  it('shows a generic message for an unrecognised OAuth error code', () => {
+  it('shows a generic message for an unrecognised OAuth error code', async () => {
     renderPage('/signup?error=invalid_code');
 
     expect(
-      screen.getByText("Google sign-in didn't complete. Please try again."),
+      await screen.findByText("Google sign-in didn't complete. Please try again."),
     ).toBeInTheDocument();
   });
 });

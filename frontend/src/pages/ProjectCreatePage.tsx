@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
+import { toast } from '@/lib/toast';
 
 type Step = 'details' | 'fields' | 'save';
 const STEPS: { key: Step; label: string }[] = [
@@ -72,6 +73,7 @@ export default function ProjectCreatePage() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       navigate(`/projects/${project.id}`);
     },
+    onError: (error) => toast.error(error),
   });
 
   const applyTemplate = (t: (typeof TEMPLATES)[number]) => {
@@ -314,10 +316,6 @@ export default function ProjectCreatePage() {
               </ul>
             )}
           </div>
-
-          {createProject.isError && (
-            <p className="text-sm text-red-700">{createProject.error.message}</p>
-          )}
 
           <div className="sticky bottom-0 -mx-4 mt-2 flex gap-3 border-t border-[#f5ebe0] bg-[#fffcf7] px-4 py-3 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
             <Button

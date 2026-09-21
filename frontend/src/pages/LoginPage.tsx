@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
 import { getEmailError } from '@/lib/validation';
+import { toast } from '@/lib/toast';
 
 export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,11 +16,27 @@ export const LoginPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const oauthErrorMessage = getGoogleOAuthErrorMessage(searchParams.get('error'));
 
+  useEffect(() => {
+    if (oauthErrorMessage) toast.error(oauthErrorMessage);
+  }, [oauthErrorMessage]);
+
   const signIn = useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['session'] });
       navigate('/dashboard');
+    },
+    onError: (error) => {
+      if (error.message === 'Email not verified') {
+        toast.error('Your email isn’t verified yet.', {
+          action: {
+            label: 'Verify it now',
+            onClick: () => navigate(`/verify-email?email=${encodeURIComponent(email)}`),
+          },
+        });
+        return;
+      }
+      toast.error(error);
     },
   });
 
@@ -36,6 +53,7 @@ export const LoginPage: React.FC = () => {
     onSuccess: (result) => {
       window.location.href = result.url;
     },
+    onError: (error) => toast.error(error),
   });
 
   return (
@@ -57,7 +75,6 @@ export const LoginPage: React.FC = () => {
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Sign in
           </h2>
-          {oauthErrorMessage && <p className="text-sm text-red-700">{oauthErrorMessage}</p>}
           <label htmlFor="email" className="text-sm font-semibold">
             Email<span className="text-red-600 ml-0.5">*</span>
           </label>
@@ -143,20 +160,6 @@ export const LoginPage: React.FC = () => {
               Reset
             </a>
           </p>
-          {signIn.isError &&
-            (signIn.error.message === 'Email not verified' ? (
-              <p className="text-sm text-red-700">
-                Your email isn&apos;t verified yet.{' '}
-                <Link
-                  to={`/verify-email?email=${encodeURIComponent(email)}`}
-                  className="inline-block -my-3 py-3 font-semibold underline"
-                >
-                  Verify it now
-                </Link>
-              </p>
-            ) : (
-              <p className="text-sm text-red-700">{signIn.error.message}</p>
-            ))}
           <button
             type="submit"
             disabled={signIn.isPending}
@@ -206,9 +209,6 @@ export const LoginPage: React.FC = () => {
               {googleSignIn.isPending ? 'Connecting…' : 'Google'}
             </button>
           </section>
-          {googleSignIn.isError && (
-            <p className="text-sm text-red-700">{googleSignIn.error.message}</p>
-          )}
         </form>
       </section>
     </main>

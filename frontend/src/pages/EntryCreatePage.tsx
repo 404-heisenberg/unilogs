@@ -8,6 +8,7 @@ import { api, ApiError } from '@/lib/api';
 import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
 import type { Entry, FieldDefinition, Project } from '@/types';
+import { toast } from '@/lib/toast';
 
 const LAST_PROJECT_KEY = 'unilogs:last-project-id';
 
@@ -19,7 +20,6 @@ export default function EntryCreatePage() {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [values, setValues] = useState<Record<string, FieldValue>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const firstFieldRef = useRef<HTMLSelectElement>(null);
@@ -50,7 +50,6 @@ export default function EntryCreatePage() {
     }
     setValues(initial);
     setFieldErrors({});
-    setFormError(null);
   }
 
   const createEntry = useMutation({
@@ -82,7 +81,7 @@ export default function EntryCreatePage() {
         }
       }
       setFieldErrors(nextFieldErrors);
-      setFormError(general.length > 0 ? general.join(' ') : null);
+      if (general.length > 0) toast.error(general.join(' '));
     },
   });
 
@@ -108,7 +107,6 @@ export default function EntryCreatePage() {
     }
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
-      setFormError(null);
       return;
     }
 
@@ -228,8 +226,6 @@ export default function EntryCreatePage() {
           <p className="block text-sm mb-1">Tags</p>
           <TagPicker selected={tagIds} onChange={setTagIds} />
         </div>
-
-        {formError && <p className="text-sm text-red-700">{formError}</p>}
 
         <Button
           type="submit"

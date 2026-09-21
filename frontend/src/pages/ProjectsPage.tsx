@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
+import { toast } from '@/lib/toast';
 
 type SaveInput = { name: string; description: string | null };
 
@@ -119,15 +120,15 @@ export default function ProjectsPage() {
     mutationFn: ({ id, ...data }: { id: number } & SaveInput) =>
       api.patch<Project>(`/api/projects/${id}`, data),
     onSuccess: invalidateProjects,
+    onError: (error) => toast.error(error),
   });
 
   const archiveToggle = useMutation({
     mutationFn: ({ id, archived }: { id: number; archived: boolean }) =>
       api.post<Project>(`/api/projects/${id}/${archived ? 'unarchive' : 'archive'}`),
     onSuccess: invalidateProjects,
+    onError: (error) => toast.error(error),
   });
-
-  const mutationError = updateProject.error ?? archiveToggle.error;
 
   return (
     <div>
@@ -148,8 +149,6 @@ export default function ProjectsPage() {
           {archivedView ? '← Back to active projects' : 'Show archived projects'}
         </button>
       </div>
-
-      {mutationError && <p className="mb-4 text-sm text-red-700">{mutationError.message}</p>}
 
       {isPending && (
         <div className="flex flex-col gap-3">

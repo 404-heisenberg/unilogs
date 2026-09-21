@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getEmailError } from '@/lib/validation';
+import { toast } from '@/lib/toast';
 
 const RequestResetForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,6 +15,7 @@ const RequestResetForm: React.FC = () => {
         '/api/auth/forgot-password',
         input,
       ),
+    onError: (error) => toast.error(error),
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -84,10 +86,6 @@ const RequestResetForm: React.FC = () => {
       />
       {emailError && <p className="text-xs text-red-700">{emailError}</p>}
 
-      {forgotPassword.isError && (
-        <p className="text-sm text-red-700">{forgotPassword.error.message}</p>
-      )}
-
       <button
         type="submit"
         disabled={forgotPassword.isPending}
@@ -117,6 +115,7 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
   const resetPassword = useMutation({
     mutationFn: (input: { token: string; newPassword: string }) =>
       api.post<{ message: string }>('/api/auth/reset-password', input),
+    onError: (error) => toast.error(error),
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -189,10 +188,6 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
         }`}
       />
       {mismatchError && <p className="text-xs text-red-700">{mismatchError}</p>}
-
-      {resetPassword.isError && (
-        <p className="text-sm text-red-700">{resetPassword.error.message}</p>
-      )}
 
       <button
         type="submit"

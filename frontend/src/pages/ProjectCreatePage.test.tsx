@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import ProjectCreatePage from './ProjectCreatePage';
 
 const { postMock } = vi.hoisted(() => ({ postMock: vi.fn() }));
@@ -17,6 +18,7 @@ function renderPage() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/projects/new']}>
+        <Toaster />
         <Routes>
           <Route path="/projects/new" element={<ProjectCreatePage />} />
           <Route path="/projects/:projectId" element={<p>Project detail</p>} />
