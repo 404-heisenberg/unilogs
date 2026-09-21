@@ -22,6 +22,7 @@ describe('stats routes', () => {
         api.get('/api/stats/project/1'),
         api.get('/api/stats/frequency'),
         api.get('/api/stats/streak'),
+        api.get('/api/stats/unfinished'),
       ]);
 
       for (const response of responses) {
@@ -185,6 +186,95 @@ describe('stats routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ streak: 0 });
+    });
+  });
+
+  describe('GET /api/stats/unfinished', () => {
+    it('groups unfinished boolean fields by their due date', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent, { name: 'Thesis Research' });
+      await createFieldDefinition(agent, project.id, { name: 'Submitted', fieldType: 'boolean' });
+      await createFieldDefinition(agent, project.id, { name: 'Due date', fieldType: 'date' });
+
+      const yesterday = new Date();
+      yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+      const today = new Date();
+
+      await createEntry(agent, project.id, {
+        title: 'Submit ethics form',
+        content: { Submitted: false, 'Due date': yesterday.toISOString().slice(0, 10) },
+      });
+      await createEntry(agent, project.id, {
+        title: 'Draft intro pipeline',
+        content: { Submitted: false, 'Due date': today.toISOString().slice(0, 10) },
+      });
+      await createEntry(agent, project.id, {
+        title: 'Already done',
+        content: { Submitted: true, 'Due date': yesterday.toISOString().slice(0, 10) },
+      });
+
+      const response = await agent.get('/api/stats/unfinished');
+
+      expect(response.status).toBe(200);
+      expect(response.body.overdue).toEqual([
+        expect.objectContaining({
+          fieldName: 'Submitted',
+          label: 'Submit ethics form',
+          projectName: 'Thesis Research',
+        }),
+      ]);
+      expect(response.body.dueThisWeek).toEqual([
+        expect.objectContaining({
+          fieldName: 'Submitted',
+          label: 'Draft intro pipeline',
+          projectName: 'Thesis Research',
+        }),
+      ]);
+      expect(response.body.noDueDate).toEqual([]);
+    });
+
+    it('buckets unfinished items with no date-type field as no due date', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent, { name: 'Personal Diary' });
+      await createFieldDefinition(agent, project.id, { name: 'Done', fieldType: 'boolean' });
+      await createEntry(agent, project.id, {
+        title: 'Morning pages',
+        content: { Done: false },
+      });
+
+      const response = await agent.get('/api/stats/unfinished');
+
+      expect(response.status).toBe(200);
+      expect(response.body.overdue).toEqual([]);
+      expect(response.body.dueThisWeek).toEqual([]);
+      expect(response.body.noDueDate).toEqual([
+        expect.objectContaining({ fieldName: 'Done', label: 'Morning pages', dueDate: null }),
+      ]);
+    });
+
+    it('excludes archived projects and other users projects', async () => {
+      const owner = await createAuthenticatedUser();
+      const otherUser = await createAuthenticatedUser();
+
+      const archivedProject = await createProject(owner.agent, { name: 'Old project' });
+      await createFieldDefinition(owner.agent, archivedProject.id, {
+        name: 'Done',
+        fieldType: 'boolean',
+      });
+      await createEntry(owner.agent, archivedProject.id, { content: { Done: false } });
+      await owner.agent.post(`/api/projects/${archivedProject.id}/archive`);
+
+      const otherProject = await createProject(otherUser.agent, { name: 'Other project' });
+      await createFieldDefinition(otherUser.agent, otherProject.id, {
+        name: 'Done',
+        fieldType: 'boolean',
+      });
+      await createEntry(otherUser.agent, otherProject.id, { content: { Done: false } });
+
+      const response = await owner.agent.get('/api/stats/unfinished');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ overdue: [], dueThisWeek: [], noDueDate: [] });
     });
   });
 
