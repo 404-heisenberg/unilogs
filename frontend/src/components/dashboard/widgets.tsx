@@ -34,6 +34,7 @@ import {
   entryTitle,
   formatDayLabel,
   formatDurationHours,
+  formatEventTime,
   formatMonthDay,
   formatShortDate,
   relativeTime,
@@ -47,6 +48,7 @@ import {
   type ThumbnailKind,
   type UnfinishedItem,
   type UnfinishedStats,
+  type UpcomingData,
   type WidgetId,
   type WidgetSize,
   type WidgetState,
@@ -74,6 +76,7 @@ export type DashboardCtx = {
   unfinished: { stats: UnfinishedStats | undefined; isLoading: boolean; isError: boolean };
   insight: { stat: InsightStat | null | undefined; isLoading: boolean };
   frequency: { stats: FrequencyStats | undefined; isLoading: boolean; isError: boolean };
+  upcoming: { data: UpcomingData | undefined; isLoading: boolean; isError: boolean };
   dormant: DormantProject[] | null;
   markFailed: boolean;
   onMarkDone: (item: UnfinishedItem) => void;
@@ -95,7 +98,7 @@ function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
 function WidgetMessage({ title, message }: { title: string; message: string }) {
   return (
     <section className={CARD}>
-      <h2 className="text-sm font-semibold text-[#2A1A0E]">{title}</h2>
+      <h2 className="text-sm font-semibold text-[#1c0d06]">{title}</h2>
       <p className={`mt-1 text-xs ${MUTED}`}>{message}</p>
     </section>
   );
@@ -115,7 +118,7 @@ function SummaryStripWidgetBase({
   topProject,
 }: SummaryStripProps) {
   return (
-    <section className="flex flex-col gap-1 rounded-xl bg-[#F5EBE0] px-4 py-3 text-sm text-[#2A1A0E] md:flex-row md:items-center md:justify-between">
+    <section className="flex flex-col gap-1 rounded-xl bg-[#F5EBE0] px-4 py-3 text-sm text-[#1c0d06] md:flex-row md:items-center md:justify-between">
       <p className="flex items-center gap-2">
         <Flame className="h-4 w-4 text-[#D4A843]" strokeWidth={1.75} aria-hidden />
         <span className="font-semibold">{streak}-day streak</span>
@@ -126,7 +129,7 @@ function SummaryStripWidgetBase({
         {topProject && (
           <>
             Top project:{' '}
-            <span className="font-semibold text-[#2A1A0E]">
+            <span className="font-semibold text-[#1c0d06]">
               {topProject.name} ({topProject.percent}%)
             </span>{' '}
             ·{' '}
@@ -141,15 +144,14 @@ function SummaryStripWidgetBase({
 const SummaryStripWidget = memo(SummaryStripWidgetBase);
 
 const LEVEL_CLASS: Record<HeatLevel, string> = {
-  0: 'bg-[#E2DCD2]',
-  1: 'bg-[#F3E8CB]',
-  2: 'bg-[#EBD9A3]',
-  3: 'bg-[#E3C67C]',
-  4: 'bg-[#DBB65A]',
-  5: 'bg-[#D4A843]',
+  0: 'bg-[#e8e0d8]',
+  1: 'bg-[#faf0e6]',
+  2: 'bg-[#e6d4c3]',
+  3: 'bg-[#d4a373]',
+  4: 'bg-[#d4a843]',
 };
 
-const LEGEND_LEVELS: HeatLevel[] = [0, 1, 2, 3, 4, 5];
+const LEGEND_LEVELS: HeatLevel[] = [0, 1, 2, 3, 4];
 
 function entryCount(count: number): string {
   return `${count} ${count === 1 ? 'entry' : 'entries'}`;
@@ -242,7 +244,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col-reverse gap-0.5">
       <dt className={LABEL}>{label}</dt>
-      <dd className="text-2xl font-semibold text-[#2A1A0E]">{value}</dd>
+      <dd className="text-2xl font-semibold text-[#1c0d06]">{value}</dd>
     </div>
   );
 }
@@ -265,7 +267,7 @@ function ContinueWidgetBase({ latest, isLoading, isDesktop }: ContinueProps) {
       className={`${CARD} flex flex-col gap-3 md:flex-row md:items-center md:justify-between`}
     >
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-[#2A1A0E]">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-[#1c0d06]">
           <span className="size-2 shrink-0 rounded-full bg-[#E8813D]" aria-hidden />
           <span className="truncate">{projectName ?? 'Start logging'}</span>
         </h2>
@@ -312,7 +314,7 @@ function RecentEntriesWidgetBase({
 
   return (
     <section className={CARD}>
-      <h2 className="mb-2 text-sm font-semibold text-[#2A1A0E]">Recent entries</h2>
+      <h2 className="mb-2 text-sm font-semibold text-[#1c0d06]">Recent entries</h2>
       <ul className="flex flex-col">
         {entries.map((entry) => (
           <li key={entry.id}>
@@ -321,7 +323,7 @@ function RecentEntriesWidgetBase({
               className="flex items-start justify-between gap-3 rounded-md py-2 focus-visible:outline-2 focus-visible:outline-[#D4A843]"
             >
               <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-[#2A1A0E]">
+                <span className="block truncate text-sm font-semibold text-[#1c0d06]">
                   {entryTitle(entry)}
                 </span>
                 <span className={`block truncate text-xs ${MUTED}`}>{entry.project?.name}</span>
@@ -363,7 +365,7 @@ function InsightWidgetBase({ stat, isLoading }: InsightProps) {
     return (
       <section className={CARD}>
         <Header />
-        <p className="mt-3 text-base font-semibold text-[#2A1A0E]">No data yet</p>
+        <p className="mt-3 text-base font-semibold text-[#1c0d06]">No data yet</p>
         <p className={`mt-1 text-xs ${MUTED}`}>Your pinned stat will show up here.</p>
       </section>
     );
@@ -379,7 +381,7 @@ function InsightWidgetBase({ stat, isLoading }: InsightProps) {
       <p className={`mt-2 inline-block rounded bg-[#FFFCF7] px-2 py-0.5 text-[11px] ${MUTED}`}>
         {stat.projectName} · {stat.fieldName}
       </p>
-      <p className="mt-2 text-lg font-semibold text-[#2A1A0E]">
+      <p className="mt-2 text-lg font-semibold text-[#1c0d06]">
         {stat.current} {stat.fieldName.toLowerCase()} this week
       </p>
       <p
@@ -394,8 +396,42 @@ function InsightWidgetBase({ stat, isLoading }: InsightProps) {
 
 const InsightWidget = memo(InsightWidgetBase);
 
-function UpcomingWidgetBase() {
-  return <WidgetMessage title="Upcoming" message="No upcoming events." />;
+type UpcomingProps = {
+  data: UpcomingData | undefined;
+  isLoading: boolean;
+  isError: boolean;
+};
+
+function UpcomingWidgetBase({ data, isLoading, isError }: UpcomingProps) {
+  if (isLoading) return <WidgetSkeleton rows={3} />;
+  if (isError) return <WidgetMessage title="Upcoming" message="Couldn't load your calendar." />;
+  if (!data || !data.connected || data.events.length === 0) {
+    return <WidgetMessage title="Upcoming" message="No upcoming events." />;
+  }
+
+  return (
+    <section className={CARD}>
+      <h2 className="mb-3 text-sm font-semibold text-[#1c0d06]">Upcoming</h2>
+      <ul className="flex flex-col gap-2">
+        {data.events.map((event) => (
+          <li key={event.id} className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-3 text-[13px]">
+              <span className="shrink-0 font-bold text-[#7a5230]">
+                {formatEventTime(event.start)}
+              </span>
+              <span className="truncate text-[#1c0d06]">{event.title}</span>
+            </span>
+            <Link
+              to="/suggestions"
+              className="shrink-0 rounded px-2 py-1 text-[11px] font-semibold text-[#7a5230] transition-colors hover:bg-[#efe0cc]"
+            >
+              Log
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 const UpcomingWidget = memo(UpcomingWidgetBase);
@@ -445,7 +481,7 @@ function Group({ heading, items, overdue = false, onMarkDone }: GroupProps) {
                 overdue ? 'border-[#B5432F]' : 'border-[#5C4630]'
               }`}
             />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#2A1A0E]">
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#1c0d06]">
               {item.label}
             </span>
             <span className={`shrink-0 text-[11px] ${overdue ? 'text-[#B5432F]' : MUTED}`}>
@@ -545,13 +581,13 @@ function TimeByProjectWidgetBase({ projects }: TimeByProjectProps) {
               />
             ))}
           </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-base font-semibold text-[#2A1A0E]">
+          <span className="absolute inset-0 flex items-center justify-center text-base font-semibold text-[#1c0d06]">
             {topPercent}%
           </span>
         </div>
         <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
           {shown.map((project, index) => (
-            <li key={project.projectId} className="flex items-center gap-2 text-xs text-[#2A1A0E]">
+            <li key={project.projectId} className="flex items-center gap-2 text-xs text-[#1c0d06]">
               <span
                 className="size-2 shrink-0 rounded-full"
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
@@ -641,7 +677,7 @@ function Row({ title, meta, alert = false }: { title: string; meta: string; aler
         aria-hidden
       />
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-[#2A1A0E]">{title}</span>
+        <span className="block truncate text-sm font-semibold text-[#1c0d06]">{title}</span>
         <span className={`block text-[11px] ${alert ? 'text-[#B5432F]' : MUTED}`}>{meta}</span>
       </span>
     </li>
@@ -719,11 +755,11 @@ function WidgetThumbnail({ kind }: { kind: ThumbnailKind }) {
       )}
       {kind === 'list' && (
         <>
-          <rect x="14" y="10" width="7" height="7" rx="1.5" fill="none" stroke="#8A7660" />
+          <rect x="14" y="10" width="7" height="7" rx="1.5" fill="none" stroke="#7a5230" />
           <rect x="26" y="12" width="38" height="3" rx="1.5" fill="#C9B79C" />
-          <rect x="14" y="22" width="7" height="7" rx="1.5" fill="none" stroke="#8A7660" />
+          <rect x="14" y="22" width="7" height="7" rx="1.5" fill="none" stroke="#7a5230" />
           <rect x="26" y="24" width="30" height="3" rx="1.5" fill="#C9B79C" />
-          <rect x="14" y="34" width="7" height="7" rx="1.5" fill="none" stroke="#8A7660" />
+          <rect x="14" y="34" width="7" height="7" rx="1.5" fill="none" stroke="#7a5230" />
           <rect x="26" y="36" width="34" height="3" rx="1.5" fill="#C9B79C" />
         </>
       )}
@@ -735,7 +771,7 @@ function WidgetThumbnail({ kind }: { kind: ThumbnailKind }) {
       )}
       {kind === 'card' && (
         <>
-          <rect x="14" y="12" width="30" height="4" rx="2" fill="#8A7660" />
+          <rect x="14" y="12" width="30" height="4" rx="2" fill="#7a5230" />
           <rect x="14" y="22" width="52" height="3" rx="1.5" fill="#C9B79C" />
           <rect x="14" y="32" width="24" height="7" rx="3.5" fill="#D4A843" />
         </>
@@ -900,7 +936,13 @@ function WidgetContent({ id, size, ctx }: ContentProps) {
         />
       );
     case 'upcoming':
-      return <UpcomingWidget />;
+      return (
+        <UpcomingWidget
+          data={ctx.upcoming.data}
+          isLoading={ctx.upcoming.isLoading}
+          isError={ctx.upcoming.isError}
+        />
+      );
     case 'insight':
       return <InsightWidget stat={ctx.insight.stat} isLoading={ctx.insight.isLoading} />;
     case 'timeByProject':
@@ -935,7 +977,7 @@ export function AddWidgetTray({ hidden, onAdd }: TrayProps) {
       aria-label="Add widget"
       className="rounded-xl border border-dashed border-[#B59F82] p-4"
     >
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#2A1A0E]">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#1c0d06]">
         <Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden />
         Add widget
       </h2>
@@ -951,7 +993,7 @@ export function AddWidgetTray({ hidden, onAdd }: TrayProps) {
                   type="button"
                   onClick={() => onAdd(widget.id)}
                   aria-label={`Add ${meta.title}`}
-                  className="flex w-full flex-col items-center gap-2 rounded-lg bg-[#F5EBE0] px-3 py-3 text-xs font-medium text-[#2A1A0E] transition-colors hover:bg-[#EFE0CC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]"
+                  className="flex w-full flex-col items-center gap-2 rounded-lg bg-[#F5EBE0] px-3 py-3 text-xs font-medium text-[#1c0d06] transition-colors hover:bg-[#EFE0CC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]"
                 >
                   <WidgetThumbnail kind={meta.thumbnail} />
                   {meta.title}
