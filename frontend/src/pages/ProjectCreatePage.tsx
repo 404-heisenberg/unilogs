@@ -109,7 +109,7 @@ export default function ProjectCreatePage() {
   const stepIndex = STEPS.findIndex((s) => s.key === step);
 
   return (
-    <div className="max-w-lg">
+    <div className="mx-auto max-w-lg">
       <div className="mb-6 flex flex-col gap-1.5">
         <div className="flex gap-1.5">
           {STEPS.map((s, i) => (

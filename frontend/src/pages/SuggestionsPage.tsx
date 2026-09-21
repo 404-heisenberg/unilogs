@@ -224,7 +224,7 @@ export default function SuggestionsPage() {
   const suggestions = suggestionsQuery.data?.suggestions ?? [];
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-2xl font-bold">Calendar suggestions</h1>
       <p className="mb-6 text-sm text-[#7a5230]">
         Events from your Google Calendar, ready to log as entries.

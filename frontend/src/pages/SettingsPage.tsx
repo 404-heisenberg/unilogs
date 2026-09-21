@@ -97,7 +97,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex max-w-200 flex-col gap-8">
+    <div className="mx-auto flex max-w-200 flex-col gap-8">
       <h1 className="text-2xl font-bold">Settings</h1>
 
       {data?.user && (

@@ -140,9 +140,9 @@ export default function EntryCreatePage() {
   }, [navigate]);
 
   return (
-    <div>
+    <div className="mx-auto max-w-md">
       <h1 className="text-2xl font-bold mb-4">New Entry</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-sm mb-1">Project</label>
           <select
