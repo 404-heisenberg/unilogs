@@ -164,6 +164,9 @@ export async function buildFieldInsights(projectId: number, userId: string) {
     const currentWeekValues: number[] = [];
     const previousWeekValues: number[] = [];
 
+    const currentWeekDurationValues: number[] = [];
+    const previousWeekDurationValues: number[] = [];
+
     const durationValues: number[] = [];
 
     const textValues: string[] = [];
@@ -188,6 +191,12 @@ export async function buildFieldInsights(projectId: number, userId: string) {
 
       if (field.fieldType === 'duration' && typeof value === 'number') {
         durationValues.push(value);
+
+        if (entry.date >= currentWeekStart) {
+          currentWeekDurationValues.push(value);
+        } else if (entry.date >= previousWeekStart) {
+          previousWeekDurationValues.push(value);
+        }
       }
 
       if (field.fieldType === 'text' && typeof value === 'string') {
@@ -436,6 +445,29 @@ export async function buildFieldInsights(projectId: number, userId: string) {
       const totalHours = calculateSum(durationValues);
       const totalMinutes = totalHours * 60;
 
+      const currentWeekMinutes = calculateSum(currentWeekDurationValues) * 60;
+      const previousWeekMinutes = calculateSum(previousWeekDurationValues) * 60;
+
+      let deltaPct: number | null = null;
+      let direction: 'up' | 'down' | 'flat' | null = null;
+
+      if (
+        currentWeekDurationValues.length > 0 &&
+        previousWeekDurationValues.length > 0 &&
+        previousWeekMinutes !== 0
+      ) {
+        deltaPct = ((currentWeekMinutes - previousWeekMinutes) / previousWeekMinutes) * 100;
+      }
+
+      if (currentWeekDurationValues.length > 0 && previousWeekDurationValues.length > 0) {
+        if (currentWeekMinutes > previousWeekMinutes) {
+          direction = 'up';
+        } else if (currentWeekMinutes < previousWeekMinutes) {
+          direction = 'down';
+        } else {
+          direction = 'flat';
+        }
+      }
       insights.push({
         name: field.name,
         fieldType: field.fieldType,
@@ -443,8 +475,8 @@ export async function buildFieldInsights(projectId: number, userId: string) {
         valueMinutes: totalMinutes,
         sampleCount: durationValues.length,
         trend: {
-          deltaPct: null,
-          direction: null,
+          deltaPct,
+          direction,
         },
       });
     }
