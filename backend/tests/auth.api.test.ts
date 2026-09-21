@@ -160,6 +160,28 @@ describe('auth routes', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('never hands back the reset token or link in production, even when email delivery fails', async () => {
+      const api = await getApiClient();
+      const email = uniqueEmail();
+      await api.post('/api/auth/signup').send({
+        email,
+        password: 'test-password-123',
+        name: 'Test User',
+      });
+
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const response = await api.post('/api/auth/forgot-password').send({ email });
+
+        expect(response.status).toBe(200);
+        expect(response.body).not.toHaveProperty('token');
+        expect(response.body).not.toHaveProperty('url');
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
   });
 
   describe('POST /api/auth/reset-password', () => {

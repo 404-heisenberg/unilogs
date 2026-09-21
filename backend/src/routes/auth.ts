@@ -194,7 +194,14 @@ router.post('/forgot-password', async (req, res) => {
     const response: { message: string; token?: string; url?: string } = {
       message: 'Reset link sent if account exists',
     };
-    if (!emailSent) {
+    // Dev/test-only convenience so the flow is testable without a real
+    // inbox (see frontend/src/pages/ResetPasswordPage.tsx's "here's the
+    // link directly" message). Handing back a live reset token whenever
+    // email delivery fails would otherwise let anyone take over an account
+    // just by knowing its email address (#174). Read per-request, not
+    // hoisted to module scope, so it reflects the environment at request
+    // time rather than whatever it was when this module first loaded.
+    if (!emailSent && process.env.NODE_ENV !== 'production') {
       response.token = token;
       response.url = resetUrl;
     }
