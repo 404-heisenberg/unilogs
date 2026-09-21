@@ -134,7 +134,7 @@ function AcceptForm({
           id={`accept-project-${suggestion.id}`}
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
-          className="w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+          className="min-h-11 w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
           required
         >
           <option value="">Select a project…</option>
@@ -158,7 +158,7 @@ function AcceptForm({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+          className="min-h-11 w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
           required
         />
       </div>
@@ -185,10 +185,14 @@ function AcceptForm({
       {formError && <p className="text-sm text-red-700">{formError}</p>}
 
       <div className="flex gap-2">
-        <Button type="submit" disabled={accept.isPending || !projectId}>
+        <Button
+          type="submit"
+          className="min-h-11 md:min-h-0"
+          disabled={accept.isPending || !projectId}
+        >
           {accept.isPending ? 'Saving…' : 'Log entry'}
         </Button>
-        <Button type="button" variant="outline" onClick={onDone}>
+        <Button type="button" variant="outline" className="min-h-11 md:min-h-0" onClick={onDone}>
           Cancel
         </Button>
       </div>
@@ -220,7 +224,7 @@ export default function SuggestionsPage() {
   const suggestions = suggestionsQuery.data?.suggestions ?? [];
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-2xl font-bold">Calendar suggestions</h1>
       <p className="mb-6 text-sm text-[#7a5230]">
         Events from your Google Calendar, ready to log as entries.
@@ -237,7 +241,7 @@ export default function SuggestionsPage() {
             type="button"
             variant="outline"
             size="sm"
-            className="mt-2"
+            className="mt-2 min-h-11 md:min-h-0"
             onClick={() => statusQuery.refetch()}
           >
             Try again
@@ -252,7 +256,7 @@ export default function SuggestionsPage() {
           </p>
           <Button
             type="button"
-            className="mt-3 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90"
+            className="mt-3 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
             onClick={() => connect.mutate()}
             disabled={connect.isPending}
           >
@@ -275,7 +279,7 @@ export default function SuggestionsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="mt-2"
+                className="mt-2 min-h-11 md:min-h-0"
                 onClick={() => suggestionsQuery.refetch()}
               >
                 Try again
@@ -308,7 +312,7 @@ export default function SuggestionsPage() {
                     <Button
                       type="button"
                       size="sm"
-                      className="bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90"
+                      className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
                       onClick={() =>
                         setAcceptingId((current) =>
                           current === suggestion.id ? null : suggestion.id,
@@ -321,6 +325,7 @@ export default function SuggestionsPage() {
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="min-h-11 md:min-h-0"
                       disabled={isRejecting}
                       onClick={() => {
                         setRejectingId(suggestion.id);

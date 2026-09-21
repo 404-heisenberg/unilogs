@@ -4,9 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import DashboardPage from './DashboardPage';
 
-const { getStatsSummaryMock, getFrequencyStatsMock } = vi.hoisted(() => ({
+const { getStatsSummaryMock, getFrequencyStatsMock, getMock } = vi.hoisted(() => ({
   getStatsSummaryMock: vi.fn(),
   getFrequencyStatsMock: vi.fn(),
+  getMock: vi.fn(),
 }));
 
 vi.mock('../lib/api', async (importOriginal) => {
@@ -15,6 +16,7 @@ vi.mock('../lib/api', async (importOriginal) => {
     ...actual,
     getStatsSummary: getStatsSummaryMock,
     getFrequencyStats: getFrequencyStatsMock,
+    api: { ...actual.api, get: getMock },
   };
 });
 
@@ -31,6 +33,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  getMock.mockResolvedValue({ entries: [], total: 0, page: 1, limit: 5 });
 });
 
 describe('DashboardPage', () => {
@@ -43,7 +46,7 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('No entries yet')).toBeInTheDocument();
   });
 
-  it('renders stats once entries exist', async () => {
+  it('renders stats, continue-logging, and recent entries once data exists', async () => {
     getStatsSummaryMock.mockResolvedValue({
       perProject: [{ projectId: 1, projectName: 'Thesis', totalHours: 12 }],
       totalHours: 12,
@@ -53,16 +56,35 @@ describe('DashboardPage', () => {
       weekly: [{ weekStart: '2026-09-01', count: 2 }],
       terms: [],
     });
+    getMock.mockResolvedValue({
+      entries: [
+        {
+          id: 1,
+          projectId: 1,
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          title: 'Literature review notes',
+          content: {},
+          project: { id: 1, name: 'Thesis' },
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 5,
+    });
 
     renderPage();
 
     expect(await screen.findByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Total logged')).toBeInTheDocument();
     expect(screen.getByText('Top project')).toBeInTheDocument();
-    expect(screen.getByText('Thesis')).toBeInTheDocument();
+    expect(screen.getAllByText('Thesis').length).toBeGreaterThan(0);
     expect(
       screen.getByRole('button', { name: 'Week of 2026-09-01: 2 entries' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue Logging' })).toBeInTheDocument();
+    expect(screen.getByText('Recent entries')).toBeInTheDocument();
+    expect(screen.getByText('Literature review notes')).toBeInTheDocument();
   });
 
   it("shows an error state when the stats can't be loaded", async () => {

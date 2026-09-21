@@ -29,43 +29,39 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-  // Define a project and its schema.
+  // Define a project and its schema via the Details → Fields → Save wizard.
   await page.getByRole('link', { name: 'New Project' }).click();
   await expect(page).toHaveURL(/\/projects\/new$/);
   await page.getByPlaceholder('e.g. Gym').fill('Thesis');
   await page.getByPlaceholder("What's this project for?").fill('Final year research');
-  await page.getByRole('button', { name: 'Save project' }).click();
-
-  await expect(page).toHaveURL(/\/projects$/);
-  // Scoped to main: the explorer pane in the app shell also lists every
-  // project by name, so an unscoped query would match twice.
-  await page.getByRole('main').getByRole('link', { name: 'Thesis' }).click();
-  await expect(page.getByRole('heading', { name: 'Thesis' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue' }).click();
 
   // A 'duration' field specifically: it's the only field type the backend's
   // stats endpoint sums into totalHours (see backend/src/routes/stats.ts) —
   // a plain 'text' field would leave the dashboard's totals at zero below.
-  await page.getByPlaceholder('e.g. Time spent').fill('Hours');
-  await page.getByRole('combobox').selectOption('duration');
+  await page.getByPlaceholder('Field name').fill('Hours');
+  await page.getByLabel('Field type').selectOption('duration');
   await page.getByRole('button', { name: 'Add field' }).click();
-  await expect(page.locator('ul li input').first()).toHaveValue('Hours');
+  await expect(page.getByText('Hours')).toBeVisible();
 
-  // Log an entry against it. Wait for the new page's own heading first — the
-  // previous page (ProjectDetailPage) also has a <select> (field type), so
-  // querying by role alone right after the click can catch both pages' DOM
-  // mid-transition and match two comboboxes instead of one.
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Create project' }).click();
+
+  // The wizard lands directly on the new project's own page.
+  await expect(page).toHaveURL(/\/projects\/\d+$/);
+  await expect(page.getByRole('heading', { name: 'Thesis' })).toBeVisible();
+
+  // Log an entry against it.
   await page.getByRole('link', { name: 'Log entry' }).click();
   await expect(page.getByRole('heading', { name: 'New Entry' })).toBeVisible();
   await page.getByRole('combobox').selectOption({ label: 'Thesis' });
   await page.getByLabel('Hours').fill('3');
   await page.getByRole('button', { name: 'Save entry' }).click();
 
-  // It shows up where a user would look for it.
+  // It shows up where a user would look for it. No title was given, so the
+  // timeline falls back to a "field: value" headline built from the content.
   await expect(page).toHaveURL(/\/entries$/);
-  // Same explorer-pane ambiguity as above.
-  await expect(page.getByRole('main').getByRole('link', { name: 'Thesis' })).toBeVisible();
-  await expect(page.getByText('Hours:')).toBeVisible();
-  await expect(page.getByText('3', { exact: true })).toBeVisible();
+  await expect(page.getByText('Hours: 3')).toBeVisible();
 
   await page.getByRole('link', { name: 'Dashboard' }).click();
   // Scoped to the "Top project" card specifically — the bar chart below it

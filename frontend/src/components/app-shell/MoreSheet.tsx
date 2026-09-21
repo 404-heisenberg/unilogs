@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, ChevronDown, Settings } from 'lucide-react';
+import { Bell, ChevronDown, Settings, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { SessionUser } from '@/hooks/useSession';
@@ -21,7 +21,7 @@ function NotificationsDisclosure({ onNavigate }: { onNavigate: () => void }) {
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex w-full items-center gap-2 px-2 py-2 text-sm font-medium text-[#1c0d06]"
+        className="flex min-h-11 w-full items-center gap-2 px-2 py-2 text-sm font-medium text-[#1c0d06]"
       >
         <Bell size={18} strokeWidth={1.75} />
         <span className="flex-1 text-left">Notifications</span>
@@ -58,9 +58,21 @@ export default function MoreSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="flex w-4/5 flex-col gap-5 bg-[#fffcf7] p-4 sm:max-w-xs">
-        <SheetHeader className="p-0">
+      <SheetContent
+        side="left"
+        showCloseButton={false}
+        className="flex w-4/5 flex-col gap-5 bg-[#fffcf7] p-4 sm:max-w-xs"
+      >
+        <SheetHeader className="flex-row items-center justify-between p-0">
           <SheetTitle>More</SheetTitle>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-black/5 text-[#7a5230]"
+          >
+            <X size={16} strokeWidth={2} />
+          </button>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -72,7 +84,7 @@ export default function MoreSheet({
         <Link
           to="/settings"
           onClick={() => onOpenChange(false)}
-          className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-[#1c0d06] hover:bg-black/5"
+          className="flex min-h-11 items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-[#1c0d06] hover:bg-black/5"
         >
           <Settings size={18} strokeWidth={1.75} />
           Settings

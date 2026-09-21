@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -24,6 +24,7 @@ const ENTRIES: Entry[] = [
     projectId: 1,
     date: '2026-09-01T00:00:00.000Z',
     createdAt: '2026-09-01T00:00:00.000Z',
+    title: 'Literature review notes',
     content: { Notes: 'Read chapter 3' },
   },
   {
@@ -35,11 +36,22 @@ const ENTRIES: Entry[] = [
   },
 ];
 
+// The real backend filters server-side (title/body/project name, via the `q`
+// query param) — this mock does the same narrow matching so the search test
+// exercises the real request/response cycle rather than pretending the page
+// still filters client-side.
 function mockEntries(entries: Entry[], projects: Project[] = PROJECTS) {
   getMock.mockImplementation((path: string) => {
-    if (path === '/api/entries')
-      return Promise.resolve({ entries, total: entries.length, page: 1, limit: 50 });
-    if (path === '/api/projects') return Promise.resolve(projects);
+    if (path.startsWith('/api/entries')) {
+      const query = new URLSearchParams(path.split('?')[1] ?? '');
+      const q = query.get('q')?.toLowerCase();
+      const filtered = q
+        ? entries.filter((e) => (e.title ?? '').toLowerCase().includes(q))
+        : entries;
+      return Promise.resolve({ entries: filtered, total: filtered.length, page: 1, limit: 50 });
+    }
+    if (path.startsWith('/api/projects')) return Promise.resolve(projects);
+    if (path === '/api/tags') return Promise.resolve([]);
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });
 }
@@ -71,8 +83,8 @@ describe('EntriesPage', () => {
 
   it('shows an error state when entries fail to load', async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === '/api/entries') return Promise.reject(new Error('network error'));
-      if (path === '/api/projects') return Promise.resolve(PROJECTS);
+      if (path.startsWith('/api/entries')) return Promise.reject(new Error('network error'));
+      if (path.startsWith('/api/projects')) return Promise.resolve(PROJECTS);
       return Promise.reject(new Error(`unexpected GET ${path}`));
     });
 
@@ -83,40 +95,46 @@ describe('EntriesPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('lists entries with their project name', async () => {
+  it('lists entries grouped by date, with their project name', async () => {
     mockEntries(ENTRIES);
 
     renderPage();
 
-    expect(await screen.findByText('Read chapter 3')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Thesis' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Gym Log' })).toBeInTheDocument();
+    expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Thesis/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Gym Log/ })).toBeInTheDocument();
   });
 
-  it('filters entries by search term', async () => {
+  it('filters entries by search term via the Filters sheet', async () => {
     mockEntries(ENTRIES);
 
     renderPage();
-    await screen.findByText('Read chapter 3');
+    await screen.findByText('Literature review notes');
 
-    await userEvent.type(screen.getByLabelText('Search entries'), 'chapter');
+    await userEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    const sheet = screen.getByRole('dialog');
+    await userEvent.type(within(sheet).getByLabelText('Search entries'), 'Literature');
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Apply filters' }));
 
-    expect(screen.getByText('Read chapter 3')).toBeInTheDocument();
-    expect(screen.queryByText('12')).not.toBeInTheDocument();
+    expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
+    expect(screen.queryByText('Reps: 12')).not.toBeInTheDocument();
   });
 
   it('shows a clear-filters action when a filter matches nothing', async () => {
     mockEntries(ENTRIES);
 
     renderPage();
-    await screen.findByText('Read chapter 3');
+    await screen.findByText('Literature review notes');
 
-    await userEvent.type(screen.getByLabelText('Search entries'), 'nonexistent');
+    await userEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    const sheet = screen.getByRole('dialog');
+    await userEvent.type(within(sheet).getByLabelText('Search entries'), 'nonexistent');
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Apply filters' }));
 
     expect(await screen.findByText('No entries match your filters.')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
 
-    expect(await screen.findByText('Read chapter 3')).toBeInTheDocument();
+    expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
   });
 });

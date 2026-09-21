@@ -42,7 +42,10 @@ beforeEach(() => {
 
 describe('EntryDetailPage', () => {
   it('renders the entry content, tags and project name', async () => {
-    getMock.mockResolvedValue(ENTRY);
+    getMock.mockImplementation((path: string) => {
+      if (path === '/api/entries/10') return Promise.resolve(ENTRY);
+      return Promise.reject(new Error(`unexpected GET ${path}`));
+    });
 
     renderPage();
 

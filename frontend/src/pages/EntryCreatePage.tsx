@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FieldInput } from '@/components/FieldInput';
+import TagPicker from '@/components/entries/TagPicker';
 import { api, ApiError } from '@/lib/api';
 import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
@@ -13,6 +14,9 @@ const LAST_PROJECT_KEY = 'unilogs:last-project-id';
 export default function EntryCreatePage() {
   const [projectId, setProjectId] = useState(() => localStorage.getItem(LAST_PROJECT_KEY) ?? '');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [tagIds, setTagIds] = useState<number[]>([]);
   const [values, setValues] = useState<Record<string, FieldValue>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,8 +54,14 @@ export default function EntryCreatePage() {
   }
 
   const createEntry = useMutation({
-    mutationFn: (input: { projectId: number; date: string; content: Record<string, unknown> }) =>
-      api.post<Entry>('/api/entries', input),
+    mutationFn: (input: {
+      projectId: number;
+      date: string;
+      title?: string;
+      body?: string;
+      tagIds?: number[];
+      content: Record<string, unknown>;
+    }) => api.post<Entry>('/api/entries', input),
     onSuccess: (_, variables) => {
       localStorage.setItem(LAST_PROJECT_KEY, String(variables.projectId));
       queryClient.invalidateQueries({ queryKey: ['entries'] });
@@ -76,18 +86,24 @@ export default function EntryCreatePage() {
     },
   });
 
+  const hasFields = fields.length > 0;
+  const hasNarrative = title.trim().length > 0 || body.trim().length > 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!projectId || fields.length === 0) return;
+    if (!projectId || (!hasFields && !hasNarrative)) return;
 
     // Client-side check so an incomplete entry never reaches the API. Every
-    // field except boolean (where `false` is a valid answer) must be filled in.
+    // field except boolean (where `false` is a valid answer) must be filled
+    // in — unless the entry has a title/notes to stand on its own instead.
     const nextFieldErrors: Record<string, string> = {};
-    for (const field of fields) {
-      if (field.fieldType === 'boolean') continue;
-      const raw = values[field.name];
-      if (raw === undefined || String(raw).trim() === '') {
-        nextFieldErrors[field.name] = `${field.name} is required`;
+    if (!hasNarrative) {
+      for (const field of fields) {
+        if (field.fieldType === 'boolean') continue;
+        const raw = values[field.name];
+        if (raw === undefined || String(raw).trim() === '') {
+          nextFieldErrors[field.name] = `${field.name} is required`;
+        }
       }
     }
     if (Object.keys(nextFieldErrors).length > 0) {
@@ -99,7 +115,14 @@ export default function EntryCreatePage() {
     const content = buildContent(fields, values);
 
     setFieldErrors({});
-    createEntry.mutate({ projectId: Number(projectId), date, content });
+    createEntry.mutate({
+      projectId: Number(projectId),
+      date,
+      title: title.trim() || undefined,
+      body: body.trim() || undefined,
+      tagIds: tagIds.length > 0 ? tagIds : undefined,
+      content,
+    });
   };
 
   useEffect(() => {
@@ -117,16 +140,16 @@ export default function EntryCreatePage() {
   }, [navigate]);
 
   return (
-    <div>
+    <div className="mx-auto max-w-md">
       <h1 className="text-2xl font-bold mb-4">New Entry</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-sm mb-1">Project</label>
           <select
             ref={firstFieldRef}
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="border rounded px-3 py-2 w-full bg-white"
+            className="min-h-11 border rounded px-3 py-2 w-full bg-white md:min-h-0"
             required
           >
             <option value="">Select a project…</option>
@@ -144,8 +167,36 @@ export default function EntryCreatePage() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
+            className="min-h-11 border rounded px-3 py-2 w-full md:min-h-0"
             required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="entry-title" className="block text-sm mb-1">
+            Title <span className="text-[#7a5230]">(optional)</span>
+          </label>
+          <input
+            id="entry-title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Literature review notes"
+            className="min-h-11 w-full rounded border px-3 py-2 md:min-h-0"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="entry-body" className="block text-sm mb-1">
+            Notes <span className="text-[#7a5230]">(optional)</span>
+          </label>
+          <textarea
+            id="entry-body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="What did you work on?"
+            rows={3}
+            className="w-full rounded border px-3 py-2"
           />
         </div>
 
@@ -153,13 +204,13 @@ export default function EntryCreatePage() {
           <p className="text-sm text-slate-500">Loading fields…</p>
         )}
 
-        {projectId && !fieldsQuery.isPending && fields.length === 0 && (
+        {projectId && !fieldsQuery.isPending && fields.length === 0 && !hasNarrative && (
           <p className="text-sm text-[#7a5230]">
-            This project has no fields yet.{' '}
-            <Link to={`/projects/${projectId}`} className="underline">
-              Add some
-            </Link>{' '}
-            before logging an entry.
+            This project has no fields yet — add a title or notes above, or{' '}
+            <Link to={`/projects/${projectId}`} className="inline-block -my-3 py-3 underline">
+              add a field
+            </Link>
+            .
           </p>
         )}
 
@@ -173,9 +224,18 @@ export default function EntryCreatePage() {
           />
         ))}
 
+        <div>
+          <p className="block text-sm mb-1">Tags</p>
+          <TagPicker selected={tagIds} onChange={setTagIds} />
+        </div>
+
         {formError && <p className="text-sm text-red-700">{formError}</p>}
 
-        <Button type="submit" disabled={createEntry.isPending || !projectId || fields.length === 0}>
+        <Button
+          type="submit"
+          className="min-h-11 md:min-h-0"
+          disabled={createEntry.isPending || !projectId || (!hasFields && !hasNarrative)}
+        >
           {createEntry.isPending ? 'Saving…' : 'Save entry'}
         </Button>
       </form>
