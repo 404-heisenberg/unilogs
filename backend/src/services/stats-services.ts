@@ -274,8 +274,8 @@ export async function buildFieldInsights(projectId: number, userId: string) {
         fieldType: field.fieldType,
         family,
         value: {
-          sum: total,
-          average: average,
+          average,
+          total,
         },
         sampleCount: values.length,
         trend: {
