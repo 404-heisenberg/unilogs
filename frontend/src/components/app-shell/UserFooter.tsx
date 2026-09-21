@@ -18,7 +18,7 @@ export default function UserFooter({
       <button
         type="button"
         onClick={onSignOut}
-        className="rounded-md px-3 py-2 text-left text-sm text-[#7a5230] transition-colors hover:bg-black/5 hover:text-[#1c0d06]"
+        className="min-h-11 rounded-md px-3 py-2 text-left text-sm text-[#7a5230] transition-colors hover:bg-black/5 hover:text-[#1c0d06] md:min-h-0"
       >
         Sign out
       </button>

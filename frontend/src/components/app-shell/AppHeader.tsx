@@ -27,7 +27,7 @@ export default function AppHeader() {
       <Link
         to="/entries/new"
         aria-label="Log entry"
-        className="flex size-10 items-center justify-center gap-1.5 rounded-full bg-[#d4a843] text-[#1c0d06] transition-opacity hover:opacity-90 sm:h-9 sm:w-auto sm:rounded-lg sm:px-4"
+        className="flex size-11 items-center justify-center gap-1.5 rounded-full bg-[#d4a843] text-[#1c0d06] transition-opacity hover:opacity-90 sm:h-9 sm:w-auto sm:rounded-lg sm:px-4"
       >
         <Plus size={16} strokeWidth={2} />
         <span className="hidden text-sm font-medium sm:inline">Log entry</span>

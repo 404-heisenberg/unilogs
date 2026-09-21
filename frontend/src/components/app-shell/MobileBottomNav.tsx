@@ -11,7 +11,7 @@ const BottomNavLink = memo(function BottomNavLink({ to, label, icon: Icon }: Nav
     <Link
       to={to}
       aria-current={active ? 'page' : undefined}
-      className={`flex w-16 flex-col items-center gap-1 ${
+      className={`flex h-full w-16 flex-col items-center justify-center gap-1 ${
         active ? 'text-[#d4a843]' : 'text-[#a68c73]'
       }`}
     >
@@ -29,7 +29,7 @@ export default function MobileBottomNav({
   onMoreClick: () => void;
 }) {
   return (
-    <nav className="flex h-16 shrink-0 items-center justify-between bg-[#1c1109] px-4 md:hidden">
+    <nav className="flex h-16 shrink-0 justify-between bg-[#1c1109] px-4 md:hidden">
       {primaryNavItems.map((item) => (
         <BottomNavLink key={item.to} {...item} />
       ))}
@@ -38,7 +38,7 @@ export default function MobileBottomNav({
         onClick={onMoreClick}
         aria-haspopup="dialog"
         aria-expanded={moreOpen}
-        className={`flex w-16 flex-col items-center gap-1 ${
+        className={`flex h-full w-16 flex-col items-center justify-center gap-1 ${
           moreOpen ? 'text-[#d4a843]' : 'text-[#a68c73]'
         }`}
       >

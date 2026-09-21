@@ -98,7 +98,10 @@ const RequestResetForm: React.FC = () => {
 
       <p className="mt-2 text-center text-sm text-[#4a3525]">
         Return back to sign in{' '}
-        <a href="/login" className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]">
+        <a
+          href="/login"
+          className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+        >
           Sign In
         </a>
       </p>
