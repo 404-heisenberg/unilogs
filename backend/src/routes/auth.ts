@@ -3,7 +3,7 @@ import { auth } from '../auth.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import { hashPassword } from 'better-auth/crypto';
 import { resetPasswordEmail, sendEmail } from '../services/email-service.js';
 import { authenticate } from '../middleware/authenticate.js';
 
@@ -130,7 +130,11 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'User not found' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Must match the hash format better-auth's own signInEmail verifies
+    // against at login - bcrypt here previously wrote a hash better-auth
+    // could never verify, so a reset "succeeded" but the new password never
+    // actually worked (#237).
+    const hashedPassword = await hashPassword(newPassword);
 
     const account = await prisma.account.findFirst({
       where: {
