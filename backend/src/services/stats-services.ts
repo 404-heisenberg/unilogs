@@ -166,12 +166,15 @@ export async function buildFieldInsights(projectId: number, userId: string) {
 
     const currentWeekDurationValues: number[] = [];
     const previousWeekDurationValues: number[] = [];
-
     const durationValues: number[] = [];
 
+    const currentWeekTextValues: string[] = [];
+    const previousWeekTextValues: string[] = [];
     const textValues: string[] = [];
 
     const booleanValues: boolean[] = [];
+    const currentWeekBooleanValues: boolean[] = [];
+    const previousWeekBooleanValues: boolean[] = [];
 
     const dateValues: string[] = [];
 
@@ -201,10 +204,22 @@ export async function buildFieldInsights(projectId: number, userId: string) {
 
       if (field.fieldType === 'text' && typeof value === 'string') {
         textValues.push(value);
+
+        if (entry.date >= currentWeekStart) {
+          currentWeekTextValues.push(value);
+        } else if (entry.date >= previousWeekStart) {
+          previousWeekTextValues.push(value);
+        }
       }
 
       if (field.fieldType === 'boolean' && typeof value === 'boolean') {
         booleanValues.push(value);
+
+        if (entry.date >= currentWeekStart) {
+          currentWeekBooleanValues.push(value);
+        } else if (entry.date >= previousWeekStart) {
+          previousWeekBooleanValues.push(value);
+        }
       }
 
       if (field.fieldType === 'date' && typeof value === 'string') {
@@ -515,6 +530,24 @@ export async function buildFieldInsights(projectId: number, userId: string) {
         count: item[1],
       }));
 
+      const currentWeekCount = currentWeekTextValues.length;
+      const previousWeekCount = previousWeekTextValues.length;
+
+      let deltaPct: number | null = null;
+      let direction: 'up' | 'down' | 'flat' | null = null;
+
+      if (currentWeekCount > 0 && previousWeekCount > 0) {
+        deltaPct = ((currentWeekCount - previousWeekCount) / previousWeekCount) * 100;
+
+        if (currentWeekCount > previousWeekCount) {
+          direction = 'up';
+        } else if (currentWeekCount < previousWeekCount) {
+          direction = 'down';
+        } else {
+          direction = 'flat';
+        }
+      }
+
       insights.push({
         name: field.name,
         fieldType: field.fieldType,
@@ -524,8 +557,8 @@ export async function buildFieldInsights(projectId: number, userId: string) {
         },
         sampleCount: textValues.length,
         trend: {
-          deltaPct: null,
-          direction: null,
+          deltaPct,
+          direction,
         },
       });
     }
@@ -547,15 +580,42 @@ export async function buildFieldInsights(projectId: number, userId: string) {
         continue;
       }
 
-      let trueCount = 0;
-
-      for (const value of booleanValues) {
-        if (value === true) {
-          trueCount++;
-        }
-      }
+      const trueCount = booleanValues.filter((value) => value === true).length;
 
       const pctTrue = (trueCount / booleanValues.length) * 100;
+
+      const currentWeekTrueCount = currentWeekBooleanValues.filter(
+        (value) => value === true,
+      ).length;
+      const previousWeekTrueCount = previousWeekBooleanValues.filter(
+        (value) => value === true,
+      ).length;
+
+      const currentWeekPctTrue =
+        currentWeekBooleanValues.length > 0
+          ? (currentWeekTrueCount / currentWeekBooleanValues.length) * 100
+          : null;
+      const previousWeekPctTrue =
+        previousWeekBooleanValues.length > 0
+          ? (previousWeekTrueCount / previousWeekBooleanValues.length) * 100
+          : null;
+
+      let deltaPct: number | null = null;
+      let direction: 'up' | 'down' | 'flat' | null = null;
+
+      if (currentWeekPctTrue !== null && previousWeekPctTrue !== null) {
+        if (previousWeekPctTrue !== 0) {
+          deltaPct = ((currentWeekPctTrue - previousWeekPctTrue) / previousWeekPctTrue) * 100;
+        }
+
+        if (currentWeekPctTrue > previousWeekPctTrue) {
+          direction = 'up';
+        } else if (currentWeekPctTrue < previousWeekPctTrue) {
+          direction = 'down';
+        } else {
+          direction = 'flat';
+        }
+      }
 
       insights.push({
         name: field.name,
@@ -566,8 +626,8 @@ export async function buildFieldInsights(projectId: number, userId: string) {
         },
         sampleCount: booleanValues.length,
         trend: {
-          deltaPct: null,
-          direction: null,
+          deltaPct,
+          direction,
         },
       });
     }
