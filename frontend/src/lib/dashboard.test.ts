@@ -20,13 +20,13 @@ import {
 } from './dashboard';
 
 describe('heatLevel', () => {
-  it('returns 0 for empty days and scales 1 to 5 by ratio of the max', () => {
+  it('returns 0 for empty days and scales 1 to 4 by ratio of the max', () => {
     expect(heatLevel(0, 4)).toBe(0);
     expect(heatLevel(1, 5)).toBe(1);
     expect(heatLevel(2, 5)).toBe(2);
     expect(heatLevel(3, 5)).toBe(3);
     expect(heatLevel(4, 5)).toBe(4);
-    expect(heatLevel(5, 5)).toBe(5);
+    expect(heatLevel(5, 5)).toBe(4);
     expect(heatLevel(3, 0)).toBe(0);
   });
 });
@@ -65,9 +65,9 @@ describe('buildHeatmap', () => {
     ];
     const cells = buildHeatmap(daily, 3, today);
     const byDate = new Map(cells.map((cell) => [cell.date, cell]));
-    expect(byDate.get('2026-09-15')?.level).toBe(5);
-    expect(byDate.get('2026-09-17')?.level).toBe(5);
-    expect(byDate.get('2026-09-01')?.level).toBe(5);
+    expect(byDate.get('2026-09-15')?.level).toBe(4);
+    expect(byDate.get('2026-09-17')?.level).toBe(4);
+    expect(byDate.get('2026-09-01')?.level).toBe(4);
     expect(byDate.get('2026-09-14')?.level).toBe(0);
   });
 
@@ -79,9 +79,9 @@ describe('buildHeatmap', () => {
     ];
     const cells = buildHeatmap(daily, 2, today);
     const byDate = new Map(cells.map((cell) => [cell.date, cell]));
-    expect(byDate.get('2026-09-15')?.level).toBe(5);
-    expect(byDate.get('2026-09-16')?.level).toBe(5);
-    expect(byDate.get('2026-09-10')?.level).toBe(5);
+    expect(byDate.get('2026-09-15')?.level).toBe(4);
+    expect(byDate.get('2026-09-16')?.level).toBe(4);
+    expect(byDate.get('2026-09-10')?.level).toBe(4);
     expect(byDate.get('2026-09-17')?.level).toBe(0);
   });
 });
@@ -169,7 +169,7 @@ describe('moveWidget and shiftWidget', () => {
   it('shifts by one place among visible widgets only', () => {
     const shifted = shiftWidget(DEFAULT_LAYOUT, 'insight', -1);
     const ids = shifted.map((widget) => widget.id);
-    expect(ids.indexOf('insight')).toBeLessThan(ids.indexOf('continue'));
+    expect(ids.indexOf('insight')).toBeLessThan(ids.indexOf('recent'));
   });
 
   it('does nothing at the ends of the list', () => {
@@ -185,8 +185,8 @@ describe('toBlocks', () => {
     expect(blocks.map((block) => block.kind)).toEqual(['row', 'row', 'columns']);
     const columns = blocks[2];
     if (columns.kind !== 'columns') throw new Error('expected columns');
-    expect(columns.left.map((widget) => widget.id)).toEqual(['whatsLeft', 'continue']);
-    expect(columns.right.map((widget) => widget.id)).toEqual(['recent', 'insight']);
+    expect(columns.left.map((widget) => widget.id)).toEqual(['whatsLeft', 'recent', 'upcoming']);
+    expect(columns.right.map((widget) => widget.id)).toEqual(['continue', 'insight']);
   });
 
   it('renders a single column in widget order on small screens', () => {
@@ -205,16 +205,17 @@ describe('useDashboardLayout', () => {
     vi.useRealTimers();
   });
 
-  it('starts from the default layout with calendar and tray widgets hidden', () => {
+  it('starts from the default layout with only the extra tray widgets hidden', () => {
     const { result } = renderHook(() => useDashboardLayout('u1'));
     expect(result.current.layout).toBe(DEFAULT_LAYOUT);
     expect(result.current.visible.map((widget) => widget.id)).toEqual([
       'summary',
       'heatmap',
       'whatsLeft',
-      'recent',
       'continue',
+      'recent',
       'insight',
+      'upcoming',
     ]);
     expect(result.current.hidden.map((widget) => widget.id)).toEqual([
       'timeByProject',
