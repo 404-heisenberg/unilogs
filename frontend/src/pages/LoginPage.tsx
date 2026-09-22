@@ -90,13 +90,13 @@ export const LoginPage: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-[#d4a373] bg-white p-3 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+              className="w-full rounded-md border border-[#d4a373] bg-white p-3 pr-12 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#7a5230] hover:text-[#1c0d06] focus:outline-none cursor-pointer"
+              className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-[#7a5230] hover:text-[#1c0d06] focus:outline-none cursor-pointer"
             >
               {showPassword ? (
                 <svg
@@ -138,7 +138,7 @@ export const LoginPage: React.FC = () => {
             Forgot password?{' '}
             <a
               href="/reset-password"
-              className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+              className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
             >
               Reset
             </a>
@@ -149,7 +149,7 @@ export const LoginPage: React.FC = () => {
                 Your email isn&apos;t verified yet.{' '}
                 <Link
                   to={`/verify-email?email=${encodeURIComponent(email)}`}
-                  className="font-semibold underline"
+                  className="inline-block -my-3 py-3 font-semibold underline"
                 >
                   Verify it now
                 </Link>
@@ -168,7 +168,7 @@ export const LoginPage: React.FC = () => {
             Don't have an account?{' '}
             <a
               href="/signup"
-              className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+              className="inline-block -my-3 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
             >
               Sign up
             </a>
@@ -183,7 +183,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={() => googleSignIn.mutate()}
               disabled={googleSignIn.isPending}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path

@@ -13,7 +13,7 @@ export function FieldInput({
   onChange: (value: FieldValue) => void;
 }) {
   const inputId = `field-${field.id}`;
-  const inputClassName = `w-full rounded-md border px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 ${
+  const inputClassName = `min-h-11 w-full rounded-md border px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 md:min-h-0 ${
     error ? 'border-red-500 focus:ring-red-500' : 'border-[#d4a373]/60 focus:ring-[#1c0d06]'
   }`;
 

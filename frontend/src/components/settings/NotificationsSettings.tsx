@@ -60,7 +60,7 @@ function ProjectFrequencyRow({ project }: { project: Project }) {
         onChange={(e) => updateFrequency.mutate(e.target.value as ReminderFrequency)}
         disabled={updateFrequency.isPending}
         aria-label={`Reminder frequency for ${project.name}`}
-        className="h-9 shrink-0 rounded-md border border-[#d4c4b0] bg-white px-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] disabled:opacity-50"
+        className="h-11 shrink-0 rounded-md border border-[#d4c4b0] bg-white px-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] disabled:opacity-50 md:h-9"
       >
         <option value="DAILY">Daily</option>
         <option value="WEEKLY">Weekly</option>

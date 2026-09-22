@@ -68,7 +68,7 @@ function ProjectRow({
   }
 
   return (
-    <li className="flex items-start justify-between gap-3 rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <li className="flex items-stretch justify-between gap-3 rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
       <Link to={`/projects/${project.id}`} className="min-w-0 flex-1">
         <p className="font-semibold text-[#1c0d06]">{project.name}</p>
         {project.description && (
@@ -77,11 +77,22 @@ function ProjectRow({
       </Link>
       <div className="flex shrink-0 gap-2">
         {!archivedView && (
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="min-h-11 md:min-h-0"
+            onClick={() => setEditing(true)}
+          >
             Edit
           </Button>
         )}
-        <Button size="sm" variant="outline" onClick={onArchiveToggle} disabled={isTogglingArchive}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="min-h-11 md:min-h-0"
+          onClick={onArchiveToggle}
+          disabled={isTogglingArchive}
+        >
           {archivedView ? 'Unarchive' : 'Archive'}
         </Button>
       </div>
@@ -123,14 +134,16 @@ export default function ProjectsPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
         <Link to="/projects/new">
-          <Button className="bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">New Project</Button>
+          <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+            New Project
+          </Button>
         </Link>
       </div>
 
       <div className="mb-4">
         <button
           onClick={() => setArchivedView((v) => !v)}
-          className="text-sm text-[#7a5230] underline hover:text-[#1c0d06]"
+          className="inline-block -my-3 py-3 text-sm text-[#7a5230] underline hover:text-[#1c0d06]"
         >
           {archivedView ? '← Back to active projects' : 'Show archived projects'}
         </button>
@@ -161,7 +174,7 @@ export default function ProjectsPage() {
           <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
             <p className="text-sm text-[#4a3525]">No projects yet.</p>
             <Link to="/projects/new">
-              <Button className="mt-4 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">
+              <Button className="mt-4 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
                 Create your first project
               </Button>
             </Link>
