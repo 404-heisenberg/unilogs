@@ -9,7 +9,6 @@ export async function buildProjectSummary(userId: string, projectId: number) {
     select: {
       id: true,
       name: true,
-      archived: true,
       fields: {
         where: {
           fieldType: 'duration',
@@ -40,7 +39,7 @@ export async function buildProjectSummary(userId: string, projectId: number) {
   let lastLoggedAt: Date | null = null;
 
   const now = new Date();
-  const day = now.getDay();
+  const day = now.getUTCDay();
 
   let daysSinceMonday;
   if (day === 0) {
@@ -50,8 +49,8 @@ export async function buildProjectSummary(userId: string, projectId: number) {
   }
 
   const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - daysSinceMonday);
-  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setUTCDate(now.getUTCDate() - daysSinceMonday);
+  startOfWeek.setUTCHours(0, 0, 0, 0);
 
   let entriesThisWeek = 0;
 
