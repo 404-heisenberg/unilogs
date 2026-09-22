@@ -18,7 +18,14 @@ vi.mock('@/lib/api', async (importOriginal) => {
 });
 
 const ACTIVE_PROJECTS: Project[] = [
-  { id: 1, name: 'Thesis', description: 'Final year research', archived: false, userId: 'u1' },
+  {
+    id: 1,
+    name: 'Thesis',
+    description: 'Final year research',
+    archived: false,
+    userId: 'u1',
+    reminderFrequency: 'WEEKLY',
+  },
 ];
 
 function mockProjects(active: Project[], archived: Project[] = []) {
@@ -105,7 +112,9 @@ describe('ProjectsPage', () => {
   });
 
   it('switches to the archived projects view', async () => {
-    mockProjects(ACTIVE_PROJECTS, [{ id: 2, name: 'Old Project', archived: true, userId: 'u1' }]);
+    mockProjects(ACTIVE_PROJECTS, [
+      { id: 2, name: 'Old Project', archived: true, userId: 'u1', reminderFrequency: 'WEEKLY' },
+    ]);
 
     renderPage();
     await screen.findByText('Thesis');

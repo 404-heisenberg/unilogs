@@ -23,6 +23,7 @@ const PROJECT: Project = {
   description: 'Final year research',
   archived: false,
   userId: 'u1',
+  reminderFrequency: 'WEEKLY',
 };
 const FIELDS: FieldDefinition[] = [{ id: 1, projectId: 1, name: 'Notes', fieldType: 'text' }];
 const ENTRIES: Entry[] = [
@@ -33,13 +34,6 @@ const ENTRIES: Entry[] = [
     createdAt: '2026-09-01T00:00:00.000Z',
     content: { Notes: 'Read chapter 3' },
   },
-  {
-    id: 6,
-    projectId: 2,
-    date: '2026-09-02T00:00:00.000Z',
-    createdAt: '2026-09-02T00:00:00.000Z',
-    content: { Reps: 12 },
-  },
 ];
 
 function mockData({
@@ -49,9 +43,9 @@ function mockData({
 }: { project?: Project; fields?: FieldDefinition[]; entries?: Entry[] } = {}) {
   getMock.mockImplementation((path: string) => {
     if (path === '/api/projects/1') return Promise.resolve(project);
-    if (path === '/api/field-definitions?projectId=1') return Promise.resolve(fields);
-    if (path === '/api/entries')
-      return Promise.resolve({ entries, total: entries.length, page: 1, limit: 50 });
+    if (path.startsWith('/api/field-definitions')) return Promise.resolve(fields);
+    if (path.startsWith('/api/entries'))
+      return Promise.resolve({ entries, total: entries.length, page: 1, limit: 100 });
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });
 }
@@ -74,22 +68,37 @@ beforeEach(() => {
 });
 
 describe('ProjectDetailPage', () => {
-  it('renders the project, its fields, and only its own entries', async () => {
+  it('renders overview stats for the project', async () => {
     mockData();
 
     renderPage();
 
     expect(await screen.findByText('Thesis')).toBeInTheDocument();
     expect(screen.getByText('Final year research')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Notes')).toBeInTheDocument();
+    // Only this project's entry counts toward the total, since the request
+    // is now filtered server-side by projectId.
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('This week')).toBeInTheDocument();
+  });
+
+  it('shows this project only in the Entries tab', async () => {
+    mockData();
+
+    renderPage();
+    await screen.findByText('Thesis');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Entries' }));
+
     expect(await screen.findByText('Read chapter 3')).toBeInTheDocument();
-    expect(screen.queryByText('12')).not.toBeInTheDocument();
   });
 
   it('shows an empty state when the project has no fields', async () => {
     mockData({ fields: [] });
 
     renderPage();
+    await screen.findByText('Thesis');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fields' }));
 
     expect(
       await screen.findByText(
@@ -104,8 +113,9 @@ describe('ProjectDetailPage', () => {
 
     renderPage();
     await screen.findByText('Thesis');
+    await userEvent.click(screen.getByRole('button', { name: 'Fields' }));
 
-    await userEvent.type(screen.getByPlaceholderText('e.g. Time spent'), 'Hours');
+    await userEvent.type(await screen.findByPlaceholderText('e.g. Time spent'), 'Hours');
     await userEvent.click(screen.getByRole('button', { name: 'Add field' }));
 
     expect(postMock).toHaveBeenCalledWith('/api/field-definitions', {
@@ -121,8 +131,9 @@ describe('ProjectDetailPage', () => {
 
     renderPage();
     await screen.findByText('Thesis');
+    await userEvent.click(screen.getByRole('button', { name: 'Fields' }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete' }));
 
     expect(deleteMock).toHaveBeenCalledWith('/api/field-definitions/1');
   });
@@ -130,12 +141,14 @@ describe('ProjectDetailPage', () => {
   it('shows an error state when entries fail to load', async () => {
     getMock.mockImplementation((path: string) => {
       if (path === '/api/projects/1') return Promise.resolve(PROJECT);
-      if (path === '/api/field-definitions?projectId=1') return Promise.resolve(FIELDS);
-      if (path === '/api/entries') return Promise.reject(new Error('network error'));
+      if (path.startsWith('/api/field-definitions')) return Promise.resolve(FIELDS);
+      if (path.startsWith('/api/entries')) return Promise.reject(new Error('network error'));
       return Promise.reject(new Error(`unexpected GET ${path}`));
     });
 
     renderPage();
+    await screen.findByText('Thesis');
+    await userEvent.click(screen.getByRole('button', { name: 'Entries' }));
 
     expect(
       await screen.findByText('Failed to load entries. Try refreshing the page.'),

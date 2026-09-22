@@ -20,3 +20,13 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// Only in production — registering a service worker during `npm run dev`
+// fights Vite's own module reloading.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.error('Service worker registration failed:', err);
+    });
+  });
+}

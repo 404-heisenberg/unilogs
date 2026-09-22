@@ -9,13 +9,18 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-10 flex items-center justify-between border-b border-[#d4a373]/40 bg-[#f5ebe0]/90 px-6 py-4 backdrop-blur-sm md:px-12">
         <span className="text-lg font-bold tracking-tight">UniLogs</span>
         <div className="flex items-center gap-2">
-          <Link to="/login">
-            <Button variant="ghost" className="text-[#1c0d06] hover:bg-[#e6c687]/30">
+          <Link to="/login" className="inline-flex">
+            <Button
+              variant="ghost"
+              className="min-h-11 text-[#1c0d06] hover:bg-[#e6c687]/30 md:min-h-0"
+            >
               Sign in
             </Button>
           </Link>
-          <Link to="/signup">
-            <Button className="bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">Get started</Button>
+          <Link to="/signup" className="inline-flex">
+            <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+              Get started
+            </Button>
           </Link>
         </div>
       </nav>
@@ -82,7 +87,7 @@ export default function LandingPage() {
           The paper book failed because it wasn't there.
         </h2>
         <p className="mx-auto mt-3 max-w-md text-[#4a3525]">This one always is.</p>
-        <Link to="/signup">
+        <Link to="/signup" className="inline-flex">
           <Button className="mt-7 bg-[#1c0d06] px-8 py-6 text-base text-[#f5ebe0] hover:opacity-90">
             Create your logbook
           </Button>

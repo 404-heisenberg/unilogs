@@ -151,7 +151,7 @@ export const SignupPage: React.FC = () => {
               onBlur={() => setIsPasswordFocused(false)}
               placeholder="••••••••"
               required
-              className={`w-full rounded-md border bg-white p-3 pr-10 text-slate-900 outline-none focus:ring-2 ${
+              className={`w-full rounded-md border bg-white p-3 pr-12 text-slate-900 outline-none focus:ring-2 ${
                 showValidationError
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-[#d4a373] focus:ring-[#1c0d06]'
@@ -161,7 +161,7 @@ export const SignupPage: React.FC = () => {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#7a5230] hover:text-[#1c0d06] focus:outline-none cursor-pointer"
+              className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-[#7a5230] hover:text-[#1c0d06] focus:outline-none cursor-pointer"
             >
               {showPassword ? (
                 /* Eye Off Icon */
@@ -268,14 +268,14 @@ export const SignupPage: React.FC = () => {
               I agree to the{' '}
               <a
                 href="/terms"
-                className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+                className="inline-block -my-4 py-4 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
               >
                 Terms of Service
               </a>{' '}
               and{' '}
               <a
                 href="/privacy"
-                className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+                className="inline-block -my-4 py-4 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
               >
                 Privacy Policy
               </a>
@@ -297,7 +297,7 @@ export const SignupPage: React.FC = () => {
             Already have an account?{' '}
             <a
               href="/login"
-              className="font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+              className="inline-block -my-3 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
             >
               Sign In
             </a>
@@ -316,7 +316,7 @@ export const SignupPage: React.FC = () => {
               type="button"
               onClick={() => googleSignUp.mutate()}
               disabled={googleSignUp.isPending}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
