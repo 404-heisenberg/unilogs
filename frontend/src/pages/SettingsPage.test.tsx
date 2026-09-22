@@ -29,10 +29,22 @@ function renderPage() {
   );
 }
 
+// The Notifications and Tags sections added by D-09 fetch their own data on
+// mount; these tests don't exercise them, so give every GET a harmless
+// default rather than leaving them to reject as "unexpected".
+function otherSettingsSectionsDefault(path: string): unknown {
+  if (path === '/api/settings') return { remindersEnabled: true };
+  if (path.startsWith('/api/projects')) return [];
+  if (path === '/api/tags') return [];
+  return undefined;
+}
+
 function mockCalendarStatus(connected: boolean) {
   getMock.mockImplementation((path: string) => {
     if (path === '/api/auth/get-session') return Promise.resolve(SESSION);
     if (path === '/api/calendar/status') return Promise.resolve({ connected });
+    const fallback = otherSettingsSectionsDefault(path);
+    if (fallback !== undefined) return Promise.resolve(fallback);
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });
 }
@@ -86,6 +98,8 @@ describe('Google Calendar settings', () => {
     getMock.mockImplementation((path: string) => {
       if (path === '/api/auth/get-session') return Promise.resolve(SESSION);
       if (path === '/api/calendar/status') return Promise.resolve({ connected });
+      const fallback = otherSettingsSectionsDefault(path);
+      if (fallback !== undefined) return Promise.resolve(fallback);
       return Promise.reject(new Error(`unexpected GET ${path}`));
     });
     deleteMock.mockImplementation(() => {
@@ -106,6 +120,8 @@ describe('Google Calendar settings', () => {
     getMock.mockImplementation((path: string) => {
       if (path === '/api/auth/get-session') return Promise.resolve(SESSION);
       if (path === '/api/calendar/status') return Promise.reject(new Error('network error'));
+      const fallback = otherSettingsSectionsDefault(path);
+      if (fallback !== undefined) return Promise.resolve(fallback);
       return Promise.reject(new Error(`unexpected GET ${path}`));
     });
 

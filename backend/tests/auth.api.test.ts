@@ -160,26 +160,61 @@ describe('auth routes', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('never hands back the reset token or link in production, even when email delivery fails', async () => {
+      const api = await getApiClient();
+      const email = uniqueEmail();
+      await api.post('/api/auth/signup').send({
+        email,
+        password: 'test-password-123',
+        name: 'Test User',
+      });
+
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const response = await api.post('/api/auth/forgot-password').send({ email });
+
+        expect(response.status).toBe(200);
+        expect(response.body).not.toHaveProperty('token');
+        expect(response.body).not.toHaveProperty('url');
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
   });
 
   describe('POST /api/auth/reset-password', () => {
-    it('resets the password with a valid token', async () => {
+    it('resets the password with a valid token, and the new password actually works at login', async () => {
       const api = await getApiClient();
       const email = uniqueEmail();
       const password = 'test-password-123';
+      const newPassword = 'new-password-456';
 
       await api.post('/api/auth/signup').send({ email, password, name: 'Test User' });
+      const { otp } = await auth.api.getVerificationOTP({
+        query: { email, type: 'email-verification' },
+      });
+      await api.post('/api/auth/email-otp/verify-email').send({ email, otp });
 
       const forgot = await api.post('/api/auth/forgot-password').send({ email });
       expect(forgot.status).toBe(200);
       const token = forgot.body.token;
       expect(typeof token).toBe('string');
 
-      const reset = await api
-        .post('/api/auth/reset-password')
-        .send({ token, newPassword: 'new-password-456' });
+      const reset = await api.post('/api/auth/reset-password').send({ token, newPassword });
       expect(reset.status).toBe(200);
       expect(reset.body).toEqual({ message: 'Password reset successfully' });
+
+      // The reset reporting success isn't enough on its own (#237) - the
+      // hash it writes has to be one better-auth's own sign-in can verify.
+      const oldPasswordSignIn = await api.post('/api/auth/signin').send({ email, password });
+      expect(oldPasswordSignIn.status).toBe(401);
+
+      const newPasswordSignIn = await api
+        .post('/api/auth/signin')
+        .send({ email, password: newPassword });
+      expect(newPasswordSignIn.status).toBe(200);
     });
 
     it('rejects an invalid token', async () => {
