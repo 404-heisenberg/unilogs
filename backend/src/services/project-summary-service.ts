@@ -5,6 +5,7 @@ export async function buildProjectSummary(userId: string, projectId: number) {
     where: {
       id: projectId,
       userId: userId,
+      archived: false,
     },
     select: {
       id: true,
