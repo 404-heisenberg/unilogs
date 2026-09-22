@@ -123,20 +123,28 @@ function calculateMin(values: number[]): number {
   return min;
 }
 export async function buildFieldInsights(projectId: number, userId: string) {
-  const fields = await prisma.fieldDefinition.findMany({
+  const project = await prisma.project.findFirst({
     where: {
-      projectId,
-      project: {
-        userId,
-        archived: false,
+      id: projectId,
+      userId,
+      archived: false,
+    },
+    include: {
+      fields: {
+        select: {
+          name: true,
+          fieldType: true,
+          aggregationOverride: true,
+        },
       },
     },
-    select: {
-      name: true,
-      fieldType: true,
-      aggregationOverride: true,
-    },
   });
+
+  if (!project) {
+    return null;
+  }
+
+  const fields = project.fields;
 
   const entries = await prisma.entry.findMany({
     where: {
