@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/authenticate.js';
 import { prisma } from '../auth.js';
 import { ReminderFrequency } from '../generated/prisma/client.js';
 import type { RequestHandler } from 'express';
-import { revokeProjectShares } from '../services/share-service.js';
+import { revokeProjectShares } from '../services/share-services.js';
 const router = Router();
 
 router.post('/', authenticate, async (req, res) => {
