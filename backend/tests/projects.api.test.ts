@@ -9,6 +9,7 @@ import {
   disconnectTestDatabase,
   getApiClient,
 } from './helpers/api.js';
+import { createShareToken, verifyShareToken } from '../src/services/share-services.js';
 import { prisma } from '../src/auth.js';
 
 afterEach(deleteTestUsers);
@@ -182,6 +183,8 @@ describe('project routes', () => {
     const { agent } = await createAuthenticatedUser();
     const project = await createProject(agent);
 
+    const share = await createShareToken(project.id);
+
     const field = await createFieldDefinition(agent, project.id);
     const entry = await createEntry(agent, project.id, {
       content: { Hours: 1 },
@@ -206,6 +209,11 @@ describe('project routes', () => {
     const deletion = await agent.delete(`/api/projects/${project.id}`);
 
     expect(deletion.status).toBe(204);
+    expect(await verifyShareToken(share.token)).toBeNull();
+
+    const shareTokenCount = await prisma.shareToken.count({
+      where: { token: share.token },
+    });
 
     const fieldCount = await prisma.fieldDefinition.count({
       where: { id: field.id },
@@ -227,6 +235,7 @@ describe('project routes', () => {
     expect(entryCount).toBe(0);
     expect(entryTagCount).toBe(0);
     expect(auditLogCount).toBe(0);
+    expect(shareTokenCount).toBe(0);
 
     const secondDeletion = await agent.delete(`/api/projects/${project.id}`);
 
