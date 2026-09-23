@@ -7,6 +7,7 @@ export type Project = {
   archived: boolean;
   userId: string;
   reminderFrequency: ReminderFrequency;
+  todoEnabled?: boolean;
 };
 
 export type FieldDefinition = {
@@ -14,6 +15,7 @@ export type FieldDefinition = {
   projectId: number;
   name: string;
   fieldType: string;
+  todoEnabled?: boolean;
 };
 
 export type EntryContent = Record<string, unknown>;
@@ -26,12 +28,14 @@ export type Entry = {
   id: number;
   projectId: number;
   date: string;
+  dueDate?: string | null;
   createdAt: string;
   title?: string | null;
   body?: string | null;
   content: EntryContent;
   tags?: EntryTag[];
   project?: Project;
+  hasOpenFields?: boolean;
 };
 
 export type PagedEntries = {
