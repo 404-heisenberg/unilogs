@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -174,13 +174,20 @@ function InlineTagInput({
 export default function EntryCreatePage() {
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
+  const [searchParams] = useSearchParams();
+  const prefill = isEditing ? null : searchParams;
 
   const [projectId, setProjectId] = useState(() => {
-    return localStorage.getItem(LAST_PROJECT_KEY) || '';
+    return prefill?.get('projectId') || localStorage.getItem(LAST_PROJECT_KEY) || '';
   });
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => {
+    const requested = prefill?.get('date');
+    return requested && /^\d{4}-\d{2}-\d{2}$/.test(requested)
+      ? requested
+      : new Date().toISOString().slice(0, 10);
+  });
   const [dueDate, setDueDate] = useState('');
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(() => prefill?.get('title') ?? '');
   const [body, setBody] = useState('');
   const [mode, setMode] = useState<'write' | 'preview'>('write');
   const [tagIds, setTagIds] = useState<number[]>([]);
