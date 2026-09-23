@@ -82,7 +82,9 @@ export default function EntryDetailPage() {
   const tags = entry?.tags ?? [];
   const formattedDate = entry ? formatDate(entry.date) : '';
   const formattedDueDate = entry?.dueDate ? formatDate(entry.dueDate) : null;
-  const timeSpentValue = entry?.content?.['Time spent'];
+
+  const contentRecord = (entry?.content ?? {}) as Record<string, unknown>;
+  const timeSpentValue = contentRecord['Time spent'] ?? contentRecord['timeSpent'];
   const timeSpentStr =
     timeSpentValue !== null && timeSpentValue !== undefined ? String(timeSpentValue) : '';
 
@@ -231,16 +233,28 @@ export default function EntryDetailPage() {
 
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {tags.map(({ tag }) => {
-                      const isBlue = tag.name.toLowerCase() === 'reading';
+                    {tags.map((t, index) => {
+                      const tagObj =
+                        typeof t === 'object' && t !== null && 'tag' in t
+                          ? (t as { tag: { id?: number; name: string } }).tag
+                          : t;
+                      const tagName =
+                        typeof tagObj === 'object' && tagObj !== null && 'name' in tagObj
+                          ? tagObj.name
+                          : String(tagObj);
+                      const tagId =
+                        typeof tagObj === 'object' && tagObj !== null && 'id' in tagObj
+                          ? tagObj.id
+                          : index;
+                      const isBlue = tagName.toLowerCase() === 'reading';
                       return (
                         <span
-                          key={tag.id}
+                          key={tagId}
                           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                             isBlue ? 'bg-[#3b82f6] text-white' : 'bg-[#d4a373]/30 text-[#683f1d]'
                           }`}
                         >
-                          {tag.name}
+                          {tagName}
                         </span>
                       );
                     })}
@@ -263,6 +277,10 @@ export default function EntryDetailPage() {
                     </pre>
                   </div>
                 )
+              ) : contentRecord['Notes'] ? (
+                <div className="text-sm text-[#4a3525] whitespace-pre-wrap">
+                  {String(contentRecord['Notes'])}
+                </div>
               ) : (
                 <p className="text-sm text-[#7a5230] italic">No notes</p>
               )}
