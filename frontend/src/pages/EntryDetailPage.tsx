@@ -117,9 +117,7 @@ export default function EntryDetailPage() {
 
       {entry && (
         <div className="space-y-6 flex-1 flex flex-col">
-          {/* Top Header & Navigation Bar */}
           <header className="flex items-center justify-between pb-4 border-b border-[#d4a373]/20 shrink-0">
-            {/* Breadcrumb Trail */}
             <nav className="flex items-center gap-1.5 text-xs sm:text-sm">
               <Link
                 to="/entries"
@@ -132,8 +130,6 @@ export default function EntryDetailPage() {
                 {entry.title ?? 'Entry'}
               </span>
             </nav>
-
-            {/* Header Actions */}
             <div className="flex items-center gap-2 sm:gap-3 relative">
               <Link
                 to={`/entries/${entryId}/edit`}
@@ -141,8 +137,6 @@ export default function EntryDetailPage() {
               >
                 Edit
               </Link>
-
-              {/* More Actions Dropdown */}
               <div className="relative">
                 <button
                   type="button"
@@ -172,8 +166,6 @@ export default function EntryDetailPage() {
                   </>
                 )}
               </div>
-
-              {/* Properties Sheet Toggle for Mobile */}
               <button
                 type="button"
                 onClick={() => setIsMobilePropertiesOpen(true)}
@@ -184,19 +176,14 @@ export default function EntryDetailPage() {
               </button>
             </div>
           </header>
-
-          {/* Main Layout Grid */}
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-stretch flex-1">
             {/* Left Main Content Area */}
             <article className="flex-1 min-w-0 space-y-6 pb-8">
-              {/* Title, Meta & Mode Toggle */}
               <div className="space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <h1 className="text-3xl font-bold tracking-tight text-[#1c0d06]">
                     {entry.title ?? 'Entry'}
                   </h1>
-
-                  {/* Read / Preview Toggle Switch */}
                   <div className="inline-flex items-center rounded-lg border border-[#d4a373]/30 bg-white/60 p-1 shadow-sm shrink-0">
                     <button
                       type="button"
@@ -259,8 +246,6 @@ export default function EntryDetailPage() {
                   </div>
                 )}
               </div>
-
-              {/* Main Content Area: Switches between Read Mode & GitHub-style Raw Source Preview */}
               {entry.body ? (
                 viewMode === 'read' ? (
                   <div className="text-sm text-[#4a3525] prose prose-stone prose-sm max-w-none leading-relaxed">
@@ -294,8 +279,6 @@ export default function EntryDetailPage() {
                 </h2>
                 <PanelRight className="h-4 w-4 text-[#8a7a6e]" />
               </div>
-
-              {/* Core Properties */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-[#8a7a6e]">
@@ -326,8 +309,6 @@ export default function EntryDetailPage() {
                   </div>
                 )}
               </div>
-
-              {/* Custom Fields */}
               {contentEntries.length > 0 && (
                 <div className="space-y-3 pt-3 border-t border-[#d4a373]/20">
                   <h3 className="uppercase tracking-wider font-semibold text-[#8a7a6e] mb-3">
@@ -355,8 +336,6 @@ export default function EntryDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Mobile Properties Bottom Sheet */}
       {isMobilePropertiesOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end bg-black/40 backdrop-blur-sm">
           <div className="fixed inset-0" onClick={() => setIsMobilePropertiesOpen(false)} />
@@ -373,7 +352,6 @@ export default function EntryDetailPage() {
                 <X size={18} />
               </button>
             </div>
-
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[#8a7a6e]">Project</span>
@@ -393,7 +371,6 @@ export default function EntryDetailPage() {
                 </div>
               )}
             </div>
-
             {contentEntries.length > 0 && (
               <div className="space-y-3 pt-3 border-t border-[#d4a373]/20 text-xs">
                 <h3 className="uppercase tracking-wider font-semibold text-[#8a7a6e]">
@@ -420,8 +397,6 @@ export default function EntryDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-[#d4a373]/30">

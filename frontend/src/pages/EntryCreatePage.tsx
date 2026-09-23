@@ -479,7 +479,6 @@ export default function EntryEditorPage() {
 
   return (
     <div className="w-full space-y-6 p-2">
-      {/* Page Header */}
       <div className="flex items-center justify-between pb-2 border-b border-stone-200">
         <div className="flex items-center gap-2.5">
           <h1 className="text-2xl font-bold">{isEditing ? 'Edit Entry' : 'New Entry'}</h1>
@@ -493,7 +492,6 @@ export default function EntryEditorPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* LEFT COLUMN: Main Editor Area */}
         <div className="flex-1 w-full space-y-4 lg:pr-8 lg:border-r lg:border-stone-200">
           <div>
             <input
@@ -648,8 +646,6 @@ export default function EntryEditorPage() {
             </Button>
           </div>
         </div>
-
-        {/* RIGHT COLUMN: Properties Sidebar Pane */}
         <div className="w-full lg:w-[320px] shrink-0 border border-stone-200 bg-stone-50/50 rounded-xl p-5 flex flex-col gap-6 lg:sticky lg:top-6 shadow-sm">
           <div className="flex items-center gap-2 text-stone-800 font-semibold border-b border-stone-200 pb-2">
             <PanelRight className="h-4 w-4" />
@@ -696,8 +692,6 @@ export default function EntryEditorPage() {
                 required
               />
             </div>
-
-            {/* Conditional Due Date Picker with Clear Button */}
             {isTodoEnabled && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -789,8 +783,6 @@ export default function EntryEditorPage() {
             </label>
             <InlineTagInput selectedIds={tagIds} onChange={setTagIds} setIsDirty={setIsDirty} />
           </div>
-
-          {/* Delete Action in Properties */}
           {isEditing && (
             <div className="pt-4 border-t border-stone-200 mt-auto">
               <label className="block text-xs uppercase tracking-wider mb-2 font-semibold text-red-600">
