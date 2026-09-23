@@ -22,6 +22,7 @@ describe('stats routes', () => {
         api.get('/api/stats/frequency'),
         api.get('/api/stats/streak'),
         api.get('/api/stats/unfinished'),
+        api.get('/api/stats/fields/1'),
       ]);
 
       for (const response of responses) {
@@ -381,6 +382,358 @@ describe('stats routes', () => {
       expect(response.body.perProject).not.toEqual(
         expect.arrayContaining([expect.objectContaining({ projectId: otherProject.id })]),
       );
+    });
+  });
+
+  describe('GET /api/stats/fields/:projectId', () => {
+    it('returns number field insights with total and average', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Height',
+        fieldType: 'number',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Height: 100 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Height: 150 },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Height',
+            fieldType: 'number',
+            family: 'number',
+            value: {
+              average: 125,
+              total: 250,
+            },
+            sampleCount: 2,
+            trend: {
+              deltaPct: 50,
+              direction: 'up',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns duration field insights as total minutes', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Hours',
+        fieldType: 'duration',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Hours: 2 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Hours: 1 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Hours: 4 },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Hours',
+            fieldType: 'duration',
+            family: 'sum',
+            valueMinutes: 420,
+            sampleCount: 3,
+            trend: {
+              deltaPct: 150,
+              direction: 'up',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns text field insights with the most frequent values', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Activity',
+        fieldType: 'text',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Activity: 'coding' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Activity: 'cooking' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'coding' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'meeting' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'cooking' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'meeting' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'testing' },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Activity',
+            fieldType: 'text',
+            family: 'frequency',
+            value: {
+              top: [
+                { value: 'coding', count: 2 },
+                { value: 'cooking', count: 2 },
+                { value: 'meeting', count: 2 },
+              ],
+            },
+            sampleCount: 7,
+            trend: {
+              deltaPct: -60,
+              direction: 'down',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns boolean field insights as percentage true', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Completed',
+        fieldType: 'boolean',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Completed: true },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Completed: false },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Completed: true },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Completed: false },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Completed',
+            fieldType: 'boolean',
+            family: 'percentage',
+            value: {
+              pctTrue: (2 / 4) * 100,
+            },
+            sampleCount: 4,
+            trend: {
+              deltaPct: 0,
+              direction: 'flat',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns date field insights with the most recent date', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Due date',
+        fieldType: 'date',
+      });
+
+      const olderDate = '2026-09-20';
+      const newerDate = '2026-09-25';
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { 'Due date': olderDate },
+      });
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { 'Due date': newerDate },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Due date',
+            fieldType: 'date',
+            family: 'recency',
+            value: {
+              mostRecent: newerDate,
+            },
+            sampleCount: 2,
+            trend: {
+              deltaPct: null,
+              direction: null,
+            },
+          },
+        ],
+      });
+    });
+
+    it('uses the aggregation override for number fields', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Weight',
+        fieldType: 'number',
+        aggregationOverride: 'sum',
+      });
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { Weight: 65 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { Weight: 15 },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Weight',
+            fieldType: 'number',
+            family: 'sum',
+            value: 80,
+            sampleCount: 2,
+            trend: {
+              deltaPct: null,
+              direction: null,
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns no-data insight for a field with no values', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Height',
+        fieldType: 'number',
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Height',
+            fieldType: 'number',
+            family: 'number',
+            hasData: false,
+            sampleCount: 0,
+            trend: {
+              deltaPct: null,
+              direction: null,
+            },
+          },
+        ],
+      });
     });
   });
 });
