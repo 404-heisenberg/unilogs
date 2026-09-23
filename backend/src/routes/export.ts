@@ -81,7 +81,8 @@ router.get('/', authenticate, async (req, res) => {
         return entry;
       }
 
-      const { body, ...entryWithoutBody } = entry;
+      const entryWithoutBody = { ...entry };
+      delete (entryWithoutBody as { body?: string | null }).body;
       return entryWithoutBody;
     });
 
@@ -99,3 +100,5 @@ router.get('/', authenticate, async (req, res) => {
     return res.status(500).json({ error: 'Failed to export entries' });
   }
 });
+
+export default router;

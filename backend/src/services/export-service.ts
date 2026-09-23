@@ -21,6 +21,10 @@ type ExportField = {
   name: string;
 };
 
+type ExportProject = {
+  name: string;
+};
+
 export function buildCsv(entries: ExportEntry[], fields: ExportField[]): string {
   const includeBodies = entries.some((entry) => 'body' in entry);
   const headers = ['date', 'title'];
@@ -36,7 +40,7 @@ export function buildCsv(entries: ExportEntry[], fields: ExportField[]): string 
   const rows: string[] = [];
 
   for (const entry of entries) {
-    const date = csvEscaping(entry.date);
+    const date = csvEscaping(entry.date.toDateString());
     const title = csvEscaping(entry.title);
 
     const content = entry.content as Record<string, unknown>;
@@ -57,4 +61,36 @@ export function buildCsv(entries: ExportEntry[], fields: ExportField[]): string 
   }
 
   return [headerRow, ...rows].join('\n');
+}
+
+export function buildMarkdown(
+  entries: ExportEntry[],
+  fields: ExportField[],
+  project: ExportProject,
+  range: string,
+): string {
+  const lines: string[] = [];
+  lines.push(`# ${project.name}`);
+  lines.push(`## ${range}`);
+
+  const includeBodies = entries.some((entry) => 'body' in entry);
+
+  for (const entry of entries) {
+    const title = entry.title || 'Untitled';
+    const date = entry.date.toDateString();
+    lines.push(`### ${title} — ${date}`);
+
+    const content = entry.content as Record<string, unknown>;
+
+    for (const field of fields) {
+      lines.push(`${field.name}: ${content[field.name]}`);
+    }
+
+    if (includeBodies) {
+      lines.push('#### Body');
+      lines.push(entry.body ?? 'No notes for this entry.');
+    }
+  }
+
+  return lines.join('\n');
 }
