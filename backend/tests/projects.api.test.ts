@@ -167,6 +167,120 @@ describe('project routes', () => {
     expect(unarchive.body).toEqual(expect.objectContaining({ id: project.id, archived: false }));
   });
 
+  it('returns a project summary with duration fields', async () => {
+    const { agent } = await createAuthenticatedUser();
+    const project = await createProject(agent);
+
+    await createFieldDefinition(agent, project.id, {
+      name: 'Hours',
+      fieldType: 'duration',
+    });
+
+    const entryDate = new Date();
+    const entryDateString = entryDate.toISOString().slice(0, 10);
+
+    await createEntry(agent, project.id, {
+      date: entryDateString,
+      content: { Hours: 2 },
+    });
+
+    const response = await agent.get(`/api/projects/${project.id}/summary`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        projectId: project.id,
+        name: project.name,
+        entryCount: 1,
+        trackedTimeMinutes: 120,
+        lastLoggedAt: new Date(`${entryDateString}T00:00:00.000Z`).toISOString(),
+        entriesThisWeek: 1,
+      }),
+    );
+  });
+
+  it('returns a project summary without tracked time when there is no duration field', async () => {
+    const { agent } = await createAuthenticatedUser();
+    const project = await createProject(agent);
+
+    await createFieldDefinition(agent, project.id, {
+      name: 'Complete',
+      fieldType: 'boolean',
+    });
+
+    const entryDate = new Date();
+    const entryDateString = entryDate.toISOString().slice(0, 10);
+
+    await createEntry(agent, project.id, {
+      date: entryDateString,
+      content: { Complete: true },
+    });
+
+    const response = await agent.get(`/api/projects/${project.id}/summary`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      projectId: project.id,
+      name: project.name,
+      entryCount: 1,
+      trackedTimeMinutes: null,
+      lastLoggedAt: new Date(`${entryDateString}T00:00:00.000Z`).toISOString(),
+      entriesThisWeek: 1,
+    });
+  });
+
+  it('sums duration and uses the latest entry date for multiple entries', async () => {
+    const { agent } = await createAuthenticatedUser();
+    const project = await createProject(agent);
+
+    await createFieldDefinition(agent, project.id, {
+      name: 'Hours',
+      fieldType: 'duration',
+    });
+
+    const olderDate = new Date();
+    olderDate.setUTCDate(olderDate.getUTCDate() - 2);
+    const newerDate = new Date();
+    newerDate.setUTCDate(newerDate.getUTCDate() - 1);
+
+    const olderDateString = olderDate.toISOString().slice(0, 10);
+    const newerDateString = newerDate.toISOString().slice(0, 10);
+
+    await createEntry(agent, project.id, {
+      date: olderDateString,
+      content: { Hours: 2 },
+    });
+
+    await createEntry(agent, project.id, {
+      date: newerDateString,
+      content: { Hours: 4 },
+    });
+
+    const response = await agent.get(`/api/projects/${project.id}/summary`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        projectId: project.id,
+        entryCount: 2,
+        trackedTimeMinutes: 360,
+        lastLoggedAt: new Date(`${newerDateString}T00:00:00.000Z`).toISOString(),
+        entriesThisWeek: 2,
+      }),
+    );
+  });
+
+  it('returns 404 for a project owned by another user', async () => {
+    const owner = await createAuthenticatedUser();
+    const otherUser = await createAuthenticatedUser();
+    const project = await createProject(owner.agent);
+
+    const response = await otherUser.agent.get(`/api/projects/${project.id}/summary`);
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: 'project not found' });
+  });
+
   it('deletes an owned project', async () => {
     const { agent } = await createAuthenticatedUser();
     const project = await createProject(agent);
