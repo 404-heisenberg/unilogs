@@ -3,6 +3,7 @@ import { authenticate } from '../middleware/authenticate.js';
 import { prisma } from '../auth.js';
 import { ReminderFrequency } from '../generated/prisma/client.js';
 import type { RequestHandler } from 'express';
+import { buildProjectSummary } from '../services/project-summary-service.js';
 import { revokeProjectShares } from '../services/share-services.js';
 const router = Router();
 
@@ -50,6 +51,30 @@ export async function getOwnedProject(id: number, userId: string) {
     where: { id: id, userId },
   });
 }
+
+router.get('/:id/summary', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const summary = await buildProjectSummary(userId, id);
+
+    if (!summary) {
+      return res.status(404).json({ error: 'project not found' });
+    }
+
+    return res.status(200).json(summary);
+  } catch {
+    return res.status(500).json({ error: 'Failed to fetch project summary' });
+  }
+});
 
 router.get('/:id', authenticate, async (req, res) => {
   try {
