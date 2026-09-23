@@ -35,6 +35,7 @@ export default function App() {
             <Route path="/entries" element={<EntriesPage />} />
             <Route path="/entries/new" element={<EntryCreatePage />} />
             <Route path="/entries/:entryId" element={<EntryDetailPage />} />
+            <Route path="/entries/:id/edit" element={<EntryCreatePage />} />
             <Route path="/suggestions" element={<SuggestionsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
