@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/authenticate.js';
 import { prisma } from '../auth.js';
-import { buildCsv } from '../services/export-service.js';
+import { buildCsv, buildMarkdown } from '../services/export-service.js';
 import { getOwnedProject } from './projects.js';
 
 const router = Router();
@@ -93,8 +93,19 @@ router.get('/', authenticate, async (req, res) => {
         'Content-Disposition',
         `attachment; filename="unilogs-${safeProjectName}-${range}.csv"`,
       );
-
       return res.send(csv);
+    }
+
+    if (format === 'md') {
+      const markdown = buildMarkdown(exportEntries, fields, project, range);
+
+      res.type('text/markdown');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="unilogs-${safeProjectName}-${range}.md"`,
+      );
+
+      return res.send(markdown);
     }
   } catch {
     return res.status(500).json({ error: 'Failed to export entries' });

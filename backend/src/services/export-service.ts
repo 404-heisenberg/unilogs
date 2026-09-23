@@ -83,7 +83,7 @@ export function buildMarkdown(
     const content = entry.content as Record<string, unknown>;
 
     for (const field of fields) {
-      lines.push(`${field.name}: ${content[field.name]}`);
+      lines.push(`${field.name}: ${content[field.name] ?? ''}`);
     }
 
     if (includeBodies) {
