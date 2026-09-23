@@ -19,7 +19,6 @@ describe('stats routes', () => {
 
       const responses = await Promise.all([
         api.get('/api/stats'),
-        api.get('/api/stats/project/1'),
         api.get('/api/stats/frequency'),
         api.get('/api/stats/streak'),
         api.get('/api/stats/unfinished'),
@@ -89,43 +88,6 @@ describe('stats routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.totalHours).toBe(4);
-    });
-  });
-
-  describe('GET /api/stats/project/:projectId', () => {
-    it('returns stats for a specific project', async () => {
-      const { agent } = await createAuthenticatedUser();
-      const project = await createProject(agent, { name: 'Specific project' });
-      await createFieldDefinition(agent, project.id, { name: 'Hours', fieldType: 'duration' });
-      await createEntry(agent, project.id, {
-        date: new Date().toISOString().slice(0, 10),
-        content: { Hours: 7 },
-      });
-
-      const response = await agent.get(`/api/stats/project/${project.id}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
-        projectId: project.id,
-        projectName: 'Specific project',
-        totalHours: 7,
-      });
-    });
-
-    it('rejects invalid project IDs', async () => {
-      const { agent } = await createAuthenticatedUser();
-
-      const response = await agent.get('/api/stats/project/not-an-id');
-
-      expect(response.status).toBe(400);
-    });
-
-    it('returns 404 for missing projects', async () => {
-      const { agent } = await createAuthenticatedUser();
-
-      const response = await agent.get('/api/stats/project/2147483647');
-
-      expect(response.status).toBe(404);
     });
   });
 
@@ -319,16 +281,6 @@ describe('stats routes', () => {
       );
     });
 
-    it('returns 404 for an archived project', async () => {
-      const { agent } = await createAuthenticatedUser();
-      const project = await createProject(agent);
-      await agent.post(`/api/projects/${project.id}/archive`);
-
-      const response = await agent.get(`/api/stats/project/${project.id}`);
-
-      expect(response.status).toBe(404);
-    });
-
     it('excludes archived projects from frequency and term totals', async () => {
       const { agent } = await createAuthenticatedUser();
       const project = await createProject(agent);
@@ -393,16 +345,6 @@ describe('stats routes', () => {
   });
 
   describe('ownership', () => {
-    it('hides project stats owned by another user', async () => {
-      const owner = await createAuthenticatedUser();
-      const otherUser = await createAuthenticatedUser();
-      const project = await createProject(owner.agent);
-
-      const response = await otherUser.agent.get(`/api/stats/project/${project.id}`);
-
-      expect(response.status).toBe(404);
-    });
-
     it('only includes stats for projects owned by the signed-in user', async () => {
       const owner = await createAuthenticatedUser();
       const otherUser = await createAuthenticatedUser();
