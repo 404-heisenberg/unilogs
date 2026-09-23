@@ -3,9 +3,8 @@ import { authenticate } from '../middleware/authenticate.js';
 import { prisma } from '../auth.js';
 import { ReminderFrequency } from '../generated/prisma/client.js';
 import type { RequestHandler } from 'express';
-import { revokeProjectShares } from '../services/share-services.js';
 import { buildProjectSummary } from '../services/project-summary-service.js';
-
+import { revokeProjectShares } from '../services/share-services.js';
 const router = Router();
 
 router.post('/', authenticate, async (req, res) => {
@@ -47,7 +46,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-async function getOwnedProject(id: number, userId: string) {
+export async function getOwnedProject(id: number, userId: string) {
   return prisma.project.findFirst({
     where: { id: id, userId },
   });
