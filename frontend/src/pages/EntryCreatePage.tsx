@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { FieldInput } from '@/components/FieldInput';
 import { api, ApiError } from '@/lib/api';
 import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
@@ -172,11 +171,13 @@ function InlineTagInput({
   );
 }
 
-export default function EntryEditorPage() {
+export default function EntryCreatePage() {
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
 
-  const [projectId, setProjectId] = useState('');
+  const [projectId, setProjectId] = useState(() => {
+    return localStorage.getItem(LAST_PROJECT_KEY) || '';
+  });
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState('');
   const [title, setTitle] = useState('');
@@ -189,6 +190,7 @@ export default function EntryEditorPage() {
 
   const [isDirty, setIsDirty] = useState(false);
   const hasInitialized = useRef(false);
+  const hasFieldDefaultsInitializedRef = useRef<string | null>(null);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -197,7 +199,7 @@ export default function EntryEditorPage() {
 
   const { data: entry, isLoading: isLoadingEntry } = useQuery({
     queryKey: ['entry', id],
-    queryFn: () => api.get<Entry & { tags?: Tag[]; dueDate?: string }>(`/api/entries/${id}`),
+    queryFn: () => api.get<Entry>(`/api/entries/${id}`),
     enabled: isEditing,
   });
 
@@ -217,6 +219,24 @@ export default function EntryEditorPage() {
   const isTodoEnabled = selectedProject?.todoEnabled || fields.some((f) => f.todoEnabled);
 
   useEffect(() => {
+    if (fieldsQuery.data && projectId && hasFieldDefaultsInitializedRef.current !== projectId) {
+      hasFieldDefaultsInitializedRef.current = projectId;
+      setValues((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const field of fieldsQuery.data) {
+          if (next[field.name] === undefined) {
+            next[field.name] =
+              field.fieldType === 'boolean' ? false : defaultValueForType(field.fieldType);
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }
+  }, [fieldsQuery.data, projectId]);
+
+  useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
@@ -234,28 +254,17 @@ export default function EntryEditorPage() {
       setDueDate(entry.dueDate ? entry.dueDate.slice(0, 10) : '');
       setTitle(entry.title || '');
       setBody(entry.body || '');
-      setTagIds(entry.tags?.map((t) => t.id) || []);
+
+      const mappedTags =
+        entry.tags
+          ?.map((t: { id?: number; tag?: { id?: number } }) => t.tag?.id ?? t.id)
+          .filter((tagId): tagId is number => typeof tagId === 'number') || [];
+      setTagIds(mappedTags);
+
       setValues((entry.content as Record<string, FieldValue>) || {});
       hasInitialized.current = true;
     }
   }, [isEditing, entry]);
-
-  useEffect(() => {
-    if (fieldsQuery.data) {
-      setValues((prev) => {
-        const next = { ...prev };
-        let changed = false;
-        for (const field of fieldsQuery.data) {
-          if (next[field.name] === undefined) {
-            next[field.name] =
-              field.fieldType === 'boolean' ? false : defaultValueForType(field.fieldType);
-            changed = true;
-          }
-        }
-        return changed ? next : prev;
-      });
-    }
-  }, [fieldsQuery.data]);
 
   const saveEntry = useMutation({
     mutationFn: (input: {
@@ -268,7 +277,8 @@ export default function EntryEditorPage() {
       content: Record<string, unknown>;
       isKeyboardSave?: boolean;
     }) => {
-      const { isKeyboardSave, ...payload } = input;
+      const { isKeyboardSave: keyboardSaveFlag, ...payload } = input;
+      void keyboardSaveFlag;
       if (isEditing) {
         return api.put<Entry>(`/api/entries/${id}`, payload);
       }
@@ -446,7 +456,6 @@ export default function EntryEditorPage() {
     handleSubmitRef.current = handleSubmit;
   });
 
-  // Navigation Guarding & Hotkey Handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -491,9 +500,15 @@ export default function EntryEditorPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
+      <form
+        onSubmit={(e) => handleSubmit(e, false)}
+        className="flex flex-col lg:flex-row gap-8 items-start"
+      >
         <div className="flex-1 w-full space-y-4 lg:pr-8 lg:border-r lg:border-stone-200">
           <div>
+            <label htmlFor="entry-title" className="sr-only">
+              Title
+            </label>
             <input
               id="entry-title"
               type="text"
@@ -608,18 +623,23 @@ export default function EntryEditorPage() {
 
             <div className="p-3">
               {mode === 'write' ? (
-                <textarea
-                  ref={textareaRef}
-                  id="entry-body"
-                  value={body}
-                  onChange={(e) => {
-                    setBody(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="What did you work on? (GitHub-flavored Markdown supported)"
-                  rows={14}
-                  className="w-full font-mono text-sm resize-y focus:outline-none bg-transparent"
-                />
+                <div>
+                  <label htmlFor="entry-body" className="sr-only">
+                    Body notes
+                  </label>
+                  <textarea
+                    ref={textareaRef}
+                    id="entry-body"
+                    value={body}
+                    onChange={(e) => {
+                      setBody(e.target.value);
+                      setIsDirty(true);
+                    }}
+                    placeholder="What did you work on? (GitHub-flavored Markdown supported)"
+                    rows={14}
+                    className="w-full font-mono text-sm resize-y focus:outline-none bg-transparent"
+                  />
+                </div>
               ) : (
                 <div className="min-h-[296px] text-sm">
                   {body.trim() ? (
@@ -654,11 +674,15 @@ export default function EntryEditorPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5 font-semibold text-stone-500">
+              <label
+                htmlFor="entry-project"
+                className="block text-xs uppercase tracking-wider mb-1.5 font-semibold text-stone-500"
+              >
                 Project
               </label>
               <select
                 ref={firstFieldRef}
+                id="entry-project"
                 value={projectId}
                 onChange={(e) => {
                   setProjectId(e.target.value);
@@ -678,10 +702,14 @@ export default function EntryEditorPage() {
             </div>
 
             <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5 font-semibold text-stone-500">
+              <label
+                htmlFor="entry-date"
+                className="block text-xs uppercase tracking-wider mb-1.5 font-semibold text-stone-500"
+              >
                 Date
               </label>
               <input
+                id="entry-date"
                 type="date"
                 value={date}
                 onChange={(e) => {
@@ -695,7 +723,10 @@ export default function EntryEditorPage() {
             {isTodoEnabled && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-stone-500 flex items-center gap-1.5">
+                  <label
+                    htmlFor="entry-due-date"
+                    className="text-xs uppercase tracking-wider font-semibold text-stone-500 flex items-center gap-1.5"
+                  >
                     <CalendarCheck className="h-3.5 w-3.5 text-stone-500" />
                     Due Date
                   </label>
@@ -713,6 +744,7 @@ export default function EntryEditorPage() {
                   )}
                 </div>
                 <input
+                  id="entry-due-date"
                   type="date"
                   value={dueDate}
                   onChange={(e) => {
@@ -726,9 +758,9 @@ export default function EntryEditorPage() {
           </div>
 
           <div className="space-y-4">
-            <label className="block text-xs uppercase tracking-wider mb-1 font-semibold text-stone-500">
+            <span className="block text-xs uppercase tracking-wider mb-1 font-semibold text-stone-500">
               Custom Schema Fields
-            </label>
+            </span>
 
             {projectId && fieldsQuery.isPending && (
               <p className="text-sm text-stone-500 italic">Loading fields…</p>
@@ -744,50 +776,105 @@ export default function EntryEditorPage() {
               </p>
             )}
 
-            {fields.map((field) => (
-              <div
-                key={field.id}
-                className="bg-white p-3 rounded-md border border-stone-200 shadow-sm"
-              >
-                {field.fieldType === 'boolean' ? (
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(values[field.name] ?? false)}
-                      onChange={(e) => {
-                        setValues((prev) => ({ ...prev, [field.name]: e.target.checked }));
-                        setIsDirty(true);
-                      }}
-                      className="h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-800"
-                    />
-                    <span className="text-sm font-medium text-stone-800">{field.name}</span>
-                  </label>
-                ) : (
-                  <FieldInput
-                    field={field}
-                    value={values[field.name] ?? defaultValueForType(field.fieldType)}
-                    error={fieldErrors[field.name]}
-                    onChange={(value) => {
-                      setValues((prev) => ({ ...prev, [field.name]: value }));
-                      setIsDirty(true);
-                    }}
-                  />
-                )}
-              </div>
-            ))}
+            {fields.map((field) => {
+              const fieldId = `field-${field.id}`;
+              const value = values[field.name] ?? defaultValueForType(field.fieldType);
+              const error = fieldErrors[field.name];
+              const inputClassName = `w-full min-h-10 border rounded bg-white px-3 py-1.5 text-sm shadow-sm focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none ${
+                error ? 'border-red-500' : 'border-stone-300'
+              }`;
+
+              return (
+                <div
+                  key={field.id}
+                  className="bg-white p-3 rounded-md border border-stone-200 shadow-sm space-y-1"
+                >
+                  {field.fieldType === 'boolean' ? (
+                    <label
+                      htmlFor={fieldId}
+                      className="flex items-center gap-2 cursor-pointer select-none"
+                    >
+                      <input
+                        id={fieldId}
+                        type="checkbox"
+                        checked={Boolean(value)}
+                        onChange={(e) => {
+                          setValues((prev) => ({ ...prev, [field.name]: e.target.checked }));
+                          setIsDirty(true);
+                        }}
+                        className={`h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-800 ${error ? 'border-red-500' : ''}`}
+                      />
+                      <span className="text-sm font-medium text-stone-800">{field.name}</span>
+                    </label>
+                  ) : (
+                    <>
+                      <label
+                        htmlFor={fieldId}
+                        className="block text-xs uppercase tracking-wider font-semibold text-stone-500"
+                      >
+                        {field.name}
+                      </label>
+                      {field.fieldType === 'number' || field.fieldType === 'duration' ? (
+                        <input
+                          id={fieldId}
+                          type="number"
+                          placeholder={field.fieldType === 'duration' ? 'minutes' : undefined}
+                          value={
+                            typeof value === 'boolean'
+                              ? ''
+                              : value === 0 && values[field.name] === undefined
+                                ? ''
+                                : value
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? '' : Number(e.target.value);
+                            setValues((prev) => ({ ...prev, [field.name]: val }));
+                            setIsDirty(true);
+                          }}
+                          className={inputClassName}
+                        />
+                      ) : field.fieldType === 'date' ? (
+                        <input
+                          id={fieldId}
+                          type="date"
+                          value={String(value)}
+                          onChange={(e) => {
+                            setValues((prev) => ({ ...prev, [field.name]: e.target.value }));
+                            setIsDirty(true);
+                          }}
+                          className={inputClassName}
+                        />
+                      ) : (
+                        <input
+                          id={fieldId}
+                          type="text"
+                          value={String(value)}
+                          onChange={(e) => {
+                            setValues((prev) => ({ ...prev, [field.name]: e.target.value }));
+                            setIsDirty(true);
+                          }}
+                          className={inputClassName}
+                        />
+                      )}
+                    </>
+                  )}
+                  {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+                </div>
+              );
+            })}
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wider mb-2 font-semibold text-stone-500">
+            <span className="block text-xs uppercase tracking-wider mb-2 font-semibold text-stone-500">
               Tags
-            </label>
+            </span>
             <InlineTagInput selectedIds={tagIds} onChange={setTagIds} setIsDirty={setIsDirty} />
           </div>
           {isEditing && (
             <div className="pt-4 border-t border-stone-200 mt-auto">
-              <label className="block text-xs uppercase tracking-wider mb-2 font-semibold text-red-600">
+              <span className="block text-xs uppercase tracking-wider mb-2 font-semibold text-red-600">
                 Danger Zone
-              </label>
+              </span>
               <Button
                 type="button"
                 variant="outline"

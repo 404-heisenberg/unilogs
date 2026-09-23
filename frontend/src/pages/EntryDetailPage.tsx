@@ -9,7 +9,6 @@ import {
   Trash2,
   CalendarCheck,
   X,
-  Eye,
   BookOpen,
   Code2,
 } from 'lucide-react';
@@ -83,7 +82,9 @@ export default function EntryDetailPage() {
   const tags = entry?.tags ?? [];
   const formattedDate = entry ? formatDate(entry.date) : '';
   const formattedDueDate = entry?.dueDate ? formatDate(entry.dueDate) : null;
-  const timeSpent = entry?.content?.['Time spent'];
+  const timeSpentValue = entry?.content?.['Time spent'];
+  const timeSpentStr =
+    timeSpentValue !== null && timeSpentValue !== undefined ? String(timeSpentValue) : '';
 
   return (
     <div className="w-full p-6 lg:p-8 min-h-full flex flex-col relative">
@@ -220,10 +221,10 @@ export default function EntryDetailPage() {
                     </>
                   )}
                   <span>{formattedDate}</span>
-                  {timeSpent && (
+                  {timeSpentStr.trim() !== '' && (
                     <>
                       <span>•</span>
-                      <span>{String(timeSpent)}</span>
+                      <span>{timeSpentStr}</span>
                     </>
                   )}
                 </div>

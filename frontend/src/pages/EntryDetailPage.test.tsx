@@ -49,7 +49,10 @@ describe('EntryDetailPage', () => {
 
     renderPage();
 
-    expect(await screen.findByText('Thesis')).toBeInTheDocument();
+    const thesisElements = await screen.findAllByText('Thesis');
+    expect(thesisElements.length).toBeGreaterThan(0);
+    expect(thesisElements[0]).toBeInTheDocument();
+
     expect(screen.getByText('Read chapter 3')).toBeInTheDocument();
     expect(screen.getByText('reading')).toBeInTheDocument();
     expect(getMock).toHaveBeenCalledWith('/api/entries/10');
