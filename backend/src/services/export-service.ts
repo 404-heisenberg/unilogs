@@ -13,7 +13,7 @@ function csvEscaping(value: unknown): string {
 type ExportEntry = {
   date: Date;
   title: string | null;
-  body: string | null;
+  body?: string | null;
   content: unknown;
 };
 
@@ -22,9 +22,13 @@ type ExportField = {
 };
 
 export function buildCsv(entries: ExportEntry[], fields: ExportField[]): string {
+  const includeBodies = entries.some((entry) => 'body' in entry);
   const headers = ['date', 'title'];
   for (const field of fields) {
     headers.push(field.name);
+  }
+  if (includeBodies) {
+    headers.push('body');
   }
 
   const escapedHeaders = headers.map(csvEscaping);
@@ -41,6 +45,10 @@ export function buildCsv(entries: ExportEntry[], fields: ExportField[]): string 
 
     for (const field of fields) {
       values.push(csvEscaping(content[field.name]));
+    }
+
+    if (includeBodies) {
+      values.push(csvEscaping(entry.body));
     }
 
     const row = values.join(',');
