@@ -10,12 +10,15 @@ export type Project = {
   todoEnabled?: boolean;
 };
 
+export type AggregationKind = 'sum' | 'average' | 'max' | 'min';
+
 export type FieldDefinition = {
   id: number;
   projectId: number;
   name: string;
   fieldType: string;
   todoEnabled?: boolean;
+  aggregationOverride?: AggregationKind | null;
 };
 
 export type EntryContent = Record<string, unknown>;
