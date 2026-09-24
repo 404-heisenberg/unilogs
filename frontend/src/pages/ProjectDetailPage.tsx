@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import DeleteProjectDialog from '@/components/project/DeleteProjectDialog';
+import ExportDialog from '@/components/project/ExportDialog';
+import ShareDialog from '@/components/project/ShareDialog';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   EntriesTab,
@@ -26,6 +29,9 @@ export default function ProjectDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams.get('tab'));
   const [today] = useState(() => toDayKey(new Date()));
+  const [exportOpen, setExportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const {
     project,
@@ -97,6 +103,30 @@ export default function ProjectDetailPage() {
           Log entry
         </Link>
       </div>
+      
+      {project.data && (
+  <>
+    <ExportDialog
+      open={exportOpen}
+      onOpenChange={setExportOpen}
+      projectId={project.data.id.toString()}
+    />
+    <ShareDialog
+      key={project.data.id}
+      open={shareOpen}
+      onOpenChange={setShareOpen}
+      projectId={project.data.id.toString()}
+    />
+    <DeleteProjectDialog
+      open={deleteOpen}
+      onOpenChange={setDeleteOpen}
+      projectId={project.data.id.toString()}
+      projectName={project.data.name}
+      entryCount={entries.data?.length ?? 0}
+    />
+  </>
+)}
+      
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="min-w-0">
