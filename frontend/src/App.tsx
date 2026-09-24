@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -16,6 +17,9 @@ import DashboardPage from './pages/DashboardPage';
 import SuggestionsPage from './pages/SuggestionsPage';
 import SettingsPage from './pages/SettingsPage';
 
+// Public share page: lazy-loaded so no app/auth code ships with it.
+const SharedReportPage = lazy(() => import('./pages/SharedReportPage'));
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -25,6 +29,14 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route
+          path="/r/:token"
+          element={
+            <Suspense fallback={null}>
+              <SharedReportPage />
+            </Suspense>
+          }
+        />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
