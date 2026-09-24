@@ -103,30 +103,29 @@ export default function ProjectDetailPage() {
           Log entry
         </Link>
       </div>
-      
+
       {project.data && (
-  <>
-    <ExportDialog
-      open={exportOpen}
-      onOpenChange={setExportOpen}
-      projectId={project.data.id.toString()}
-    />
-    <ShareDialog
-      key={project.data.id}
-      open={shareOpen}
-      onOpenChange={setShareOpen}
-      projectId={project.data.id.toString()}
-    />
-    <DeleteProjectDialog
-      open={deleteOpen}
-      onOpenChange={setDeleteOpen}
-      projectId={project.data.id.toString()}
-      projectName={project.data.name}
-      entryCount={entries.data?.length ?? 0}
-    />
-  </>
-)}
-      
+        <>
+          <ExportDialog
+            open={exportOpen}
+            onOpenChange={setExportOpen}
+            projectId={project.data.id.toString()}
+          />
+          <ShareDialog
+            key={project.data.id}
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            projectId={project.data.id.toString()}
+          />
+          <DeleteProjectDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            projectId={project.data.id.toString()}
+            projectName={project.data.name}
+            entryCount={entries.data?.length ?? 0}
+          />
+        </>
+      )}
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="min-w-0">
