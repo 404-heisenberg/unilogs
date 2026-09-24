@@ -8,6 +8,7 @@ import {
   type FrequencyStats,
   type StatsSummary,
 } from '@/lib/api';
+
 import type { Entry, FieldDefinition, PagedEntries } from '@/types';
 
 export type DailyCount = { date: string; count: number };
@@ -486,7 +487,14 @@ export async function loadInsight(): Promise<InsightStat | null> {
   return null;
 }
 
-export type UpcomingEvent = { id: string; title: string; start: string | null };
+export type UpcomingEvent = {
+  id: string;
+  title: string;
+  start: string | null;
+  end: string | null;
+  description: string | null;
+  projectId: number | null;
+};
 
 export type UpcomingData = { connected: boolean; events: UpcomingEvent[] };
 
@@ -502,6 +510,9 @@ export async function loadUpcoming(): Promise<UpcomingData> {
       id: suggestion.id,
       title: suggestion.title,
       start: suggestion.start ?? null,
+      end: suggestion.end ?? null,
+      description: suggestion.description?.trim() || null,
+      projectId: suggestion.projectId ?? null,
     }))
     .filter((event) => event.start === null || new Date(event.start).getTime() >= now)
     .sort((a, b) => (a.start ?? '').localeCompare(b.start ?? ''))
@@ -514,6 +525,29 @@ export function formatEventTime(start: string | null): string {
   if (!start) return '';
   if (!start.includes('T')) return formatShortDate(start);
   return new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+export function formatEventWhen(event: UpcomingEvent, today: string): string {
+  const { start, end } = event;
+  if (!start) return '';
+  const day = start.slice(0, 10);
+  const label =
+    day === today ? 'Today' : day === addDays(today, 1) ? 'Tomorrow' : formatShortDate(day);
+  if (!start.includes('T')) return `${label} · All day`;
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const range = end && end.includes('T') ? `${time(start)} – ${time(end)}` : time(start);
+  return `${label} · ${range}`;
+}
+
+// Opens the entry editor pre-filled from a calendar event. projectId is only
+// sent when the suggestion carries one; otherwise the editor falls back to the
+// last-used project.
+export function logEventPath(event: UpcomingEvent): string {
+  const params = new URLSearchParams({ title: event.title });
+  if (event.start) params.set('date', event.start.slice(0, 10));
+  if (event.projectId !== null) params.set('projectId', String(event.projectId));
+  return `/entries/new?${params.toString()}`;
 }
 
 export async function markEntryFieldDone(entryId: number, fieldName: string): Promise<void> {

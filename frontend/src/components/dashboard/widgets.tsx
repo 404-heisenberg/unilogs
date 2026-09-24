@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Calendar,
   Clock,
   Eye,
   Flame,
@@ -23,18 +24,24 @@ import {
   Plus,
   Sparkles,
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import type { FrequencyStats, StatsSummary } from '@/lib/api';
 import {
   CARD,
+  DARK_BUTTON,
   GOLD_BUTTON,
   LABEL,
   MUTED,
+  TEXT_BUTTON,
   WIDGET_META,
   entryDateLabel,
   entryTitle,
   formatDayLabel,
   formatDurationHours,
   formatEventTime,
+  formatEventWhen,
+  logEventPath,
   formatMonthDay,
   formatShortDate,
   relativeTime,
@@ -49,6 +56,7 @@ import {
   type UnfinishedItem,
   type UnfinishedStats,
   type UpcomingData,
+  type UpcomingEvent,
   type WidgetId,
   type WidgetSize,
   type WidgetState,
@@ -400,36 +408,149 @@ type UpcomingProps = {
   data: UpcomingData | undefined;
   isLoading: boolean;
   isError: boolean;
+  isDesktop: boolean;
+  today: string;
 };
 
-function UpcomingWidgetBase({ data, isLoading, isError }: UpcomingProps) {
+type EventDetailsProps = {
+  event: UpcomingEvent;
+  today: string;
+  heading: ReactNode;
+  stacked: boolean;
+  onDismiss: () => void;
+};
+
+function EventDetails({ event, today, heading, stacked, onDismiss }: EventDetailsProps) {
+  const when = formatEventWhen(event, today);
+  return (
+    <div className="flex flex-col gap-2">
+      {heading}
+      {when && <p className={`text-xs ${MUTED}`}>{when}</p>}
+      <span className="w-fit rounded bg-[#F5EBE0] px-2 py-0.5 text-[10px] font-medium text-[#7a5230]">
+        From Google Calendar
+      </span>
+      {event.description && <p className="text-xs text-[#4a3525]">{event.description}</p>}
+      <div
+        className={
+          stacked ? 'mt-3 flex flex-col items-stretch gap-1' : 'mt-2 flex items-center gap-3'
+        }
+      >
+        <Link to={logEventPath(event)} className={`${DARK_BUTTON} ${stacked ? 'w-full' : ''}`}>
+          Create UniLogs entry
+        </Link>
+        <button type="button" onClick={onDismiss} className={TEXT_BUTTON}>
+          Dismiss
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const EVENT_ROW =
+  'flex min-w-0 flex-1 items-center gap-3 rounded text-left text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+const LOG_LINK =
+  'shrink-0 rounded border border-[#B59F82] px-2 py-1 text-[11px] font-semibold text-[#5C4630] transition-colors hover:bg-[#EFE0CC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+
+function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: UpcomingProps) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
   if (isLoading) return <WidgetSkeleton rows={3} />;
   if (isError) return <WidgetMessage title="Upcoming" message="Couldn't load your calendar." />;
   if (!data || !data.connected || data.events.length === 0) {
     return <WidgetMessage title="Upcoming" message="No upcoming events." />;
   }
 
+  const close = () => setOpenId(null);
+  const selected = data.events.find((event) => event.id === openId) ?? null;
+
   return (
     <section className={CARD}>
-      <h2 className="mb-3 text-sm font-semibold text-[#1c0d06]">Upcoming</h2>
-      <ul className="flex flex-col gap-2">
-        {data.events.map((event) => (
-          <li key={event.id} className="flex items-center justify-between gap-3">
-            <span className="flex min-w-0 items-center gap-3 text-[13px]">
+      <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-[#1c0d06]">
+        <Calendar className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+        Upcoming from Google Calendar
+      </h2>
+      <ul className="flex flex-col gap-1">
+        {data.events.map((event) => {
+          const label = (
+            <>
               <span className="shrink-0 font-bold text-[#7a5230]">
                 {formatEventTime(event.start)}
               </span>
               <span className="truncate text-[#1c0d06]">{event.title}</span>
-            </span>
-            <Link
-              to="/suggestions"
-              className="shrink-0 rounded px-2 py-1 text-[11px] font-semibold text-[#7a5230] transition-colors hover:bg-[#efe0cc]"
+            </>
+          );
+          return (
+            <li
+              key={event.id}
+              className={`-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-1.5 transition-colors ${
+                openId === event.id ? 'bg-[#EBD9A3]/50' : ''
+              }`}
             >
-              Log
-            </Link>
-          </li>
-        ))}
+              {isDesktop ? (
+                <Popover
+                  open={openId === event.id}
+                  onOpenChange={(open) => setOpenId(open ? event.id : null)}
+                >
+                  <PopoverTrigger asChild>
+                    <button type="button" className={EVENT_ROW}>
+                      {label}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-72 gap-0 bg-[#FFFCF7] p-3 text-[#1c0d06] ring-[#d4a373]/40"
+                  >
+                    <EventDetails
+                      event={event}
+                      today={today}
+                      stacked={false}
+                      onDismiss={close}
+                      heading={<p className="text-sm font-semibold">{event.title}</p>}
+                    />
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <button type="button" onClick={() => setOpenId(event.id)} className={EVENT_ROW}>
+                  {label}
+                </button>
+              )}
+              <Link to={logEventPath(event)} className={LOG_LINK}>
+                Log entry
+              </Link>
+            </li>
+          );
+        })}
       </ul>
+
+      {!isDesktop && (
+        <Sheet
+          open={selected !== null}
+          onOpenChange={(open) => {
+            if (!open) close();
+          }}
+        >
+          <SheetContent
+            side="bottom"
+            showCloseButton={false}
+            aria-describedby={undefined}
+            className="rounded-t-3xl bg-[#FFFCF7] px-5 pb-8 pt-5 text-[#1c0d06]"
+          >
+            {selected && (
+              <EventDetails
+                event={selected}
+                today={today}
+                stacked
+                onDismiss={close}
+                heading={
+                  <SheetTitle className="text-base font-semibold text-[#1c0d06]">
+                    {selected.title}
+                  </SheetTitle>
+                }
+              />
+            )}
+          </SheetContent>
+        </Sheet>
+      )}
     </section>
   );
 }
@@ -941,6 +1062,8 @@ function WidgetContent({ id, size, ctx }: ContentProps) {
           data={ctx.upcoming.data}
           isLoading={ctx.upcoming.isLoading}
           isError={ctx.upcoming.isError}
+          isDesktop={ctx.isDesktop}
+          today={ctx.today}
         />
       );
     case 'insight':

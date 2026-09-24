@@ -67,6 +67,8 @@ export type CalendarSuggestion = {
   title: string;
   start?: string;
   end?: string;
+  description?: string;
+  projectId?: number;
 };
 
 export type CalendarSuggestionsResponse = {
