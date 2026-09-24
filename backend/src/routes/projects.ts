@@ -4,8 +4,18 @@ import { prisma } from '../auth.js';
 import { ReminderFrequency } from '../generated/prisma/client.js';
 import type { RequestHandler } from 'express';
 import { buildProjectSummary } from '../services/project-summary-service.js';
-import { revokeProjectShares } from '../services/share-services.js';
+import {
+  createShareToken,
+  revokeProjectShares,
+  revokeShareToken,
+} from '../services/share-services.js';
+
 const router = Router();
+
+// Public share links open a front-end page, not the API route. Default to the
+// configured front-end origin so a link pasted into an incognito window works.
+const SHARE_BASE_URL =
+  process.env.SHARE_BASE_URL ?? process.env.CORS_ORIGIN ?? 'http://localhost:5173';
 
 router.post('/', authenticate, async (req, res) => {
   const { name, description } = req.body;
@@ -73,6 +83,78 @@ router.get('/:id/summary', authenticate, async (req, res) => {
     return res.status(200).json(summary);
   } catch {
     return res.status(500).json({ error: 'Failed to fetch project summary' });
+  }
+});
+
+router.post('/:id/share-links', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const { includeBodies, rangeDays, expiresInDays } = req.body ?? {};
+
+    if (includeBodies !== undefined && typeof includeBodies !== 'boolean') {
+      return res.status(400).json({ error: 'includeBodies must be a boolean' });
+    }
+    if (rangeDays !== undefined && (!Number.isInteger(rangeDays) || rangeDays <= 0)) {
+      return res.status(400).json({ error: 'rangeDays must be a positive integer' });
+    }
+    if (expiresInDays !== undefined && (!Number.isInteger(expiresInDays) || expiresInDays <= 0)) {
+      return res.status(400).json({ error: 'expiresInDays must be a positive integer' });
+    }
+
+    const project = await getOwnedProject(id, userId);
+    if (!project) {
+      return res.status(404).json({ error: 'project not found' });
+    }
+
+    const share = await createShareToken(id, {
+      includeBodies,
+      defaultRangeDays: rangeDays,
+      expiresInDays,
+    });
+
+    return res.status(201).json({
+      url: `${SHARE_BASE_URL}/share/${share.token}`,
+      token: share.token,
+      expiresAt: share.expiresAt,
+    });
+  } catch {
+    return res.status(500).json({ error: 'Failed to create share link' });
+  }
+});
+
+router.delete('/:id/share-links/:token', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const project = await getOwnedProject(id, userId);
+    if (!project) {
+      return res.status(404).json({ error: 'project not found' });
+    }
+
+    // Idempotent: revoking an already-dead or foreign token is still a no-op
+    // success, and the public route 404s it either way.
+    await revokeShareToken(id, String(req.params.token));
+
+    return res.status(204).send();
+  } catch {
+    return res.status(500).json({ error: 'Failed to revoke share link' });
   }
 });
 
@@ -186,6 +268,12 @@ function setArchived(archived: boolean, action: string): RequestHandler {
 
       const project = await getOwnedProject(id, userId);
       if (!project) return res.status(404).json({ error: 'project not found' });
+
+      if (archived) {
+        // Archiving hides the project from lists and stats, so a live public
+        // link must stop serving it too. Unarchiving does not resurrect links.
+        await revokeProjectShares(id);
+      }
 
       const update = await prisma.project.update({
         where: { id },
