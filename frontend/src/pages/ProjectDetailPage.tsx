@@ -100,7 +100,7 @@ export default function ProjectDetailPage() {
           to="/entries/new"
           className="hidden shrink-0 items-center justify-center rounded-md bg-[#1C0D06] px-3.5 py-2 text-sm font-medium text-[#FFFCF7] transition-colors hover:bg-[#3A2214] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843] sm:inline-flex"
         >
-          Log entry
+          Log
         </Link>
       </div>
 
