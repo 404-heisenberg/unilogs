@@ -177,6 +177,9 @@ export default function ProjectDetailPage() {
             project={project.data}
             fieldCount={fields.data?.length}
             actions={projectActions}
+            onExport={() => setExportOpen(true)}
+            onShare={() => setShareOpen(true)}
+            onDelete={() => setDeleteOpen(true)}
           />
         </div>
       </div>

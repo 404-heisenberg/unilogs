@@ -44,6 +44,8 @@ const OUTLINE_BUTTON =
   'inline-flex w-full items-center justify-center rounded-md border border-[#D9C9AE] bg-white px-3 py-2 text-sm font-medium text-[#1C0D06] transition-colors hover:bg-[#F5EBE0] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
 const LINK_BUTTON =
   'rounded px-1.5 py-0.5 text-xs font-medium text-[#5C4630] transition-colors hover:text-[#1C0D06] hover:underline disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-[#D4A843]';
+const DANGER_BUTTON =
+  'inline-flex w-full items-center justify-center rounded-md border border-[#E6B8AE] bg-white px-3 py-2 text-sm font-medium text-[#B5432F] transition-colors hover:bg-[#FBEDE9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -690,10 +692,16 @@ export function MetadataPanel({
   project,
   fieldCount,
   actions,
+  onExport,
+  onShare,
+  onDelete,
 }: {
   project: Project;
   fieldCount: number | undefined;
   actions: ProjectActions;
+  onExport: () => void;
+  onShare: () => void;
+  onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project.name);
@@ -773,6 +781,15 @@ export function MetadataPanel({
             className={OUTLINE_BUTTON}
           >
             {project.archived ? 'Unarchive project' : 'Archive project'}
+          </button>
+          <button type="button" onClick={onExport} className={OUTLINE_BUTTON}>
+            Export…
+          </button>
+          <button type="button" onClick={onShare} className={OUTLINE_BUTTON}>
+            Share report…
+          </button>
+          <button type="button" onClick={onDelete} className={DANGER_BUTTON}>
+            Delete project
           </button>
         </div>
         {actions.error && <p className="mt-2 text-xs text-red-700">{actions.error}</p>}
