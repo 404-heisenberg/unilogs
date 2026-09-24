@@ -345,7 +345,7 @@ describe('ProjectDetailPage workspace', () => {
       'Fields',
     ]);
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('link', { name: 'Log entry' })).toHaveAttribute('href', '/entries/new');
+    expect(screen.getByRole('link', { name: 'Log' })).toHaveAttribute('href', '/entries/new');
     const panel = screen.getByRole('complementary', { name: 'Project details' });
     expect(within(panel).getByText('Fields').nextSibling).toHaveTextContent('5');
   });
