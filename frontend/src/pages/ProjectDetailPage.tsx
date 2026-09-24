@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
-import { Download, EllipsisVertical } from 'lucide-react';
+import { EllipsisVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { api } from '@/lib/api';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { formatRelativeTime } from '@/lib/time';
-import { downloadTextFile, entriesToCSV, entriesToMarkdown } from '@/lib/exportEntries';
+import DeleteProjectDialog from '@/components/project/DeleteProjectDialog';
+import ExportDialog from '@/components/project/ExportDialog';
+import ShareDialog from '@/components/project/ShareDialog';
 import type { Entry, FieldDefinition, PagedEntries, Project } from '@/types';
 
 const LAST_PROJECT_KEY = 'unilogs:last-project-id';
@@ -100,6 +102,9 @@ export default function ProjectDetailPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('overview');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameName, setRenameName] = useState('');
   const [renameDescription, setRenameDescription] = useState('');
@@ -222,16 +227,6 @@ export default function ProjectDetailPage() {
     if (projectId) localStorage.setItem(LAST_PROJECT_KEY, projectId);
   };
 
-  const exportName = projectQuery.data?.name ?? 'project';
-  const handleExportCSV = () =>
-    downloadTextFile(`${exportName}.csv`, entriesToCSV(entries, fields), 'text/csv');
-  const handleExportMarkdown = () =>
-    downloadTextFile(
-      `${exportName}.md`,
-      entriesToMarkdown(entries, fields, exportName),
-      'text/markdown',
-    );
-
   return (
     <div>
       <Link
@@ -305,24 +300,6 @@ export default function ProjectDetailPage() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              disabled={entries.length === 0}
-              className="flex min-h-11 items-center gap-1.5 rounded-md border border-[#d4a373]/50 px-3 text-sm font-medium text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
-            >
-              <Download size={14} strokeWidth={1.75} />
-              CSV
-            </button>
-            <button
-              type="button"
-              onClick={handleExportMarkdown}
-              disabled={entries.length === 0}
-              className="flex min-h-11 items-center gap-1.5 rounded-md border border-[#d4a373]/50 px-3 text-sm font-medium text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
-            >
-              <Download size={14} strokeWidth={1.75} />
-              Markdown
-            </button>
             <Link to="/entries/new" onClick={handleLogEntry}>
               <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
                 Log
@@ -360,6 +337,36 @@ export default function ProjectDetailPage() {
                   className="flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm text-[#1c0d06] hover:bg-[#f5ebe0] disabled:opacity-50"
                 >
                   {projectQuery.data?.archived ? 'Unarchive' : 'Archive'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setExportOpen(true);
+                  }}
+                  className="flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm text-[#1c0d06] hover:bg-[#f5ebe0]"
+                >
+                  Export…
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setShareOpen(true);
+                  }}
+                  className="flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm text-[#1c0d06] hover:bg-[#f5ebe0]"
+                >
+                  Share report…
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setDeleteOpen(true);
+                  }}
+                  className="flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm text-[#9b2c2c] hover:bg-[#f5ebe0]"
+                >
+                  Delete project
                 </button>
               </PopoverContent>
             </Popover>
@@ -593,6 +600,29 @@ export default function ProjectDetailPage() {
             <p className="mt-2 text-sm text-red-700">{createField.error.message}</p>
           )}
         </div>
+      )}
+
+      {projectQuery.data && (
+        <>
+          <ExportDialog
+            open={exportOpen}
+            onOpenChange={setExportOpen}
+            projectId={projectQuery.data.id.toString()}
+          />
+          <ShareDialog
+            key={projectQuery.data.id}
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            projectId={projectQuery.data.id.toString()}
+          />
+          <DeleteProjectDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            projectId={projectQuery.data.id.toString()}
+            projectName={projectQuery.data.name}
+            entryCount={totalEntries}
+          />
+        </>
       )}
     </div>
   );
