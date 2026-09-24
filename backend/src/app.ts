@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import entriesRoutes from './routes/entries.js';
 import projectRouter from './routes/projects.js';
 import exportRouter from './routes/export.js';
+import shareRouter from './routes/share.js';
 import fieldDefinitionsRoutes from './routes/field-definitions.js';
 import statsRoutes from './routes/stats.js';
 import calendarRoutes from './routes/calendar.js';
@@ -31,6 +32,8 @@ export function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api/projects', projectRouter);
   app.use('/api/export', exportRouter);
+  // Intentionally public: the token in the URL is the auth for this router.
+  app.use('/share', shareRouter);
   app.use('/api/calendar', calendarRoutes);
   app.all('/api/auth/*splat', toNodeHandler(auth));
 
