@@ -708,7 +708,8 @@ export const openapiSpec = {
     '/api/projects/{id}/archive': {
       post: {
         summary: 'Archive a project',
-        description: 'Archives a project belonging to the authenticated user.',
+        description:
+          'Archives a project belonging to the authenticated user. Revokes every live share link for the project, so archiving also takes its public report offline.',
 
         parameters: [
           {
@@ -1571,6 +1572,247 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete field definition.',
+          },
+        },
+      },
+    },
+
+    '/api/projects/{id}/share-links': {
+      post: {
+        summary: 'Create a share link for a project',
+        description:
+          'Creates a tokenised read-only share link for a project owned by the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  includeBodies: {
+                    type: 'boolean',
+                    default: false,
+                    description: 'Include entry bodies on the public report.',
+                  },
+                  rangeDays: {
+                    type: 'integer',
+                    default: 30,
+                    description: 'How many days back the public report covers.',
+                  },
+                  expiresInDays: {
+                    type: 'integer',
+                    default: 30,
+                    description: 'How many days until the link expires.',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Share link created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    url: {
+                      type: 'string',
+                      example: 'http://localhost:5173/share/3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                    },
+                    token: {
+                      type: 'string',
+                      example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                    },
+                    expiresAt: {
+                      type: 'string',
+                      format: 'date-time',
+                    },
+                  },
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Invalid share link options.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to create share link.',
+          },
+        },
+      },
+    },
+
+    '/api/projects/{id}/share-links/{token}': {
+      delete: {
+        summary: 'Revoke a share link',
+        description:
+          'Soft-revokes a share link so the public URL immediately stops resolving. Idempotent.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+          {
+            name: 'token',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+            description: 'The share token.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Share link revoked (or already dead).',
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to revoke share link.',
+          },
+        },
+      },
+    },
+
+    '/share/{token}': {
+      get: {
+        summary: 'Get a shared project report',
+        description:
+          'Public, unauthenticated read-only report for a live share token. Unknown, revoked and expired tokens all return the same 404.',
+
+        parameters: [
+          {
+            name: 'token',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+            description: 'The share token.',
+          },
+          {
+            name: 'tagIds',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'string',
+            },
+            description: 'Comma-separated tag IDs to filter entries by.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Report returned successfully.',
+          },
+
+          '404': {
+            description: 'Share link not found (unknown, revoked or expired).',
+          },
+
+          '429': {
+            description: 'Rate limit exceeded for this token.',
+          },
+
+          '500': {
+            description: 'Failed to load shared report.',
+          },
+        },
+      },
+    },
+
+    '/share/{token}/export': {
+      get: {
+        summary: 'Download a shared project report',
+        description:
+          "Public CSV or Markdown export, scoped to the share token's own range and body setting. Request parameters cannot widen either.",
+
+        parameters: [
+          {
+            name: 'token',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+            description: 'The share token.',
+          },
+          {
+            name: 'format',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+              enum: ['csv', 'md'],
+            },
+            description: 'Export format.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Export file returned.',
+          },
+
+          '400': {
+            description: 'format must be csv or md.',
+          },
+
+          '404': {
+            description: 'Share link not found (unknown, revoked or expired).',
+          },
+
+          '429': {
+            description: 'Rate limit exceeded for this token.',
+          },
+
+          '500': {
+            description: 'Failed to export shared report.',
           },
         },
       },
