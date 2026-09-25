@@ -435,6 +435,17 @@ export const openapiSpec = {
   },
 
   paths: {
+    '/api/health': {
+      get: {
+        summary: 'Check API health',
+        responses: {
+          '200': {
+            description: 'API is healthy.',
+          },
+        },
+      },
+    },
+
     '/api/auth/signup': {
       post: {
         summary: 'Create a new user account',
@@ -2472,6 +2483,191 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to export shared report.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/status': {
+      get: {
+        summary: 'Get Google Calendar connection status',
+        responses: {
+          '200': {
+            description: 'Connection status returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    type: 'boolean',
+                    example: true,
+                  },
+                  required: ['connected'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch Google Calendar status.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/connect': {
+      post: {
+        summary: 'Connect Google Calendar',
+        responses: {
+          '200': {
+            description: 'Google Calendar is already connected or connection initiated.',
+          },
+
+          '400': {
+            description: 'Failed to connect Google Calendar.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/disconnect': {
+      delete: {
+        summary: 'Disconnect Google Calendar',
+        responses: {
+          '200': {
+            description: 'Google Calendar disconnected or was not connected.',
+          },
+
+          '400': {
+            description: 'Failed to disconnect Google Calendar.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events': {
+      get: {
+        summary: 'Get upcoming Google Calendar events',
+        responses: {
+          '200': {
+            description: 'Upcoming calendar events returned.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch Google Calendar events.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events/suggestions': {
+      get: {
+        summary: 'Get calendar entry suggestions',
+        responses: {
+          '200': {
+            description: 'Calendar suggestions returned.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch calendar suggestions.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events/suggestions/{eventId}/accept': {
+      post: {
+        summary: 'Accept a calendar suggestion',
+        parameters: [
+          {
+            name: 'eventId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['projectId', 'content'],
+                properties: {
+                  projectId: { type: 'integer', example: 1 },
+                  content: { type: 'object' },
+                  date: { type: 'string', format: 'date-time' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Calendar suggestion accepted and entry created.',
+          },
+
+          '400': {
+            description: 'Invalid request.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'User does not have access to the project.',
+          },
+
+          '500': {
+            description: 'Failed to accept calendar suggestion.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events/suggestions/{eventId}/reject': {
+      post: {
+        summary: 'Reject a calendar suggestion',
+        parameters: [
+          {
+            name: 'eventId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Calendar suggestion rejected.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to reject calendar suggestion.',
           },
         },
       },
