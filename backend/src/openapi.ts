@@ -379,6 +379,9 @@ export const openapiSpec = {
             nullable: true,
             oneOf: [
               {
+                $ref: '#/components/schemas/NumberValue',
+              },
+              {
                 $ref: '#/components/schemas/NumberInsightValue',
               },
               {
@@ -2132,6 +2135,102 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to fetch field insights.',
+          },
+        },
+      },
+    },
+
+    '/api/export': {
+      get: {
+        summary: 'Export project entries',
+        description:
+          'Exports entries from a project as a CSV or Markdown file. The project must belong to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'projectId',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID to export',
+            example: 1,
+          },
+          {
+            name: 'format',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+              enum: ['csv', 'md'],
+            },
+            description: 'Export format.',
+            example: 'csv',
+          },
+          {
+            name: 'includeBodies',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'boolean',
+              default: false,
+            },
+            description: 'Whether to include entry bodies in the export.',
+          },
+          {
+            name: 'dateFrom',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'string',
+              format: 'date-time',
+            },
+            description: 'Start date of the export range.',
+          },
+          {
+            name: 'dateTo',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'string',
+              format: 'date-time',
+            },
+            description: 'End date of the export range.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Export file returned successfully.',
+            content: {
+              'text/csv': {
+                schema: {
+                  type: 'string',
+                },
+              },
+              'text/markdown': {
+                schema: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Invalid project ID, format or date range',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to export entries.',
           },
         },
       },
