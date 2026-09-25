@@ -105,6 +105,11 @@ export const openapiSpec = {
             type: 'string',
             example: 'University',
           },
+          usageCount: {
+            type: 'integer',
+            example: 5,
+            description: 'Number of entries using this tag.',
+          },
         },
       },
 
@@ -313,6 +318,40 @@ export const openapiSpec = {
           '400': {
             description: 'Signin failed.',
           },
+        },
+      },
+    },
+
+    '/api/auth/socal/google': {
+      post: {
+        summary: 'Start Google sign-in',
+        description:
+          'Starts a Google OAuth sign-in or sign-up flow. The request can specify whether the flow originated from signup or login.',
+
+        requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  type: 'string',
+                  enum: ['signup', 'login'],
+                  default: 'login',
+                  example: 'login',
+                },
+              },
+            },
+          },
+        },
+      },
+
+      responses: {
+        '200': {
+          description: 'Google OAuth flow started successfully.',
+        },
+        '400': {
+          description: 'Failed to started Google sign-in.',
         },
       },
     },
