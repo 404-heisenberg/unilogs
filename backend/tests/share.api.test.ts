@@ -32,6 +32,19 @@ async function createShareLink(
 }
 
 describe('share link routes', () => {
+  it('rejects unauthenticated share-link management requests', async () => {
+    const api = await getApiClient();
+
+    const responses = await Promise.all([
+      api.post('/api/projects/1/share-links'),
+      api.delete('/api/projects/1/share-links/some-token'),
+    ]);
+
+    for (const response of responses) {
+      expect(response.status).toBe(401);
+    }
+  });
+
   it('creates a share link and returns a public url', async () => {
     const { agent } = await createAuthenticatedUser();
     const project = await createProject(agent);

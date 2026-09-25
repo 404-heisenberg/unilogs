@@ -55,6 +55,50 @@ export const openapiSpec = {
         },
       },
 
+      ProjectSummary: {
+        type: 'object',
+        properties: {
+          projectId: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'My First University Project',
+          },
+          entryCount: {
+            type: 'integer',
+            example: 10,
+          },
+          trackedTimeMinutes: {
+            type: 'integer',
+            nullable: true,
+            example: 360,
+            description:
+              'Total tracked duration in minutes. Null if the project has no duration fields.',
+          },
+          lastLoggedAt: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            example: '2026-09-23T12:00:00.000Z',
+          },
+          entriesThisWeek: {
+            type: 'integer',
+            example: 3,
+          },
+        },
+
+        required: [
+          'projectId',
+          'name',
+          'entryCount',
+          'trackedTimeMinutes',
+          'lastLoggedAt',
+          'entriesThisWeek',
+        ],
+      },
+
       ReminderSettings: {
         type: 'object',
         properties: {
@@ -104,6 +148,11 @@ export const openapiSpec = {
           name: {
             type: 'string',
             example: 'University',
+          },
+          usageCount: {
+            type: 'integer',
+            example: 5,
+            description: 'Number of entries using this tag.',
           },
         },
       },
@@ -195,6 +244,13 @@ export const openapiSpec = {
             enum: ['text', 'number', 'date', 'duration', 'boolean'],
             example: 'text',
           },
+          aggregationOverride: {
+            type: 'string',
+            nullable: true,
+            enum: ['sum', 'average', 'max', 'min'],
+            example: 'average',
+            description: 'Optional aggregation used when calculating field statistics.',
+          },
         },
       },
 
@@ -212,6 +268,152 @@ export const openapiSpec = {
             },
           },
         ],
+      },
+
+      FieldTrend: {
+        type: 'object',
+        properties: {
+          deltaPct: {
+            type: 'number',
+            nullable: true,
+            example: 10,
+            description: 'Percentage change compared with the previous week.',
+          },
+          direction: {
+            type: 'string',
+            nullable: true,
+            enum: ['up', 'down', 'flat'],
+            example: 'up',
+          },
+        },
+
+        required: ['deltaPct', 'direction'],
+      },
+
+      NumberValue: {
+        type: 'number',
+        example: 22,
+        description: 'Numeric statistic value.',
+      },
+
+      NumberInsightValue: {
+        type: 'object',
+        properties: {
+          average: {
+            type: 'number',
+            example: 5.5,
+          },
+          total: {
+            type: 'number',
+            example: 22,
+          },
+        },
+        required: ['average', 'total'],
+      },
+
+      TextInsightValue: {
+        type: 'object',
+        properties: {
+          top: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                value: {
+                  type: 'string',
+                  example: 'Completed',
+                },
+                count: {
+                  type: 'integer',
+                  example: 5,
+                },
+              },
+              required: ['value', 'count'],
+            },
+          },
+        },
+        required: ['top'],
+      },
+
+      BooleanInsightValue: {
+        type: 'object',
+        properties: {
+          pctTrue: {
+            type: 'number',
+            example: 75,
+            description: 'Percentage of recorded boolean values that are true.',
+          },
+        },
+        required: ['pctTrue'],
+      },
+
+      DateInsightValue: {
+        type: 'object',
+        properties: {
+          mostRecent: {
+            type: 'string',
+            example: '2026-09-23',
+          },
+        },
+        required: ['mostRecent'],
+      },
+
+      FieldInsight: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            example: 'Hours',
+          },
+          fieldType: {
+            type: 'string',
+            enum: ['text', 'number', 'date', 'duration', 'boolean'],
+            example: 'number',
+          },
+          family: {
+            type: 'string',
+            enum: ['number', 'sum', 'average', 'max', 'min', 'frequency', 'percentage', 'recency'],
+            example: 'number',
+          },
+          value: {
+            nullable: true,
+            oneOf: [
+              {
+                $ref: '#/components/schemas/NumberValue',
+              },
+              {
+                $ref: '#/components/schemas/NumberInsightValue',
+              },
+              {
+                $ref: '#/components/schemas/TextInsightValue',
+              },
+              {
+                $ref: '#/components/schemas/BooleanInsightValue',
+              },
+              {
+                $ref: '#/components/schemas/DateInsightValue',
+              },
+            ],
+          },
+          valueMinutes: {
+            type: 'number',
+            example: 330,
+            description: 'Total duration in minutes. Used for duration fields.',
+          },
+          trend: {
+            $ref: '#/components/schemas/FieldTrend',
+          },
+          sampleCount: {
+            type: 'integer',
+            example: 4,
+          },
+          hasData: {
+            type: 'boolean',
+            example: false,
+            description: 'Present and false when the field has no recorded values.',
+          },
+        },
+        required: ['name', 'fieldType', 'family', 'trend', 'sampleCount'],
       },
 
       EntryWithProject: {
@@ -233,6 +435,17 @@ export const openapiSpec = {
   },
 
   paths: {
+    '/api/health': {
+      get: {
+        summary: 'Check API health',
+        responses: {
+          '200': {
+            description: 'API is healthy.',
+          },
+        },
+      },
+    },
+
     '/api/auth/signup': {
       post: {
         summary: 'Create a new user account',
@@ -312,6 +525,42 @@ export const openapiSpec = {
           },
           '400': {
             description: 'Signin failed.',
+          },
+        },
+      },
+    },
+
+    '/api/auth/social/google': {
+      post: {
+        summary: 'Start Google sign-in',
+        description:
+          'Starts a Google OAuth sign-in or sign-up flow. The request can specify whether the flow originated from signup or login.',
+
+        requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  from: {
+                    type: 'string',
+                    enum: ['signup', 'login'],
+                    default: 'login',
+                    example: 'login',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Google OAuth flow started successfully.',
+          },
+          '400': {
+            description: 'Failed to start Google sign-in.',
           },
         },
       },
@@ -629,6 +878,11 @@ export const openapiSpec = {
                     nullable: true,
                     example: 'Updated project description.',
                   },
+                  reminderFrequency: {
+                    type: 'string',
+                    enum: ['DAILY', 'WEEKLY', 'OFF'],
+                    example: 'WEEKLY',
+                  },
                 },
               },
             },
@@ -700,6 +954,55 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete project.',
+          },
+        },
+      },
+    },
+
+    '/api/projects/{id}/summary': {
+      get: {
+        summary: 'Get project summary',
+        description:
+          'Returns summary statistics for an active project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Project summary retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ProjectSummary',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch project summary.',
           },
         },
       },
@@ -797,6 +1100,208 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to update archive status of project.',
+          },
+        },
+      },
+    },
+
+    '/api/tags': {
+      get: {
+        summary: 'Get tags',
+        description:
+          'Returns all tags belonging to the authenticated user, sorted by usage count and then name.',
+
+        responses: {
+          '200': {
+            description: 'Tags retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Tag',
+                  },
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch tags.',
+          },
+        },
+      },
+
+      post: {
+        summary: 'Create a tag',
+        description: 'Creates a new tag for the authenticated user.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'University',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Tag created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Tag',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Tag name is required and cannot be empty.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '409': {
+            description: 'A tag with this name already exists.',
+          },
+
+          '500': {
+            description: 'Failed to create tag.',
+          },
+        },
+      },
+    },
+
+    '/api/tags/{id}': {
+      patch: {
+        summary: 'Updates a tag',
+        description: 'Updates a tag belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The tag ID.',
+          },
+        ],
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'University Work',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Tag updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Tag',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Tag ID or name is invalid',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this tag.',
+          },
+
+          '404': {
+            description: 'Tag not found.',
+          },
+
+          '409': {
+            description: 'A tag with this name already exists.',
+          },
+
+          '500': {
+            description: 'Failed to update tag',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Delete a tag',
+        description:
+          'Deletes a tag belonging to the authenticated user and removes its entry and associations.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The tag ID.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Tag deleted successfully.',
+          },
+
+          '400': {
+            description: 'Tag ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this tag.',
+          },
+
+          '404': {
+            description: 'Tag not found.',
+          },
+
+          '500': {
+            description: 'Failed to delete tag.',
           },
         },
       },
@@ -1371,6 +1876,12 @@ export const openapiSpec = {
                     enum: ['text', 'number', 'date', 'duration', 'boolean'],
                     example: 'text',
                   },
+                  aggregationOverride: {
+                    type: 'string',
+                    nullable: true,
+                    enum: ['sum', 'average', 'min', 'max'],
+                    example: 'min',
+                  },
                 },
               },
             },
@@ -1492,6 +2003,11 @@ export const openapiSpec = {
                     enum: ['text', 'number', 'date', 'duration', 'boolean'],
                     example: 'text',
                   },
+                  aggregationOverride: {
+                    type: 'string',
+                    nullable: true,
+                    enum: ['sum', 'average', 'min', 'max'],
+                  },
                 },
               },
             },
@@ -1572,6 +2088,449 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete field definition.',
+          },
+        },
+      },
+    },
+
+    '/api/stats': {
+      get: {
+        summary: 'Get overall statistics',
+        description:
+          'Returns overall statistics for the authenticated user, including hours tracked per project, total hours, and current streak.',
+
+        responses: {
+          '200': {
+            description: 'Statistics retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    perProject: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          projectId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          totalHours: {
+                            type: 'number',
+                            example: 12.5,
+                          },
+                        },
+                        required: ['projectId', 'projectName', 'totalHours'],
+                      },
+                    },
+                    totalHours: {
+                      type: 'number',
+                      example: 25.5,
+                    },
+                    streak: {
+                      type: 'integer',
+                      example: 5,
+                    },
+                  },
+                  required: ['perProject', 'totalHours', 'streak'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch stats.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/frequency': {
+      get: {
+        summary: 'Get entry frequency statistics',
+        description: 'Returns weekly entry counts and term totals for the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Frequency statistics retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    weekly: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          weekStart: {
+                            type: 'string',
+                            format: 'date',
+                            example: '2026-09-21',
+                          },
+                          count: {
+                            type: 'integer',
+                            example: 5,
+                          },
+                        },
+                        required: ['weekStart', 'count'],
+                      },
+                    },
+                    terms: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          termName: {
+                            type: 'string',
+                            example: 'Term 1',
+                          },
+                          total: {
+                            type: 'integer',
+                            example: 42,
+                          },
+                        },
+                        required: ['termName', 'total'],
+                      },
+                    },
+                  },
+                  required: ['weekly', 'terms'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch frequency stats.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/streak': {
+      get: {
+        summary: 'Get current streak',
+        description: 'Returns the current consecutive-day entry streak for the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Current streak retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    streak: {
+                      type: 'integer',
+                      example: 5,
+                    },
+                  },
+                  required: ['streak'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch streak.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/unfinished': {
+      get: {
+        summary: 'Get unfinished items',
+        description:
+          'Returns unfinished boolean items grouped by overdue, due this week, and no due date for the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Unfinished items retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    overdue: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          entryId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          fieldName: {
+                            type: 'string',
+                            example: 'Completed',
+                          },
+                          label: {
+                            type: 'string',
+                            example: 'Finish report',
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          dueDate: {
+                            type: 'string',
+                            nullable: true,
+                            example: '2026-09-22',
+                          },
+                        },
+                        required: ['entryId', 'fieldName', 'label', 'projectName', 'dueDate'],
+                      },
+                    },
+
+                    dueThisWeek: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          entryId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          fieldName: {
+                            type: 'string',
+                            example: 'Completed',
+                          },
+                          label: {
+                            type: 'string',
+                            example: 'Finish report',
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          dueDate: {
+                            type: 'string',
+                            nullable: true,
+                            example: '2026-09-22',
+                          },
+                        },
+                        required: ['entryId', 'fieldName', 'label', 'projectName', 'dueDate'],
+                      },
+                    },
+
+                    noDueDate: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          entryId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          fieldName: {
+                            type: 'string',
+                            example: 'Completed',
+                          },
+                          label: {
+                            type: 'string',
+                            example: 'Finish report',
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          dueDate: {
+                            type: 'string',
+                            nullable: true,
+                            example: null,
+                          },
+                        },
+                        required: ['entryId', 'fieldName', 'label', 'projectName', 'dueDate'],
+                      },
+                    },
+                  },
+
+                  required: ['overdue', 'dueThisWeek', 'noDueDate'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch unfinished items.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/fields/{projectId}': {
+      get: {
+        summary: 'Get field insights',
+        description: 'Returns statistics and insights for the fields in a project.',
+        parameters: [
+          {
+            name: 'projectId',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            example: 1,
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Field insights retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    projectId: {
+                      type: 'integer',
+                      example: 1,
+                    },
+
+                    fields: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/FieldInsight',
+                      },
+                    },
+                  },
+                  required: ['projectId', 'fields'],
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Invalid project ID.',
+          },
+
+          '401': {
+            description: 'Authentication required.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch field insights.',
+          },
+        },
+      },
+    },
+
+    '/api/export': {
+      get: {
+        summary: 'Export project entries',
+        description:
+          'Exports entries from a project as a CSV or Markdown file. The project must belong to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'projectId',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID to export',
+            example: 1,
+          },
+          {
+            name: 'format',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+              enum: ['csv', 'md'],
+            },
+            description: 'Export format.',
+            example: 'csv',
+          },
+          {
+            name: 'includeBodies',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'boolean',
+              default: false,
+            },
+            description: 'Whether to include entry bodies in the export.',
+          },
+          {
+            name: 'dateFrom',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'string',
+              format: 'date-time',
+            },
+            description: 'Start date of the export range.',
+          },
+          {
+            name: 'dateTo',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'string',
+              format: 'date-time',
+            },
+            description: 'End date of the export range.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Export file returned successfully.',
+            content: {
+              'text/csv': {
+                schema: {
+                  type: 'string',
+                },
+              },
+              'text/markdown': {
+                schema: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Invalid project ID, format or date range',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to export entries.',
           },
         },
       },
@@ -1813,6 +2772,193 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to export shared report.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/status': {
+      get: {
+        summary: 'Get Google Calendar connection status',
+        responses: {
+          '200': {
+            description: 'Connection status returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                  },
+                  required: ['connected'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch Google Calendar status.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/connect': {
+      post: {
+        summary: 'Connect Google Calendar',
+        responses: {
+          '200': {
+            description: 'Google Calendar is already connected or connection initiated.',
+          },
+
+          '400': {
+            description: 'Failed to connect Google Calendar.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/disconnect': {
+      delete: {
+        summary: 'Disconnect Google Calendar',
+        responses: {
+          '200': {
+            description: 'Google Calendar disconnected or was not connected.',
+          },
+
+          '400': {
+            description: 'Failed to disconnect Google Calendar.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events': {
+      get: {
+        summary: 'Get upcoming Google Calendar events',
+        responses: {
+          '200': {
+            description: 'Upcoming calendar events returned.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch Google Calendar events.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events/suggestions': {
+      get: {
+        summary: 'Get calendar entry suggestions',
+        responses: {
+          '200': {
+            description: 'Calendar suggestions returned.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch calendar suggestions.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events/suggestions/{eventId}/accept': {
+      post: {
+        summary: 'Accept a calendar suggestion',
+        parameters: [
+          {
+            name: 'eventId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['projectId', 'content'],
+                properties: {
+                  projectId: { type: 'integer', example: 1 },
+                  content: { type: 'object' },
+                  date: { type: 'string', format: 'date-time' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Calendar suggestion accepted and entry created.',
+          },
+
+          '400': {
+            description: 'Invalid request.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'User does not have access to the project.',
+          },
+
+          '500': {
+            description: 'Failed to accept calendar suggestion.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/events/suggestions/{eventId}/reject': {
+      post: {
+        summary: 'Reject a calendar suggestion',
+        parameters: [
+          {
+            name: 'eventId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Calendar suggestion rejected.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to reject calendar suggestion.',
           },
         },
       },
