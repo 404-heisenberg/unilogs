@@ -55,6 +55,50 @@ export const openapiSpec = {
         },
       },
 
+      ProjectSummary: {
+        type: 'object',
+        properties: {
+          projectId: {
+            type: 'integer',
+            example: 1,
+          },
+          name: {
+            type: 'string',
+            example: 'My First University Project',
+          },
+          entryCount: {
+            type: 'integer',
+            example: 10,
+          },
+          trackedTimeMinutes: {
+            type: 'integer',
+            nullable: true,
+            example: 360,
+            description:
+              'Total tracked duration in minutes. Null if the project has no duration fields.',
+          },
+          lastLoggedAt: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            example: '2026-09-23T12:00:00.000Z',
+          },
+          entriesThisWeek: {
+            type: 'integer',
+            example: 3,
+          },
+        },
+
+        required: [
+          'projectId',
+          'name',
+          'entryCount',
+          'trackedTimeMinutes',
+          'lastLoggedAt',
+          'entriesThisWeek',
+        ],
+      },
+
       ReminderSettings: {
         type: 'object',
         properties: {
@@ -322,7 +366,7 @@ export const openapiSpec = {
       },
     },
 
-    '/api/auth/socal/google': {
+    '/api/auth/social/google': {
       post: {
         summary: 'Start Google sign-in',
         description:
@@ -335,10 +379,12 @@ export const openapiSpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  type: 'string',
-                  enum: ['signup', 'login'],
-                  default: 'login',
-                  example: 'login',
+                  from: {
+                    type: 'string',
+                    enum: ['signup', 'login'],
+                    default: 'login',
+                    example: 'login',
+                  },
                 },
               },
             },
@@ -351,7 +397,7 @@ export const openapiSpec = {
           description: 'Google OAuth flow started successfully.',
         },
         '400': {
-          description: 'Failed to started Google sign-in.',
+          description: 'Failed to start Google sign-in.',
         },
       },
     },
@@ -739,6 +785,55 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete project.',
+          },
+        },
+      },
+    },
+
+    '/api/projects/{id}/summary': {
+      get: {
+        summary: 'Get project summary',
+        description:
+          'Returns summary statistics for an active project belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Project summary retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ProjectSummary',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch project summary.',
           },
         },
       },
