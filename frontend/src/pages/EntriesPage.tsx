@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { SlidersHorizontal } from 'lucide-react';
+import {
+  Search,
+  ChevronDown,
+  CheckSquare,
+  Square,
+  Clock,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FiltersSheet from '@/components/entries/FiltersSheet';
 import { api } from '@/lib/api';
 import {
-  DATE_RANGE_LABELS,
   DEFAULT_FILTERS,
   buildEntriesQuery,
   isFiltering,
@@ -15,12 +22,20 @@ import {
 } from '@/lib/entryFilters';
 import type { Entry, PagedEntries, Project } from '@/types';
 
-const QUICK_RANGES: DateRangeKey[] = ['all', 'today', '7d'];
+const DATE_RANGE_LABELS: Record<DateRangeKey, string> = {
+  all: 'All time',
+  today: 'Today',
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+  custom: 'Custom',
+};
 
-const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a6fa5', '#9c5a9c', '#c4664a'];
+const QUICK_RANGES: DateRangeKey[] = ['all', 'today', '7d', '30d', 'custom'];
+
+const DOT_COLORS = ['#d1a153', '#5b82a6', '#4a8067', '#9c5a9c', '#c4664a'];
 const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
 
-function groupLabel(iso: string): string {
+function groupDateFormatted(iso: string): { primary: string; secondary: string | null } {
   const date = new Date(iso);
   const today = new Date();
   const yesterday = new Date();
@@ -31,9 +46,19 @@ function groupLabel(iso: string): string {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
 
-  if (sameDay(date, today)) return 'Today';
-  if (sameDay(date, yesterday)) return 'Yesterday';
-  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const formattedDate = date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  if (sameDay(date, today)) {
+    return { primary: 'Today', secondary: `· ${formattedDate}` };
+  }
+  if (sameDay(date, yesterday)) {
+    return { primary: 'Yesterday', secondary: `· ${formattedDate}` };
+  }
+  return { primary: formattedDate, secondary: null };
 }
 
 function entryHeadline(entry: Entry): { headline: string; snippet: string | null } {
@@ -45,21 +70,55 @@ function entryHeadline(entry: Entry): { headline: string; snippet: string | null
 }
 
 function contentSnippet(entry: Entry): string | null {
+  if (!entry.content) return null;
   const parts = Object.entries(entry.content).map(([key, value]) => `${key}: ${String(value)}`);
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
+function getTimeSpent(entry: Entry): string | null {
+  if (entry.content && entry.content.timeSpent) {
+    return String(entry.content.timeSpent);
+  }
+  return null;
+}
+
+function isEntryUnfinished(entry: Entry): boolean {
+  if (entry.isCompleted !== undefined) return !entry.isCompleted;
+  if (entry.content && typeof entry.content.completed === 'boolean') {
+    return !entry.content.completed;
+  }
+  return false;
+}
+
+function isEntryOverdue(entry: Entry): boolean {
+  if (!entry.dueDate) return false;
+  const due = new Date(entry.dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return due < today && isEntryUnfinished(entry);
+}
+
+function formatDueDate(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
 export default function EntriesPage() {
   const [filters, setFilters] = useState<EntryFilters>(DEFAULT_FILTERS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'unfinished' | 'overdue' | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  // Fetch entries
   const { data, isPending, isError } = useQuery({
     queryKey: ['entries', filters],
     queryFn: () => api.get<PagedEntries>(`/api/entries${buildEntriesQuery(filters)}`),
   });
 
-  const entries = useMemo(() => data?.entries ?? [], [data]);
+  const rawEntries = useMemo(() => data?.entries ?? [], [data]);
 
+  // Fetch projects
   const { data: projects } = useQuery({
     queryKey: ['projects', { archived: false }],
     queryFn: () => api.get<Project[]>('/api/projects'),
@@ -71,33 +130,128 @@ export default function EntriesPage() {
     return map;
   }, [projects]);
 
+  // Status counts across raw dataset
+  const { unfinishedCount, overdueCount } = useMemo(() => {
+    let unfinished = 0;
+    let overdue = 0;
+    for (const entry of rawEntries) {
+      if (isEntryUnfinished(entry)) unfinished++;
+      if (isEntryOverdue(entry)) overdue++;
+    }
+    return { unfinishedCount: unfinished, overdueCount: overdue };
+  }, [rawEntries]);
+
+  // Memoized client-side filtering pass
+  const filteredEntries = useMemo(() => {
+    return rawEntries.filter((entry) => {
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const { headline, snippet } = entryHeadline(entry);
+        const matchesTitle = headline.toLowerCase().includes(query);
+        const matchesSnippet = snippet ? snippet.toLowerCase().includes(query) : false;
+        if (!matchesTitle && !matchesSnippet) return false;
+      }
+
+      if (statusFilter === 'unfinished' && !isEntryUnfinished(entry)) return false;
+      if (statusFilter === 'overdue' && !isEntryOverdue(entry)) return false;
+
+      if (selectedTagIds.length > 0) {
+        const entryTagIds = entry.tags?.map((t) => t.tag.id) ?? [];
+        const hasAllTags = selectedTagIds.every((id) => entryTagIds.includes(id));
+        if (!hasAllTags) return false;
+      }
+
+      return true;
+    });
+  }, [rawEntries, searchQuery, statusFilter, selectedTagIds]);
+
+  // Memoized date grouping using local calendar day
   const groups = useMemo(() => {
     const map = new Map<string, Entry[]>();
-    for (const entry of entries) {
-      const label = groupLabel(entry.date);
-      const bucket = map.get(label);
-      if (bucket) bucket.push(entry);
-      else map.set(label, [entry]);
-    }
-    return Array.from(map.entries());
-  }, [entries]);
+    for (const entry of filteredEntries) {
+      const d = new Date(entry.date);
+      const localDateKey = isNaN(d.getTime())
+        ? entry.date.slice(0, 10)
+        : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-  const hasAnyEntries = entries.length > 0 || isFiltering(filters);
-  const filtering = isFiltering(filters);
+      const bucket = map.get(localDateKey);
+      if (bucket) bucket.push(entry);
+      else map.set(localDateKey, [entry]);
+    }
+    return Array.from(map.entries()).map(([, entriesList]) => ({
+      rawDate: entriesList[0].date,
+      entries: entriesList,
+    }));
+  }, [filteredEntries]);
+
+  const activeFilterCount =
+    (isFiltering(filters) ? 1 : 0) +
+    (searchQuery ? 1 : 0) +
+    selectedTagIds.length +
+    (statusFilter ? 1 : 0);
+
+  const handleClearAllFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setSearchQuery('');
+    setSelectedTagIds([]);
+    setStatusFilter(null);
+  };
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Entries</h1>
-        <Link to="/entries/new">
-          <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
-            New Entry
-          </Button>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-[#faf7f2] p-6 text-[#1c0d06] md:p-10">
+      <div className="mx-auto max-w-6xl">
+        {/* Top Header & Search Input */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-3xl font-bold tracking-tight text-[#1c0d06]">Entries</h1>
 
-      {hasAnyEntries && (
-        <div className="mb-6 flex items-center gap-1.5 overflow-x-auto pb-1">
+          {/* Search bar top right */}
+          <div className="relative w-full sm:w-72">
+            <input
+              type="text"
+              placeholder="Search entries..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-full border border-[#e6ded6] bg-[#fcfaf7] py-2 pl-4 pr-10 text-sm text-[#1c0d06] placeholder-[#a39588] shadow-sm transition-all focus:border-[#d1a153] focus:bg-white focus:outline-none"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8c7b6e] hover:text-[#1c0d06]"
+              >
+                <X size={14} />
+              </button>
+            ) : (
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-[#a39588]" />
+            )}
+          </div>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="mb-8 flex flex-wrap items-center gap-2">
+          {/* Project Select Dropdown Pill */}
+          <div className="relative inline-block">
+            <select
+              value={filters.projectId ?? ''}
+              onChange={(e) =>
+                setFilters((f) => ({
+                  ...f,
+                  projectId: e.target.value ? Number(e.target.value) : undefined,
+                }))
+              }
+              className="appearance-none rounded-full border border-[#e6ded6] bg-[#fcfaf7] py-1.5 pl-4 pr-8 text-xs font-medium text-[#5c4a3e] shadow-sm hover:border-[#d1a153] focus:outline-none"
+            >
+              <option value="">All projects</option>
+              {projects?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#8c7b6e]" />
+          </div>
+
+          {/* Date Range Quick Pills */}
           {QUICK_RANGES.map((key) => {
             const active = filters.dateRange === key;
             return (
@@ -105,123 +259,195 @@ export default function EntriesPage() {
                 key={key}
                 type="button"
                 onClick={() => setFilters((f) => ({ ...f, dateRange: key }))}
-                className={`min-h-11 shrink-0 rounded-full px-3 text-sm font-medium ${
+                className={`rounded-full px-3.5 py-1.5 text-xs font-medium shadow-sm transition-all ${
                   active
-                    ? 'border border-[#d4a843] bg-[#d4a843] text-[#1c1109]'
-                    : 'border border-[#d4a373]/40 text-[#7a5230]'
+                    ? 'bg-[#d1a153] text-[#1c1109]'
+                    : 'border border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-[#d1a153]'
                 }`}
               >
                 {DATE_RANGE_LABELS[key]}
               </button>
             );
           })}
+
+          {/* Unfinished Status Chip */}
+          <button
+            type="button"
+            onClick={() => setStatusFilter((prev) => (prev === 'unfinished' ? null : 'unfinished'))}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-sm transition-all ${
+              statusFilter === 'unfinished'
+                ? 'border-[#1c0d06] bg-[#1c0d06] text-[#f5ebe0]'
+                : 'border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-[#d1a153]'
+            }`}
+          >
+            <CheckSquare size={13} className="text-[#8c7b6e]" />
+            <span>Unfinished</span>
+            <span className="text-[#8c7b6e]">· {unfinishedCount}</span>
+          </button>
+
+          {/* Overdue Status Chip */}
+          <button
+            type="button"
+            onClick={() => setStatusFilter((prev) => (prev === 'overdue' ? null : 'overdue'))}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-sm transition-all ${
+              statusFilter === 'overdue'
+                ? 'border-red-600 bg-red-600 text-white'
+                : 'border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-red-400'
+            }`}
+          >
+            <Clock size={13} className="text-[#8c7b6e]" />
+            <span>Overdue</span>
+            <span className="text-[#8c7b6e]">· {overdueCount}</span>
+          </button>
+
+          {/* Mobile Filters Sheet Trigger */}
           <button
             type="button"
             onClick={() => setSheetOpen(true)}
-            aria-label="Filters"
-            className={`flex size-11 shrink-0 items-center justify-center rounded-full border ${
-              filtering ? 'border-[#d4a843] text-[#d4a843]' : 'border-[#d4a373]/40 text-[#7a5230]'
-            }`}
+            aria-label="Open filter sheet"
+            className="ml-auto flex size-8 items-center justify-center rounded-full border border-[#e6ded6] bg-white text-[#5c4a3e] md:hidden"
           >
-            <SlidersHorizontal size={16} strokeWidth={2} />
+            <SlidersHorizontal size={14} />
           </button>
         </div>
-      )}
 
-      {isPending && (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-[#d4a373]/20" />
-          ))}
-        </div>
-      )}
-
-      {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          Failed to load entries. Try refreshing the page.
-        </div>
-      )}
-
-      {!isPending && !isError && entries.length === 0 && !filtering && (
-        <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
-          <p className="text-sm text-[#4a3525]">No entries yet.</p>
-          <Link to="/entries/new">
-            <Button className="mt-4 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
-              Log your first entry
-            </Button>
-          </Link>
-        </div>
-      )}
-
-      {!isPending && !isError && entries.length === 0 && filtering && (
-        <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
-          <p className="text-sm text-[#4a3525]">No entries match your filters.</p>
-          <Button
-            onClick={() => setFilters(DEFAULT_FILTERS)}
-            className="mt-4 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
-          >
-            Clear filters
-          </Button>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-6">
-        {groups.map(([label, groupEntries]) => (
-          <div key={label} className="flex flex-col gap-3">
-            <p className="text-sm font-bold text-[#1c0d06]">{label}</p>
-            <ul className="flex flex-col gap-3">
-              {groupEntries.map((entry) => {
-                const { headline, snippet } = entryHeadline(entry);
-                return (
-                  <li
-                    key={entry.id}
-                    className="rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <Link
-                        to={`/projects/${entry.projectId}`}
-                        className="inline-flex min-h-11 items-center gap-1.5 text-xs font-bold tracking-wide text-[#7a5230] uppercase hover:underline"
-                      >
-                        <span
-                          className="size-[8px] shrink-0 rounded-full"
-                          style={{ backgroundColor: dotColorFor(entry.projectId) }}
-                          aria-hidden
-                        />
-                        {projectNames.get(entry.projectId) ?? 'Unknown project'}
-                      </Link>
-                      <p className="text-xs text-[#7a5230]">
-                        {new Date(entry.date).toLocaleTimeString([], {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                    <Link to={`/entries/${entry.id}`} className="mt-1 block min-h-11">
-                      <p className="font-semibold text-[#1c0d06]">{headline}</p>
-                      {snippet && (
-                        <p className="mt-0.5 line-clamp-2 text-sm text-[#4a3525]">{snippet}</p>
-                      )}
-                    </Link>
-                    {entry.tags && entry.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {entry.tags.map(({ tag }) => (
-                          <span
-                            key={tag.id}
-                            className="rounded-full bg-[#d4a373]/20 px-2 py-0.5 text-[11px] font-medium text-[#7a5230]"
-                          >
-                            {tag.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+        {/* Loading / Error States */}
+        {isPending && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 animate-pulse rounded-2xl bg-[#ebe3d8]" />
+            ))}
           </div>
-        ))}
+        )}
+
+        {isError && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            Failed to load entries. Please refresh to try again.
+          </div>
+        )}
+
+        {!isPending && !isError && rawEntries.length === 0 && !activeFilterCount && (
+          <div className="rounded-2xl border border-dashed border-[#e6ded6] bg-white/60 p-12 text-center">
+            <p className="text-sm font-medium text-[#7a6b5d]">No entries recorded yet.</p>
+            <Link to="/entries/new">
+              <Button className="mt-4 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">
+                Create First Entry
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {!isPending && !isError && filteredEntries.length === 0 && activeFilterCount > 0 && (
+          <div className="rounded-2xl border border-dashed border-[#e6ded6] bg-white/60 p-12 text-center">
+            <p className="text-sm font-medium text-[#7a6b5d]">
+              No entries match the selected filters.
+            </p>
+            <Button
+              onClick={handleClearAllFilters}
+              className="mt-4 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90"
+            >
+              Clear filters
+            </Button>
+          </div>
+        )}
+
+        {/* Date Group Timeline */}
+        <div className="space-y-8">
+          {groups.map((group) => {
+            const { primary, secondary } = groupDateFormatted(group.rawDate);
+
+            return (
+              <section key={group.rawDate} className="space-y-3">
+                {/* Date Group Header */}
+                <div className="flex items-baseline gap-1.5 text-sm">
+                  <span className="font-bold text-[#1c0d06]">{primary}</span>
+                  {secondary && <span className="text-[#8c7b6e]">{secondary}</span>}
+                </div>
+
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {group.entries.map((entry) => {
+                    const { headline, snippet } = entryHeadline(entry);
+                    const unfinished = isEntryUnfinished(entry);
+                    const overdue = isEntryOverdue(entry);
+                    const timeSpent = getTimeSpent(entry);
+
+                    return (
+                      <div
+                        key={entry.id}
+                        className="group flex flex-col justify-between rounded-2xl border border-[#ebdcd0] bg-white p-5 shadow-xs transition-all hover:shadow-md"
+                      >
+                        <div>
+                          {/* Top Row: Project Tag & Time */}
+                          <div className="mb-2 flex items-center justify-between text-[11px] font-semibold tracking-wider text-[#8c7b6e] uppercase">
+                            <Link
+                              to={`/projects/${entry.projectId}`}
+                              className="flex items-center gap-1.5 hover:underline"
+                            >
+                              <span
+                                className="size-2 rounded-full"
+                                style={{ backgroundColor: dotColorFor(entry.projectId) }}
+                              />
+                              <span>{projectNames.get(entry.projectId) ?? 'PROJECT'}</span>
+                            </Link>
+
+                            <span className="text-xs font-normal tracking-normal text-[#8c7b6e]/80">
+                              {new Date(entry.date).toLocaleTimeString([], {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+
+                          {/* Title & Open Checkbox State */}
+                          <Link to={`/entries/${entry.id}`} className="block">
+                            <h3 className="flex items-start gap-2 text-base font-semibold leading-snug text-[#1c0d06]">
+                              {unfinished && (
+                                <Square
+                                  size={16}
+                                  className="mt-1 shrink-0 text-[#8c7b6e] group-hover:text-[#1c0d06]"
+                                />
+                              )}
+                              <span>{headline}</span>
+                            </h3>
+
+                            {/* Snippet */}
+                            {snippet && (
+                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[#5c4a3e]">
+                                {snippet}
+                              </p>
+                            )}
+                          </Link>
+                        </div>
+
+                        {/* Footer Badges (Time spent or Overdue notice) */}
+                        {(timeSpent || overdue) && (
+                          <div className="mt-4 flex items-center gap-1.5 text-xs text-[#8c7b6e]">
+                            {timeSpent && !overdue && (
+                              <span className="flex items-center gap-1">
+                                <Clock size={13} />
+                                {timeSpent}
+                              </span>
+                            )}
+                            {overdue && (
+                              <span className="flex items-center gap-1 text-[#c44536] font-medium">
+                                <Clock size={13} className="text-[#c44536]" />
+                                Overdue · due {formatDueDate(entry.dueDate!)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
 
+      {/* Mobile Filter Bottom Sheet */}
       <FiltersSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
