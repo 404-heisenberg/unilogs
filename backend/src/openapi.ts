@@ -1,5 +1,3 @@
-import { nullable } from 'better-auth';
-
 export const openapiSpec = {
   openapi: '3.0.3',
 
