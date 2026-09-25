@@ -133,13 +133,19 @@ export default function EntriesPage() {
   });
 
   // Unique tags fallback from entries if tag endpoint is empty
-  const availableTags = useMemo(() => {
+  const availableTags = useMemo<Tag[]>(() => {
     if (tagsData && Array.isArray(tagsData) && tagsData.length > 0) return tagsData;
     const tagMap = new Map<number, Tag>();
     for (const entry of rawEntries) {
       if (entry.tags) {
         for (const t of entry.tags) {
-          if (t.tag) tagMap.set(t.tag.id, t.tag);
+          if (t.tag) {
+            tagMap.set(t.tag.id, {
+              id: t.tag.id,
+              name: t.tag.name,
+              usageCount: 'usageCount' in t.tag ? (t.tag as Tag).usageCount : 0,
+            });
+          }
         }
       }
     }
