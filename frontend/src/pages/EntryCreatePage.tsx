@@ -97,7 +97,9 @@ function InlineTagInput({
           createTag.mutate(inputValue.trim());
         }
       } else if (filteredTags.length > 0) {
-        handleSelect(filteredTags[0].id);
+        if (filteredTags[0]) {
+          handleSelect(filteredTags[0].id);
+        }
       }
     }
     if (e.key === 'Escape') {
@@ -336,6 +338,32 @@ export default function EntryCreatePage() {
   const hasFields = fields.length > 0;
   const hasNarrative = title.trim().length > 0 || body.trim().length > 0;
 
+  const formatPayloadDate = (selectedDateStr: string, existingIsoDate?: string) => {
+    const [year, month, day] = selectedDateStr.split('-').map(Number);
+    const targetDate = new Date();
+    targetDate.setFullYear(year, month - 1, day);
+
+    if (isEditing && existingIsoDate) {
+      const orig = new Date(existingIsoDate);
+      targetDate.setHours(
+        orig.getHours(),
+        orig.getMinutes(),
+        orig.getSeconds(),
+        orig.getMilliseconds(),
+      );
+    } else {
+      const now = new Date();
+      targetDate.setHours(
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds(),
+      );
+    }
+
+    return targetDate.toISOString();
+  };
+
   const handleSubmit = (e?: React.FormEvent | KeyboardEvent, isKeyboardSave = false) => {
     if (e) e.preventDefault();
 
@@ -356,7 +384,7 @@ export default function EntryCreatePage() {
       for (const field of fields) {
         if (field.fieldType === 'boolean') continue;
         const raw = values[field.name];
-        if (raw === undefined || String(raw).trim() === '') {
+        if (raw === undefined || raw === null || String(raw).trim() === '') {
           nextFieldErrors[field.name] = `${field.name} is required`;
         }
       }
@@ -368,19 +396,33 @@ export default function EntryCreatePage() {
     }
 
     const content = buildContent(fields, values);
+    const formattedDate = formatPayloadDate(date, entry?.date);
 
     setFieldErrors({});
     setFormError(null);
-    saveEntry.mutate({
+
+    const payload: {
+      projectId: number;
+      date: string;
+      dueDate?: string;
+      title?: string;
+      body?: string;
+      tagIds?: number[];
+      content: Record<string, unknown>;
+      isKeyboardSave?: boolean;
+    } = {
       projectId: Number(projectId),
-      date,
-      dueDate: dueDate ? dueDate : undefined,
-      title: title.trim() || undefined,
-      body: body.trim() || undefined,
-      tagIds: tagIds.length > 0 ? tagIds : undefined,
+      date: formattedDate,
       content,
       isKeyboardSave,
-    });
+    };
+
+    if (dueDate) payload.dueDate = dueDate;
+    if (title.trim()) payload.title = title.trim();
+    if (body.trim()) payload.body = body.trim();
+    if (tagIds.length > 0) payload.tagIds = tagIds;
+
+    saveEntry.mutate(payload);
   };
 
   const applyFormatting = (type: FormatOption) => {
@@ -509,161 +551,163 @@ export default function EntryCreatePage() {
 
       <form
         onSubmit={(e) => handleSubmit(e, false)}
-        className="flex flex-col lg:flex-row gap-8 items-start"
+        className="flex flex-col lg:flex-row gap-8 items-stretch min-h-[calc(100vh-160px)]"
       >
-        <div className="flex-1 w-full space-y-4 lg:pr-8 lg:border-r lg:border-stone-200">
-          <div>
-            <label htmlFor="entry-title" className="sr-only">
-              Title
-            </label>
-            <input
-              id="entry-title"
-              type="text"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setIsDirty(true);
-              }}
-              placeholder="Title (optional)"
-              className="w-full border-b border-stone-200 bg-transparent px-0 pb-2 text-2xl font-bold tracking-tight text-stone-900 placeholder:text-stone-300 focus:border-stone-800 focus:outline-none"
-            />
-          </div>
-
-          <div className="border rounded-md overflow-hidden bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b bg-stone-50 px-2 pt-2 gap-1 text-xs">
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setMode('write')}
-                  className={`px-3 py-1.5 font-medium border-t border-x rounded-t ${
-                    mode === 'write'
-                      ? 'bg-white border-stone-300 border-b-white -mb-px text-stone-900'
-                      : 'border-transparent text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  Write
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode('preview')}
-                  className={`px-3 py-1.5 font-medium border-t border-x rounded-t ${
-                    mode === 'preview'
-                      ? 'bg-white border-stone-300 border-b-white -mb-px text-stone-900'
-                      : 'border-transparent text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  Preview
-                </button>
-              </div>
+        <div className="flex-1 w-full space-y-4 lg:pr-8 lg:border-r lg:border-stone-200 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="entry-title" className="sr-only">
+                Title
+              </label>
+              <input
+                id="entry-title"
+                type="text"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Title (optional)"
+                className="w-full border-b border-stone-200 bg-transparent px-0 pb-2 text-2xl font-bold tracking-tight text-stone-900 placeholder:text-stone-300 focus:border-stone-800 focus:outline-none"
+              />
             </div>
 
-            {mode === 'write' && (
-              <div className="flex items-center gap-0.5 border-b bg-stone-50/50 px-2 py-1 overflow-x-auto text-stone-600">
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('bold')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Bold"
-                >
-                  <Bold className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('italic')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Italics"
-                >
-                  <Italic className="h-3.5 w-3.5" />
-                </button>
-                <div className="h-3.5 w-[1px] bg-stone-300 mx-1" />
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('heading')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Heading"
-                >
-                  <Heading2 className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('list')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Bulleted List"
-                >
-                  <List className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('ordered-list')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Numbered List"
-                >
-                  <ListOrdered className="h-3.5 w-3.5" />
-                </button>
-                <div className="h-3.5 w-[1px] bg-stone-300 mx-1" />
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('code')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Code Block"
-                >
-                  <Code className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('quote')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Quote"
-                >
-                  <Quote className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyFormatting('link')}
-                  className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
-                  title="Link"
-                >
-                  <LinkIcon className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-
-            <div className="p-3">
-              {mode === 'write' ? (
-                <div>
-                  <label htmlFor="entry-body" className="sr-only">
-                    Body notes
-                  </label>
-                  <textarea
-                    ref={textareaRef}
-                    id="entry-body"
-                    value={body}
-                    onChange={(e) => {
-                      setBody(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    placeholder="What did you work on? (GitHub-flavored Markdown supported)"
-                    rows={14}
-                    className="w-full font-mono text-sm resize-y focus:outline-none bg-transparent"
-                  />
+            <div className="border rounded-md overflow-hidden bg-white shadow-sm flex-1 flex flex-col">
+              <div className="flex items-center justify-between border-b bg-stone-50 px-2 pt-2 gap-1 text-xs">
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setMode('write')}
+                    className={`px-3 py-1.5 font-medium border-t border-x rounded-t ${
+                      mode === 'write'
+                        ? 'bg-white border-stone-300 border-b-white -mb-px text-stone-900'
+                        : 'border-transparent text-stone-500 hover:text-stone-800'
+                    }`}
+                  >
+                    Write
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode('preview')}
+                    className={`px-3 py-1.5 font-medium border-t border-x rounded-t ${
+                      mode === 'preview'
+                        ? 'bg-white border-stone-300 border-b-white -mb-px text-stone-900'
+                        : 'border-transparent text-stone-500 hover:text-stone-800'
+                    }`}
+                  >
+                    Preview
+                  </button>
                 </div>
-              ) : (
-                <div className="min-h-[296px] text-sm">
-                  {body.trim() ? (
-                    <div className="prose prose-stone prose-sm max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-stone-400 italic">Nothing to preview</p>
-                  )}
+              </div>
+
+              {mode === 'write' && (
+                <div className="flex items-center gap-0.5 border-b bg-stone-50/50 px-2 py-1 overflow-x-auto text-stone-600">
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('bold')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Bold"
+                  >
+                    <Bold className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('italic')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Italics"
+                  >
+                    <Italic className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="h-3.5 w-[1px] bg-stone-300 mx-1" />
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('heading')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Heading"
+                  >
+                    <Heading2 className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('list')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Bulleted List"
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('ordered-list')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Numbered List"
+                  >
+                    <ListOrdered className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="h-3.5 w-[1px] bg-stone-300 mx-1" />
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('code')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Code Block"
+                  >
+                    <Code className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('quote')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Quote"
+                  >
+                    <Quote className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyFormatting('link')}
+                    className="p-1.5 rounded hover:bg-stone-200 hover:text-stone-900 transition-colors"
+                    title="Link"
+                  >
+                    <LinkIcon className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               )}
+
+              <div className="p-3 flex-1 flex flex-col">
+                {mode === 'write' ? (
+                  <div className="flex-1 flex flex-col">
+                    <label htmlFor="entry-body" className="sr-only">
+                      Body notes
+                    </label>
+                    <textarea
+                      ref={textareaRef}
+                      id="entry-body"
+                      value={body}
+                      onChange={(e) => {
+                        setBody(e.target.value);
+                        setIsDirty(true);
+                      }}
+                      placeholder="What did you work on? (GitHub-flavored Markdown supported)"
+                      rows={14}
+                      className="w-full h-full font-mono text-sm resize-y focus:outline-none bg-transparent flex-1 min-h-[280px]"
+                    />
+                  </div>
+                ) : (
+                  <div className="min-h-[296px] text-sm flex-1">
+                    {body.trim() ? (
+                      <div className="prose prose-stone prose-sm max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-stone-400 italic">Nothing to preview</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+
+            {formError && <p className="text-sm text-red-700">{formError}</p>}
           </div>
 
-          {formError && <p className="text-sm text-red-700">{formError}</p>}
-
-          <div className="pt-2 flex justify-end">
+          <div className="pt-4 flex justify-end">
             <Button
               type="submit"
               className="min-h-11 md:min-h-0 w-full md:w-auto"
@@ -673,7 +717,8 @@ export default function EntryCreatePage() {
             </Button>
           </div>
         </div>
-        <div className="w-full lg:w-[320px] shrink-0 border border-stone-200 bg-stone-50/50 rounded-xl p-5 flex flex-col gap-6 lg:sticky lg:top-6 shadow-sm">
+
+        <div className="w-full lg:w-[320px] shrink-0 border border-stone-200 bg-stone-50/50 rounded-xl p-5 flex flex-col gap-6 lg:self-start lg:sticky lg:top-6 shadow-sm">
           <div className="flex items-center gap-2 text-stone-800 font-semibold border-b border-stone-200 pb-2">
             <PanelRight className="h-4 w-4" />
             <h2>Properties</h2>

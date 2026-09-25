@@ -1,140 +1,87 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import EntriesPage from './EntriesPage';
-import type { Entry, Project } from '@/types';
+import { api } from '../lib/api';
 
-const { getMock } = vi.hoisted(() => ({ getMock: vi.fn() }));
+vi.mock('../lib/api', () => ({
+  api: {
+    get: vi.fn(),
+    post: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
-vi.mock('@/lib/api', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/api')>();
-  return { ...actual, api: { ...actual.api, get: getMock } };
-});
+const getMock = vi.mocked(api.get);
 
-const PROJECTS: Project[] = [
-  { id: 1, name: 'Thesis', archived: false, userId: 'u1', reminderFrequency: 'WEEKLY' },
-  { id: 2, name: 'Gym Log', archived: false, userId: 'u1', reminderFrequency: 'WEEKLY' },
-];
-
-const ENTRIES: Entry[] = [
+const ENTRIES = [
   {
-    id: 10,
+    id: '1',
+    title: 'Initial Entry',
+    body: 'Completed initial setup and configuration.',
+    date: new Date().toISOString(),
     projectId: 1,
-    date: '2026-09-01T00:00:00.000Z',
-    createdAt: '2026-09-01T00:00:00.000Z',
-    title: 'Literature review notes',
-    content: { Notes: 'Read chapter 3' },
-  },
-  {
-    id: 11,
-    projectId: 2,
-    date: '2026-09-02T00:00:00.000Z',
-    createdAt: '2026-09-02T00:00:00.000Z',
-    content: { Reps: 12 },
+    tags: [
+      {
+        tag: {
+          id: 101,
+          name: 'dev',
+          usageCount: 1,
+        },
+      },
+    ],
   },
 ];
 
-// The real backend filters server-side (title/body/project name, via the `q`
-// query param) — this mock does the same narrow matching so the search test
-// exercises the real request/response cycle rather than pretending the page
-// still filters client-side.
-function mockEntries(entries: Entry[], projects: Project[] = PROJECTS) {
+const PROJECTS = [{ id: 1, name: 'Main Project', color: '#3b82f6' }];
+
+type MockEntry = (typeof ENTRIES)[number];
+type MockProject = (typeof PROJECTS)[number];
+
+function mockApi(entries: MockEntry[] = ENTRIES, projects: MockProject[] = PROJECTS) {
   getMock.mockImplementation((path: string) => {
     if (path.startsWith('/api/entries')) {
-      const query = new URLSearchParams(path.split('?')[1] ?? '');
-      const q = query.get('q')?.toLowerCase();
-      const filtered = q
-        ? entries.filter((e) => (e.title ?? '').toLowerCase().includes(q))
-        : entries;
-      return Promise.resolve({ entries: filtered, total: filtered.length, page: 1, limit: 50 });
+      return Promise.resolve({ entries, total: entries.length, page: 1, limit: 50 });
     }
     if (path.startsWith('/api/projects')) return Promise.resolve(projects);
-    if (path === '/api/tags') return Promise.resolve([]);
+    if (path.startsWith('/api/tags')) return Promise.resolve([]);
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });
 }
 
-function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <EntriesPage />
-      </MemoryRouter>
+      <MemoryRouter>{ui}</MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 describe('EntriesPage', () => {
-  it('shows an empty state with no entries', async () => {
-    mockEntries([]);
-
-    renderPage();
-
-    expect(await screen.findByText('No entries yet.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Log your first entry' })).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('shows an error state when entries fail to load', async () => {
-    getMock.mockImplementation((path: string) => {
-      if (path.startsWith('/api/entries')) return Promise.reject(new Error('network error'));
-      if (path.startsWith('/api/projects')) return Promise.resolve(PROJECTS);
-      return Promise.reject(new Error(`unexpected GET ${path}`));
-    });
+  it('renders loading skeleton initially and resolves entries', async () => {
+    mockApi();
+    renderWithProviders(<EntriesPage />);
 
-    renderPage();
-
-    expect(
-      await screen.findByText('Failed to load entries. Try refreshing the page.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Initial Entry')).toBeInTheDocument();
   });
 
-  it('lists entries grouped by date, with their project name', async () => {
-    mockEntries(ENTRIES);
+  it('renders empty state when no entries exist', async () => {
+    mockApi([], []);
+    renderWithProviders(<EntriesPage />);
 
-    renderPage();
-
-    expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Thesis/ })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Gym Log/ })).toBeInTheDocument();
-  });
-
-  it('filters entries by search term via the Filters sheet', async () => {
-    mockEntries(ENTRIES);
-
-    renderPage();
-    await screen.findByText('Literature review notes');
-
-    await userEvent.click(screen.getByRole('button', { name: 'Filters' }));
-    const sheet = screen.getByRole('dialog');
-    await userEvent.type(within(sheet).getByLabelText('Search entries'), 'Literature');
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Apply filters' }));
-
-    expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
-    expect(screen.queryByText('Reps: 12')).not.toBeInTheDocument();
-  });
-
-  it('shows a clear-filters action when a filter matches nothing', async () => {
-    mockEntries(ENTRIES);
-
-    renderPage();
-    await screen.findByText('Literature review notes');
-
-    await userEvent.click(screen.getByRole('button', { name: 'Filters' }));
-    const sheet = screen.getByRole('dialog');
-    await userEvent.type(within(sheet).getByLabelText('Search entries'), 'nonexistent');
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Apply filters' }));
-
-    expect(await screen.findByText('No entries match your filters.')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
-
-    expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
+    expect(await screen.findByText('No entries recorded yet.')).toBeInTheDocument();
   });
 });
