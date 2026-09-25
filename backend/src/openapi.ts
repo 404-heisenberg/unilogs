@@ -1,3 +1,5 @@
+import { nullable } from 'better-auth';
+
 export const openapiSpec = {
   openapi: '3.0.3',
 
@@ -1878,6 +1880,7 @@ export const openapiSpec = {
                   },
                   aggregationOverride: {
                     type: 'string',
+                    nullable: true,
                     enum: ['sum', 'average', 'min', 'max'],
                     example: 'min',
                   },
@@ -2004,6 +2007,7 @@ export const openapiSpec = {
                   },
                   aggregationOverride: {
                     type: 'string',
+                    nullable: true,
                     enum: ['sum', 'average', 'min', 'max'],
                   },
                 },
@@ -2086,6 +2090,293 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete field definition.',
+          },
+        },
+      },
+    },
+
+    '/api/stats': {
+      get: {
+        summary: 'Get overall statistics',
+        description:
+          'Returns overall statistics for the authenticated user, including hours tracked per project, total hours, and current streak.',
+
+        responses: {
+          '200': {
+            description: 'Statistics retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    perProject: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          projectId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          totalHours: {
+                            type: 'number',
+                            example: 12.5,
+                          },
+                        },
+                        required: ['projectId', 'projectName', 'totalHours'],
+                      },
+                    },
+                    totalHours: {
+                      type: 'number',
+                      example: 25.5,
+                    },
+                    streak: {
+                      type: 'integer',
+                      example: 5,
+                    },
+                  },
+                  required: ['perProject', 'totalHours', 'streak'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch stats.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/frequency': {
+      get: {
+        summary: 'Get entry frequency statistics',
+        description: 'Returns weekly entry counts and term totals for the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Frequency statistics retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    weekly: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          weekStart: {
+                            type: 'string',
+                            format: 'date',
+                            example: '2026-09-21',
+                          },
+                          count: {
+                            type: 'integer',
+                            example: 5,
+                          },
+                        },
+                        required: ['weekStart', 'count'],
+                      },
+                    },
+                    terms: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          termName: {
+                            type: 'string',
+                            example: 'Term 1',
+                          },
+                          total: {
+                            type: 'integer',
+                            example: 42,
+                          },
+                        },
+                        required: ['termName', 'total'],
+                      },
+                    },
+                  },
+                  required: ['weekly', 'terms'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch frequency stats.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/streak': {
+      get: {
+        summary: 'Get current streak',
+        description: 'Returns the current consecutive-day entry streak for the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Current streak retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    streak: {
+                      type: 'integer',
+                      example: 5,
+                    },
+                  },
+                  required: ['streak'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch streak.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/unfinished': {
+      get: {
+        summary: 'Get unfinished items',
+        description:
+          'Returns unfinished boolean items grouped by overdue, due this week, and no due date for the authenticated user.',
+
+        responses: {
+          '200': {
+            description: 'Unfinished items retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    overdue: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          entryId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          fieldName: {
+                            type: 'string',
+                            example: 'Completed',
+                          },
+                          label: {
+                            type: 'string',
+                            example: 'Finish report',
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          dueDate: {
+                            type: 'string',
+                            nullable: true,
+                            example: '2026-09-22',
+                          },
+                        },
+                        required: ['entryId', 'fieldName', 'label', 'projectName', 'dueDate'],
+                      },
+                    },
+
+                    dueThisWeek: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          entryId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          fieldName: {
+                            type: 'string',
+                            example: 'Completed',
+                          },
+                          label: {
+                            type: 'string',
+                            example: 'Finish report',
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          dueDate: {
+                            type: 'string',
+                            nullable: true,
+                            example: '2026-09-22',
+                          },
+                        },
+                        required: ['entryId', 'fieldName', 'label', 'projectName', 'dueDate'],
+                      },
+                    },
+
+                    noDueDate: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          entryId: {
+                            type: 'integer',
+                            example: 1,
+                          },
+                          fieldName: {
+                            type: 'string',
+                            example: 'Completed',
+                          },
+                          label: {
+                            type: 'string',
+                            example: 'Finish report',
+                          },
+                          projectName: {
+                            type: 'string',
+                            example: 'University Project',
+                          },
+                          dueDate: {
+                            type: 'string',
+                            nullable: true,
+                            example: null,
+                          },
+                        },
+                        required: ['entryId', 'fieldName', 'label', 'projectName', 'dueDate'],
+                      },
+                    },
+                  },
+
+                  required: ['overdue', 'dueThisWeek', 'noDueDate'],
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch unfinished items.',
           },
         },
       },
@@ -2499,8 +2790,10 @@ export const openapiSpec = {
                 schema: {
                   type: 'object',
                   properties: {
-                    type: 'boolean',
-                    example: true,
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
                   },
                   required: ['connected'],
                 },
