@@ -244,6 +244,13 @@ export const openapiSpec = {
             enum: ['text', 'number', 'date', 'duration', 'boolean'],
             example: 'text',
           },
+          aggregationOverride: {
+            type: 'string',
+            nullable: true,
+            enum: ['sum', 'average', 'max', 'min'],
+            example: 'average',
+            description: 'Optional aggregation used when calculating field statistics.',
+          },
         },
       },
 
@@ -261,6 +268,149 @@ export const openapiSpec = {
             },
           },
         ],
+      },
+
+      FieldTrend: {
+        type: 'object',
+        properties: {
+          deltaPct: {
+            type: 'number',
+            nullable: true,
+            example: 10,
+            description: 'Percentage change compared with the previous week.',
+          },
+          direction: {
+            type: 'string',
+            nullable: true,
+            enum: ['up', 'down', 'flat'],
+            example: 'up',
+          },
+        },
+
+        required: ['deltaPct', 'direction'],
+      },
+
+      NumberValue: {
+        type: 'number',
+        example: 22,
+        description: 'Numeric statistic value.',
+      },
+
+      NumberInsightValue: {
+        type: 'object',
+        properties: {
+          average: {
+            type: 'number',
+            example: 5.5,
+          },
+          total: {
+            type: 'number',
+            example: 22,
+          },
+        },
+        required: ['average', 'total'],
+      },
+
+      TextInsightValue: {
+        type: 'object',
+        properties: {
+          top: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                value: {
+                  type: 'string',
+                  example: 'Completed',
+                },
+                count: {
+                  type: 'integer',
+                  example: 5,
+                },
+              },
+              required: ['value', 'count'],
+            },
+          },
+        },
+        required: ['top'],
+      },
+
+      BooleanInsightValue: {
+        type: 'object',
+        properties: {
+          pctTrue: {
+            type: 'number',
+            example: 75,
+            description: 'Percentage of recorded boolean values that are true.',
+          },
+        },
+        required: ['pctTrue'],
+      },
+
+      DateInsightValue: {
+        type: 'object',
+        properties: {
+          mostRecent: {
+            type: 'string',
+            example: '2026-09-23',
+          },
+        },
+        required: ['mostRecent'],
+      },
+
+      FieldInsight: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            example: 'Hours',
+          },
+          fieldType: {
+            type: 'string',
+            enum: ['text', 'number', 'date', 'duration', 'boolean'],
+            example: 'number',
+          },
+          family: {
+            type: 'string',
+            enum: ['number', 'sum', 'average', 'max', 'min', 'frequency', 'percentage', 'recency'],
+            example: 'number',
+          },
+          value: {
+            nullable: true,
+            oneOf: [
+              {
+                $ref: '#/components/schemas/NumberInsightValue',
+              },
+              {
+                $ref: '#/components/schemas/TextInsightValue',
+              },
+              {
+                $ref: '#/components/schemas/BooleanInsightValue',
+              },
+              {
+                $ref: '#/components/schemas/DateInsightValue',
+              },
+            ],
+          },
+          valueMinutes: {
+            type: 'number',
+            example: 330,
+            description: 'Total duration in minutes. Used for duration fields.',
+          },
+          trend: {
+            $ref: '#/components/schemas/FieldTrend',
+          },
+          sampleCount: {
+            type: 'integer',
+            example: 4,
+          },
+          hasData: {
+            type: 'boolean',
+            example: false,
+            description: 'Present and false when the field has no recorded values.',
+          },
+        },
+        required: ['name', 'fieldType', 'family', 'trend', 'sampleCount'],
       },
 
       EntryWithProject: {
@@ -390,14 +540,14 @@ export const openapiSpec = {
             },
           },
         },
-      },
 
-      responses: {
-        '200': {
-          description: 'Google OAuth flow started successfully.',
-        },
-        '400': {
-          description: 'Failed to start Google sign-in.',
+        responses: {
+          '200': {
+            description: 'Google OAuth flow started successfully.',
+          },
+          '400': {
+            description: 'Failed to start Google sign-in.',
+          },
         },
       },
     },
@@ -714,6 +864,11 @@ export const openapiSpec = {
                     nullable: true,
                     example: 'Updated project description.',
                   },
+                  reminderFrequency: {
+                    type: 'string',
+                    enum: ['DAILY', 'WEEKLY', 'OFF'],
+                    example: 'WEEKLY',
+                  },
                 },
               },
             },
@@ -931,6 +1086,208 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to update archive status of project.',
+          },
+        },
+      },
+    },
+
+    '/api/tags': {
+      get: {
+        summary: 'Get tags',
+        description:
+          'Returns all tags belonging to the authenticated user, sorted by usage count and then name.',
+
+        responses: {
+          '200': {
+            description: 'Tags retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Tag',
+                  },
+                },
+              },
+            },
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to fetch tags.',
+          },
+        },
+      },
+
+      post: {
+        summary: 'Create a tag',
+        description: 'Creates a new tag for the authenticated user.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'University',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '201': {
+            description: 'Tag created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Tag',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Tag name is required and cannot be empty.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '409': {
+            description: 'A tag with this name already exists.',
+          },
+
+          '500': {
+            description: 'Failed to create tag.',
+          },
+        },
+      },
+    },
+
+    '/api/tags/{id}': {
+      patch: {
+        summary: 'Updates a tag',
+        description: 'Updates a tag belonging to the authenticated user.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The tag ID.',
+          },
+        ],
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: {
+                    type: 'string',
+                    example: 'University Work',
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description: 'Tag updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Tag',
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Tag ID or name is invalid',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this tag.',
+          },
+
+          '404': {
+            description: 'Tag not found.',
+          },
+
+          '409': {
+            description: 'A tag with this name already exists.',
+          },
+
+          '500': {
+            description: 'Failed to update tag',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Delete a tag',
+        description:
+          'Deletes a tag belonging to the authenticated user and removes its entry and associations.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The tag ID.',
+          },
+        ],
+
+        responses: {
+          '204': {
+            description: 'Tag deleted successfully.',
+          },
+
+          '400': {
+            description: 'Tag ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '403': {
+            description: 'You do not have access to this tag.',
+          },
+
+          '404': {
+            description: 'Tag not found.',
+          },
+
+          '500': {
+            description: 'Failed to delete tag.',
           },
         },
       },
@@ -1505,6 +1862,11 @@ export const openapiSpec = {
                     enum: ['text', 'number', 'date', 'duration', 'boolean'],
                     example: 'text',
                   },
+                  aggregationOverride: {
+                    type: 'string',
+                    enum: ['sum', 'average', 'min', 'max'],
+                    example: 'min',
+                  },
                 },
               },
             },
@@ -1626,6 +1988,10 @@ export const openapiSpec = {
                     enum: ['text', 'number', 'date', 'duration', 'boolean'],
                     example: 'text',
                   },
+                  aggregationOverride: {
+                    type: 'string',
+                    enum: ['sum', 'average', 'min', 'max'],
+                  },
                 },
               },
             },
@@ -1706,6 +2072,66 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete field definition.',
+          },
+        },
+      },
+    },
+
+    '/api/stats/fields/{projectId}': {
+      get: {
+        summary: 'Get field insights',
+        description: 'Returns statistics and insights for the fields in a project.',
+        parameters: [
+          {
+            name: 'projectId',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            example: 1,
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Field insights retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    projectId: {
+                      type: 'integer',
+                      example: 1,
+                    },
+
+                    fields: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/FieldInsight',
+                      },
+                    },
+                  },
+                  required: ['projectId', 'fields'],
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Invalid project ID.',
+          },
+
+          '401': {
+            description: 'Authentication required.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch field insights.',
           },
         },
       },
