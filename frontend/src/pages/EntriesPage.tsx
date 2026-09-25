@@ -9,6 +9,8 @@ import {
   Clock,
   SlidersHorizontal,
   X,
+  Tag as TagIcon,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FiltersSheet from '@/components/entries/FiltersSheet';
@@ -20,7 +22,7 @@ import {
   type DateRangeKey,
   type EntryFilters,
 } from '@/lib/entryFilters';
-import type { Entry, PagedEntries, Project } from '@/types';
+import type { Entry, PagedEntries, Project, Tag } from '@/types';
 
 const DATE_RANGE_LABELS: Record<DateRangeKey, string> = {
   all: 'All time',
@@ -124,6 +126,26 @@ export default function EntriesPage() {
     queryFn: () => api.get<Project[]>('/api/projects'),
   });
 
+  // Fetch tags
+  const { data: tagsData } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => api.get<Tag[]>('/api/tags').catch(() => []),
+  });
+
+  // Unique tags fallback from entries if tag endpoint is empty
+  const availableTags = useMemo(() => {
+    if (tagsData && Array.isArray(tagsData) && tagsData.length > 0) return tagsData;
+    const tagMap = new Map<number, Tag>();
+    for (const entry of rawEntries) {
+      if (entry.tags) {
+        for (const t of entry.tags) {
+          if (t.tag) tagMap.set(t.tag.id, t.tag);
+        }
+      }
+    }
+    return Array.from(tagMap.values());
+  }, [tagsData, rawEntries]);
+
   const projectNames = useMemo(() => {
     const map = new Map<number, string>();
     for (const project of projects ?? []) map.set(project.id, project.name);
@@ -197,9 +219,20 @@ export default function EntriesPage() {
     setStatusFilter(null);
   };
 
+  const toggleTag = (tagId: number) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
+    );
+  };
+
+  const scrollToDateGroup = (rawDate: string) => {
+    const el = document.getElementById(`group-${rawDate}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="min-h-screen bg-[#faf7f2] p-6 text-[#1c0d06] md:p-10">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         {/* Top Header & Search Input */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-bold tracking-tight text-[#1c0d06]">Entries</h1>
@@ -227,7 +260,7 @@ export default function EntriesPage() {
           </div>
         </div>
 
-        {/* Filter Bar */}
+        {/* Shared Filter Bar */}
         <div className="mb-8 flex flex-wrap items-center gap-2">
           {/* Project Select Dropdown Pill */}
           <div className="relative inline-block">
@@ -300,6 +333,26 @@ export default function EntriesPage() {
             <span className="text-[#8c7b6e]">· {overdueCount}</span>
           </button>
 
+          {/* Shared Tag Chips */}
+          {availableTags.map((t) => {
+            const active = selectedTagIds.includes(t.id);
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => toggleTag(t.id)}
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm transition-all ${
+                  active
+                    ? 'border-[#8c7b6e] bg-[#8c7b6e] text-white'
+                    : 'border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-[#d1a153]'
+                }`}
+              >
+                <TagIcon size={11} />
+                <span>#{t.name}</span>
+              </button>
+            );
+          })}
+
           {/* Mobile Filters Sheet Trigger */}
           <button
             type="button"
@@ -351,99 +404,163 @@ export default function EntriesPage() {
           </div>
         )}
 
-        {/* Date Group Timeline */}
-        <div className="space-y-8">
-          {groups.map((group) => {
-            const { primary, secondary } = groupDateFormatted(group.rawDate);
+        {/* Desktop Layout Grid: Main Content + Recency Explorer Outline Sidebar */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+          {/* Main Date Group Timeline Column */}
+          <div className="space-y-8 lg:col-span-3">
+            {groups.map((group) => {
+              const { primary, secondary } = groupDateFormatted(group.rawDate);
 
-            return (
-              <section key={group.rawDate} className="space-y-3">
-                {/* Date Group Header */}
-                <div className="flex items-baseline gap-1.5 text-sm">
-                  <span className="font-bold text-[#1c0d06]">{primary}</span>
-                  {secondary && <span className="text-[#8c7b6e]">{secondary}</span>}
-                </div>
+              return (
+                <section
+                  key={group.rawDate}
+                  id={`group-${group.rawDate}`}
+                  className="scroll-mt-6 space-y-3"
+                >
+                  {/* Date Group Header */}
+                  <div className="flex items-baseline gap-1.5 text-sm">
+                    <span className="font-bold text-[#1c0d06]">{primary}</span>
+                    {secondary && <span className="text-[#8c7b6e]">{secondary}</span>}
+                  </div>
 
-                {/* Cards Grid */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {group.entries.map((entry) => {
-                    const { headline, snippet } = entryHeadline(entry);
-                    const unfinished = isEntryUnfinished(entry);
-                    const overdue = isEntryOverdue(entry);
-                    const timeSpent = getTimeSpent(entry);
+                  {/* Cards Grid */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {group.entries.map((entry) => {
+                      const { headline, snippet } = entryHeadline(entry);
+                      const unfinished = isEntryUnfinished(entry);
+                      const overdue = isEntryOverdue(entry);
+                      const timeSpent = getTimeSpent(entry);
 
-                    return (
-                      <div
-                        key={entry.id}
-                        className="group flex flex-col justify-between rounded-2xl border border-[#ebdcd0] bg-white p-5 shadow-xs transition-all hover:shadow-md"
-                      >
-                        <div>
-                          {/* Top Row: Project Tag & Time */}
-                          <div className="mb-2 flex items-center justify-between text-[11px] font-semibold tracking-wider text-[#8c7b6e] uppercase">
-                            <Link
-                              to={`/projects/${entry.projectId}`}
-                              className="flex items-center gap-1.5 hover:underline"
-                            >
-                              <span
-                                className="size-2 rounded-full"
-                                style={{ backgroundColor: dotColorFor(entry.projectId) }}
-                              />
-                              <span>{projectNames.get(entry.projectId) ?? 'PROJECT'}</span>
+                      return (
+                        <div
+                          key={entry.id}
+                          className="group flex flex-col justify-between rounded-2xl border border-[#ebdcd0] bg-white p-5 shadow-xs transition-all hover:shadow-md"
+                        >
+                          <div>
+                            {/* Top Row: Project Tag & Property Summary Header */}
+                            <div className="mb-2 flex items-center justify-between text-[11px] font-semibold tracking-wider text-[#8c7b6e] uppercase">
+                              <Link
+                                to={`/projects/${entry.projectId}`}
+                                className="flex items-center gap-1.5 hover:underline"
+                              >
+                                <span
+                                  className="size-2 rounded-full"
+                                  style={{ backgroundColor: dotColorFor(entry.projectId) }}
+                                />
+                                <span>{projectNames.get(entry.projectId) ?? 'PROJECT'}</span>
+                              </Link>
+
+                              {/* Right-aligned property summary */}
+                              <div className="flex items-center gap-2 text-xs font-normal tracking-normal text-[#8c7b6e]/80">
+                                {timeSpent && (
+                                  <span className="flex items-center gap-1 font-medium text-[#1c0d06]">
+                                    <Clock size={12} />
+                                    {timeSpent}
+                                  </span>
+                                )}
+                                <span>
+                                  {new Date(entry.date).toLocaleTimeString([], {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Title (Muted Red if Overdue) & Open Checkbox State */}
+                            <Link to={`/entries/${entry.id}`} className="block">
+                              <h3
+                                className={`flex items-start gap-2 text-base font-semibold leading-snug ${
+                                  overdue ? 'text-[#c44536]' : 'text-[#1c0d06]'
+                                }`}
+                              >
+                                {unfinished && (
+                                  <Square
+                                    size={16}
+                                    className="mt-1 shrink-0 text-[#8c7b6e] group-hover:text-[#1c0d06]"
+                                  />
+                                )}
+                                <span>{headline}</span>
+                              </h3>
+
+                              {/* Snippet */}
+                              {snippet && (
+                                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[#5c4a3e]">
+                                  {snippet}
+                                </p>
+                              )}
                             </Link>
 
-                            <span className="text-xs font-normal tracking-normal text-[#8c7b6e]/80">
-                              {new Date(entry.date).toLocaleTimeString([], {
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
-                            </span>
+                            {/* Tag Chips on Entry Card */}
+                            {entry.tags && entry.tags.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-1">
+                                {entry.tags.map(({ tag }) => (
+                                  <span
+                                    key={tag.id}
+                                    className="inline-flex items-center gap-0.5 rounded-md bg-[#f4eee6] px-2 py-0.5 text-[10px] font-medium text-[#6e5d50]"
+                                  >
+                                    #{tag.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
-                          {/* Title & Open Checkbox State */}
-                          <Link to={`/entries/${entry.id}`} className="block">
-                            <h3 className="flex items-start gap-2 text-base font-semibold leading-snug text-[#1c0d06]">
-                              {unfinished && (
-                                <Square
-                                  size={16}
-                                  className="mt-1 shrink-0 text-[#8c7b6e] group-hover:text-[#1c0d06]"
-                                />
+                          {/* Footer Badges (Overdue notice or time spent fallback) */}
+                          {(timeSpent || overdue) && (
+                            <div className="mt-4 flex items-center gap-1.5 text-xs text-[#8c7b6e]">
+                              {timeSpent && !overdue && (
+                                <span className="flex items-center gap-1">
+                                  <Clock size={13} />
+                                  {timeSpent}
+                                </span>
                               )}
-                              <span>{headline}</span>
-                            </h3>
-
-                            {/* Snippet */}
-                            {snippet && (
-                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[#5c4a3e]">
-                                {snippet}
-                              </p>
-                            )}
-                          </Link>
+                              {overdue && (
+                                <span className="flex items-center gap-1 font-medium text-[#c44536]">
+                                  <Clock size={13} className="text-[#c44536]" />
+                                  Overdue · due {formatDueDate(entry.dueDate!)}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
 
-                        {/* Footer Badges (Time spent or Overdue notice) */}
-                        {(timeSpent || overdue) && (
-                          <div className="mt-4 flex items-center gap-1.5 text-xs text-[#8c7b6e]">
-                            {timeSpent && !overdue && (
-                              <span className="flex items-center gap-1">
-                                <Clock size={13} />
-                                {timeSpent}
-                              </span>
-                            )}
-                            {overdue && (
-                              <span className="flex items-center gap-1 text-[#c44536] font-medium">
-                                <Clock size={13} className="text-[#c44536]" />
-                                Overdue · due {formatDueDate(entry.dueDate!)}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+          {/* Recency Explorer Outline Sidebar (Desktop) */}
+          {groups.length > 0 && (
+            <aside className="hidden lg:block lg:col-span-1">
+              <div className="sticky top-6 rounded-2xl border border-[#ebdcd0] bg-white/70 p-4 backdrop-blur-xs">
+                <div className="mb-3 flex items-center gap-2 border-b border-[#e6ded6] pb-2 text-xs font-bold tracking-wider text-[#8c7b6e] uppercase">
+                  <Calendar size={13} />
+                  <span>Recency Outline</span>
+                </div>
+                <nav className="space-y-1">
+                  {groups.map((group) => {
+                    const { primary } = groupDateFormatted(group.rawDate);
+                    return (
+                      <button
+                        key={group.rawDate}
+                        type="button"
+                        onClick={() => scrollToDateGroup(group.rawDate)}
+                        className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs text-[#5c4a3e] transition-colors hover:bg-[#f4eee6] hover:text-[#1c0d06]"
+                      >
+                        <span className="truncate font-medium">{primary}</span>
+                        <span className="ml-2 rounded-full bg-[#f0e8de] px-1.5 py-0.5 text-[10px] text-[#8c7b6e]">
+                          {group.entries.length}
+                        </span>
+                      </button>
                     );
                   })}
-                </div>
-              </section>
-            );
-          })}
+                </nav>
+              </div>
+            </aside>
+          )}
         </div>
       </div>
 
