@@ -236,7 +236,7 @@ export default function EntriesPage() {
               onChange={(e) =>
                 setFilters((f) => ({
                   ...f,
-                  projectId: e.target.value ? Number(e.target.value) : undefined,
+                  projectId: e.target.value ? Number(e.target.value) : null,
                 }))
               }
               className="appearance-none rounded-full border border-[#e6ded6] bg-[#fcfaf7] py-1.5 pl-4 pr-8 text-xs font-medium text-[#5c4a3e] shadow-sm hover:border-[#d1a153] focus:outline-none"

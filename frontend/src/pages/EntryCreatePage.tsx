@@ -97,7 +97,9 @@ function InlineTagInput({
           createTag.mutate(inputValue.trim());
         }
       } else if (filteredTags.length > 0) {
-        handleSelect(filteredTags[0]);
+        if (filteredTags[0]) {
+          handleSelect(filteredTags[0].id);
+        }
       }
     }
     if (e.key === 'Escape') {
@@ -382,7 +384,7 @@ export default function EntryCreatePage() {
       for (const field of fields) {
         if (field.fieldType === 'boolean') continue;
         const raw = values[field.name];
-        if (raw === undefined || String(raw).trim() === '') {
+        if (raw === undefined || raw === null || String(raw).trim() === '') {
           nextFieldErrors[field.name] = `${field.name} is required`;
         }
       }
@@ -398,16 +400,29 @@ export default function EntryCreatePage() {
 
     setFieldErrors({});
     setFormError(null);
-    saveEntry.mutate({
+
+    const payload: {
+      projectId: number;
+      date: string;
+      dueDate?: string;
+      title?: string;
+      body?: string;
+      tagIds?: number[];
+      content: Record<string, unknown>;
+      isKeyboardSave?: boolean;
+    } = {
       projectId: Number(projectId),
       date: formattedDate,
-      dueDate: dueDate ? dueDate : undefined,
-      title: title.trim() || undefined,
-      body: body.trim() || undefined,
-      tagIds: tagIds.length > 0 ? tagIds : undefined,
       content,
       isKeyboardSave,
-    });
+    };
+
+    if (dueDate) payload.dueDate = dueDate;
+    if (title.trim()) payload.title = title.trim();
+    if (body.trim()) payload.body = body.trim();
+    if (tagIds.length > 0) payload.tagIds = tagIds;
+
+    saveEntry.mutate(payload);
   };
 
   const applyFormatting = (type: FormatOption) => {

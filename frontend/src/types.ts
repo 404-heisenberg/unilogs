@@ -36,6 +36,7 @@ export type Entry = {
   tags?: EntryTag[];
   project?: Project;
   hasOpenFields?: boolean;
+  isCompleted?: boolean;
 };
 
 export type PagedEntries = {

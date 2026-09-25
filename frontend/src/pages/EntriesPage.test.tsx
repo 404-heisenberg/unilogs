@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -18,40 +18,46 @@ const PROJECTS: Project[] = [
   { id: 2, name: 'Gym Log', archived: false, userId: 'u1', reminderFrequency: 'WEEKLY' },
 ];
 
+const PAST_DUE_DATE = '2020-01-01T00:00:00.000Z';
+
 const ENTRIES: Entry[] = [
   {
     id: 10,
     projectId: 1,
-    date: '2026-09-01T00:00:00.000Z',
-    createdAt: '2026-09-01T00:00:00.000Z',
+    date: '2026-09-01T10:00:00.000Z',
+    createdAt: '2026-09-01T10:00:00.000Z',
     title: 'Literature review notes',
-    content: { Notes: 'Read chapter 3' },
+    content: { Notes: 'Read chapter 3', timeSpent: '2h 30m' },
+    isCompleted: true,
   },
   {
     id: 11,
     projectId: 2,
-    date: '2026-09-02T00:00:00.000Z',
-    createdAt: '2026-09-02T00:00:00.000Z',
+    date: '2026-09-02T10:00:00.000Z',
+    createdAt: '2026-09-02T10:00:00.000Z',
     content: { Reps: 12 },
+    isCompleted: false,
+  },
+  {
+    id: 12,
+    projectId: 1,
+    date: '2026-09-03T10:00:00.000Z',
+    createdAt: '2026-09-03T10:00:00.000Z',
+    title: 'Overdue task',
+    dueDate: PAST_DUE_DATE,
+    isCompleted: false,
+    content: {
+      text: 'Test entry content',
+    },
   },
 ];
 
-// The real backend filters server-side (title/body/project name, via the `q`
-// query param) — this mock does the same narrow matching so the search test
-// exercises the real request/response cycle rather than pretending the page
-// still filters client-side.
-function mockEntries(entries: Entry[], projects: Project[] = PROJECTS) {
+function mockApi(entries: Entry[] = ENTRIES, projects: Project[] = PROJECTS) {
   getMock.mockImplementation((path: string) => {
     if (path.startsWith('/api/entries')) {
-      const query = new URLSearchParams(path.split('?')[1] ?? '');
-      const q = query.get('q')?.toLowerCase();
-      const filtered = q
-        ? entries.filter((e) => (e.title ?? '').toLowerCase().includes(q))
-        : entries;
-      return Promise.resolve({ entries: filtered, total: filtered.length, page: 1, limit: 50 });
+      return Promise.resolve({ entries, total: entries.length, page: 1, limit: 50 });
     }
     if (path.startsWith('/api/projects')) return Promise.resolve(projects);
-    if (path === '/api/tags') return Promise.resolve([]);
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });
 }
@@ -72,16 +78,18 @@ beforeEach(() => {
 });
 
 describe('EntriesPage', () => {
-  it('shows an empty state with no entries', async () => {
-    mockEntries([]);
+  it('shows empty state when no entries exist', async () => {
+    mockApi([]);
 
     renderPage();
 
-    expect(await screen.findByText('No entries yet.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Log your first entry' })).toBeInTheDocument();
+    expect(await screen.findByText('No entries recorded yet.')).toBeInTheDocument();
+    const createBtn = screen.getByRole('link', { name: 'Create First Entry' });
+    expect(createBtn).toBeInTheDocument();
+    expect(createBtn).toHaveAttribute('href', '/entries/new');
   });
 
-  it('shows an error state when entries fail to load', async () => {
+  it('shows error state when fetching entries fails', async () => {
     getMock.mockImplementation((path: string) => {
       if (path.startsWith('/api/entries')) return Promise.reject(new Error('network error'));
       if (path.startsWith('/api/projects')) return Promise.resolve(PROJECTS);
@@ -91,50 +99,88 @@ describe('EntriesPage', () => {
     renderPage();
 
     expect(
-      await screen.findByText('Failed to load entries. Try refreshing the page.'),
+      await screen.findByText('Failed to load entries. Please refresh to try again.'),
     ).toBeInTheDocument();
   });
 
-  it('lists entries grouped by date, with their project name', async () => {
-    mockEntries(ENTRIES);
+  it('renders entries with headlines, snippets, time spent, and project badges', async () => {
+    mockApi(ENTRIES);
 
     renderPage();
 
     expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Thesis/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Thesis/ })).toHaveLength(2);
     expect(screen.getByRole('link', { name: /Gym Log/ })).toBeInTheDocument();
+    expect(screen.getByText('2h 30m')).toBeInTheDocument();
   });
 
-  it('filters entries by search term via the Filters sheet', async () => {
-    mockEntries(ENTRIES);
+  it('filters entries client-side using top header search input', async () => {
+    mockApi(ENTRIES);
 
     renderPage();
     await screen.findByText('Literature review notes');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Filters' }));
-    const sheet = screen.getByRole('dialog');
-    await userEvent.type(within(sheet).getByLabelText('Search entries'), 'Literature');
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Apply filters' }));
+    const searchInput = screen.getByPlaceholderText('Search entries...');
+    await userEvent.type(searchInput, 'Literature');
 
-    expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
+    expect(screen.getByText('Literature review notes')).toBeInTheDocument();
     expect(screen.queryByText('Reps: 12')).not.toBeInTheDocument();
   });
 
-  it('shows a clear-filters action when a filter matches nothing', async () => {
-    mockEntries(ENTRIES);
+  it('filters entries by project using project select dropdown', async () => {
+    mockApi(ENTRIES);
 
     renderPage();
     await screen.findByText('Literature review notes');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Filters' }));
-    const sheet = screen.getByRole('dialog');
-    await userEvent.type(within(sheet).getByLabelText('Search entries'), 'nonexistent');
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Apply filters' }));
+    const select = screen.getByRole('combobox');
+    await userEvent.selectOptions(select, '2');
 
-    expect(await screen.findByText('No entries match your filters.')).toBeInTheDocument();
+    expect(getMock).toHaveBeenCalledWith(expect.stringContaining('projectId=2'));
+  });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+  it('filters entries by status using Unfinished chip', async () => {
+    mockApi(ENTRIES);
+
+    renderPage();
+    await screen.findByText('Literature review notes');
+
+    const unfinishedChip = screen.getByRole('button', { name: /Unfinished/i });
+    await userEvent.click(unfinishedChip);
+
+    expect(screen.queryByText('Literature review notes')).not.toBeInTheDocument();
+    expect(screen.getByText('Reps: 12')).toBeInTheDocument();
+  });
+
+  it('filters and highlights overdue entries using Overdue status chip', async () => {
+    mockApi(ENTRIES);
+
+    renderPage();
+    await screen.findByText('Overdue task');
+
+    const overdueChip = screen.getByRole('button', { name: /Overdue/i });
+    await userEvent.click(overdueChip);
+
+    expect(screen.getByText('Overdue task')).toBeInTheDocument();
+    expect(screen.getByText(/Overdue · due/i)).toBeInTheDocument();
+    expect(screen.queryByText('Literature review notes')).not.toBeInTheDocument();
+  });
+
+  it('shows no-matches state and clears all active filters', async () => {
+    mockApi(ENTRIES);
+
+    renderPage();
+    await screen.findByText('Literature review notes');
+
+    const searchInput = screen.getByPlaceholderText('Search entries...');
+    await userEvent.type(searchInput, 'nonexistentquery');
+
+    expect(await screen.findByText('No entries match the selected filters.')).toBeInTheDocument();
+
+    const clearBtn = screen.getByRole('button', { name: 'Clear filters' });
+    await userEvent.click(clearBtn);
 
     expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
   });
 });
