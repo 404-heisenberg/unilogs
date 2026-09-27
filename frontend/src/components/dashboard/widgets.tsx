@@ -13,7 +13,6 @@ import { Link } from 'react-router-dom';
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Calendar,
   Clock,
   Eye,
   Flame,
@@ -178,20 +177,20 @@ const HeatmapGrid = memo(function HeatmapGrid({ cells, onHover }: HeatmapGridPro
 
   return (
     <div
-      className="grid grid-flow-col grid-rows-7 gap-[3px]"
+      className="grid w-max grid-flow-col grid-rows-7 gap-[2px] md:gap-[3px]"
       onMouseOver={handleOver}
       onMouseLeave={() => onHover(null)}
     >
       {cells.map((cell, index) =>
         cell.future ? (
-          <div key={cell.date} aria-hidden className="size-3.5" />
+          <div key={cell.date} aria-hidden className="size-2.5 md:size-3" />
         ) : (
           <div
             key={cell.date}
             data-index={index}
             role="img"
             aria-label={`${formatDayLabel(cell.date)}: ${entryCount(cell.count)}`}
-            className={`size-3.5 rounded-[3px] ${LEVEL_CLASS[cell.level]}`}
+            className={`size-2.5 rounded-[2px] md:size-3 ${LEVEL_CLASS[cell.level]}`}
           />
         ),
       )}
@@ -238,7 +237,7 @@ function HeatmapWidgetBase({ cells, stats, isLoading, isError, size }: HeatmapPr
       >
         <HeatmapGrid cells={cells} onHover={setHovered} />
 
-        <dl className="grid grid-cols-3 gap-6 text-center md:gap-10 md:pr-8">
+        <dl className="hidden grid-cols-3 gap-6 text-center md:grid md:gap-12 md:pr-8">
           <Stat value={String(stats.activeDays)} label="Active days" />
           <Stat value={`${stats.daysThisWeek} of 7`} label="Days this week" />
           <Stat value={String(stats.avgDaysPerWeek)} label="Avg days per week" />
@@ -449,7 +448,7 @@ function EventDetails({ event, today, heading, stacked, onDismiss }: EventDetail
 const EVENT_ROW =
   'flex min-w-0 flex-1 items-center gap-3 rounded text-left text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const LOG_LINK =
-  'shrink-0 rounded border border-line-strong px-2 py-1 text-[11px] font-semibold text-cocoa transition-colors hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
+  'shrink-0 rounded px-1 py-1 text-[11px] font-medium text-cocoa transition-colors hover:text-espresso hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: UpcomingProps) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -465,10 +464,7 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
 
   return (
     <section className={CARD}>
-      <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-espresso">
-        <Calendar className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-        Upcoming from Google Calendar
-      </h2>
+      <h2 className="mb-3 text-sm font-bold text-espresso">Upcoming</h2>
       <ul className="flex flex-col gap-1">
         {data.events.map((event) => {
           const label = (
@@ -512,8 +508,12 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
                   {label}
                 </button>
               )}
-              <Link to={logEventPath(event)} className={LOG_LINK}>
-                Log entry
+              <Link
+                to={logEventPath(event)}
+                aria-label={`Log entry for ${event.title}`}
+                className={LOG_LINK}
+              >
+                Log
               </Link>
             </li>
           );

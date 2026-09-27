@@ -231,11 +231,13 @@ const WIDGET_IDS = Object.keys(WIDGET_META) as WidgetId[];
 export const DEFAULT_LAYOUT: WidgetState[] = [
   { id: 'summary', visible: true, size: 'wide' },
   { id: 'heatmap', visible: true, size: 'wide' },
+  // Desktop fills two columns alternately, so this order gives Figma's
+  // columns: What's left / Continue / Insight left, Recent / Upcoming right.
   { id: 'whatsLeft', visible: true, size: 'standard' },
-  { id: 'continue', visible: true, size: 'standard' },
   { id: 'recent', visible: true, size: 'standard' },
-  { id: 'insight', visible: true, size: 'standard' },
+  { id: 'continue', visible: true, size: 'standard' },
   { id: 'upcoming', visible: true, size: 'standard' },
+  { id: 'insight', visible: true, size: 'standard' },
   { id: 'timeByProject', visible: false, size: 'standard' },
   { id: 'frequency', visible: false, size: 'standard' },
   { id: 'dueDormant', visible: false, size: 'standard' },
@@ -807,6 +809,6 @@ export const MUTED = 'text-clay';
 export const GOLD_BUTTON =
   'inline-flex items-center justify-center rounded-full bg-gold px-4 py-1.5 text-sm font-semibold text-espresso transition-colors hover:bg-gold/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-espresso';
 export const DARK_BUTTON =
-  'inline-flex items-center justify-center gap-1.5 rounded-md bg-espresso px-3.5 py-2 text-sm font-medium text-paper transition-colors hover:bg-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-espresso px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 export const TEXT_BUTTON =
-  'rounded-md px-2 py-1.5 text-sm text-cocoa transition-colors hover:text-espresso focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
+  'rounded-md px-2 py-1.5 text-xs font-semibold text-clay transition-colors hover:text-espresso focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';

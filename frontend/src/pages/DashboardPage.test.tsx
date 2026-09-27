@@ -163,12 +163,16 @@ afterEach(() => {
 });
 
 describe('DashboardPage', () => {
-  it('shows an empty state when there are no entries yet', async () => {
+  it('shows the first-run setup prompt when there are no entries yet', async () => {
     mocks.getStatsSummary.mockResolvedValue({ perProject: [], totalHours: 0, streak: 0 });
 
     renderPage();
 
-    expect(await screen.findByText('No entries yet')).toBeInTheDocument();
+    expect(await screen.findByText('Set up your first project')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create project' })).toHaveAttribute(
+      'href',
+      '/projects/new',
+    );
   });
 
   it("shows an error state when the stats can't be loaded", async () => {

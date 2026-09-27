@@ -169,7 +169,7 @@ describe('moveWidget and shiftWidget', () => {
   it('shifts by one place among visible widgets only', () => {
     const shifted = shiftWidget(DEFAULT_LAYOUT, 'insight', -1);
     const ids = shifted.map((widget) => widget.id);
-    expect(ids.indexOf('insight')).toBeLessThan(ids.indexOf('recent'));
+    expect(ids.indexOf('insight')).toBeLessThan(ids.indexOf('upcoming'));
   });
 
   it('does nothing at the ends of the list', () => {
@@ -185,8 +185,8 @@ describe('toBlocks', () => {
     expect(blocks.map((block) => block.kind)).toEqual(['row', 'row', 'columns']);
     const columns = blocks[2];
     if (columns.kind !== 'columns') throw new Error('expected columns');
-    expect(columns.left.map((widget) => widget.id)).toEqual(['whatsLeft', 'recent', 'upcoming']);
-    expect(columns.right.map((widget) => widget.id)).toEqual(['continue', 'insight']);
+    expect(columns.left.map((widget) => widget.id)).toEqual(['whatsLeft', 'continue', 'insight']);
+    expect(columns.right.map((widget) => widget.id)).toEqual(['recent', 'upcoming']);
   });
 
   it('renders a single column in widget order on small screens', () => {
@@ -212,10 +212,10 @@ describe('useDashboardLayout', () => {
       'summary',
       'heatmap',
       'whatsLeft',
-      'continue',
       'recent',
-      'insight',
+      'continue',
       'upcoming',
+      'insight',
     ]);
     expect(result.current.hidden.map((widget) => widget.id)).toEqual([
       'timeByProject',
