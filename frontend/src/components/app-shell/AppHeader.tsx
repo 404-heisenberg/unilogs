@@ -1,5 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, Plus } from 'lucide-react';
+import { api } from '@/lib/api';
+import type { Project } from '@/types';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -19,13 +22,14 @@ function titleFor(pathname: string) {
 // The top bar's action, per page, as in the Figma mobile frames: Dashboard
 // logs an entry (dark "Log"), Projects creates a project (gold "New"), and
 // everything else falls back to the round gold log-entry button.
-function HeaderAction({ pathname }: { pathname: string }) {
-  if (pathname === '/dashboard' || pathname === '/projects') {
+function HeaderAction({ pathname, projectId }: { pathname: string; projectId: string | null }) {
+  if (pathname === '/dashboard' || pathname === '/projects' || projectId) {
     const isProjects = pathname === '/projects';
+    const logTo = projectId ? `/entries/new?projectId=${projectId}` : '/entries/new';
     return (
       // 44px tap target around the 32px pill.
       <Link
-        to={isProjects ? '/projects/new' : '/entries/new'}
+        to={isProjects ? '/projects/new' : logTo}
         aria-label={isProjects ? 'New project' : 'Log entry'}
         className="-mr-1 flex min-h-11 items-center px-1"
       >
@@ -57,13 +61,36 @@ function HeaderAction({ pathname }: { pathname: string }) {
 // own title row.
 export default function AppHeader() {
   const { pathname } = useLocation();
+  // A project page shows Figma's back arrow + project name instead of a
+  // section title. Same query as the workspace, so it's served from cache.
+  const projectId = pathname.match(/^\/projects\/(\d+)$/)?.[1] ?? null;
+  const project = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: () => api.get<Project>(`/api/projects/${projectId}`),
+    enabled: projectId !== null,
+  });
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-rule bg-canvas px-4 md:hidden">
+    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-rule bg-canvas px-4 md:hidden">
       {/* Not a heading: each page still renders its own <h1> (visually hidden
           on mobile), and a page must have only one. */}
-      <p className="truncate text-lg font-bold text-espresso">{titleFor(pathname)}</p>
-      <HeaderAction pathname={pathname} />
+      {projectId ? (
+        <div className="flex min-w-0 items-center">
+          <Link
+            to="/projects"
+            aria-label="Back to projects"
+            className="-ml-3 flex size-11 shrink-0 items-center justify-center text-espresso"
+          >
+            <ChevronLeft size={20} strokeWidth={2} />
+          </Link>
+          <p className="truncate text-lg font-bold text-espresso">
+            {project.data?.name ?? 'Project'}
+          </p>
+        </div>
+      ) : (
+        <p className="truncate text-lg font-bold text-espresso">{titleFor(pathname)}</p>
+      )}
+      <HeaderAction pathname={pathname} projectId={projectId} />
     </header>
   );
 }

@@ -62,6 +62,7 @@ export type FieldInsight = {
   value: string | null;
   sub: string;
   trend: 'up' | 'down' | null;
+  distribution?: { value: string; count: number }[];
 };
 
 export type WeekBar = { weekStart: string; count: number };
@@ -247,7 +248,14 @@ export function mapFieldInsights(
     const first = top[0];
     const value =
       top.length > 1 && first.count > 1 ? `Mostly ${first.value}` : (first?.value ?? '');
-    return { ...base, value, sub: entryWord(insight.sampleCount), trend };
+    return {
+      ...base,
+      value,
+      sub: entryWord(insight.sampleCount),
+      trend,
+      // Shown as Figma's stacked bar when there's more than one answer.
+      ...(top.length > 1 ? { distribution: top } : {}),
+    };
   });
 }
 

@@ -345,7 +345,10 @@ describe('ProjectDetailPage workspace', () => {
       'Fields',
     ]);
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('link', { name: 'Log' })).toHaveAttribute('href', '/entries/new');
+    expect(screen.getByRole('link', { name: 'Log entry' })).toHaveAttribute(
+      'href',
+      '/entries/new?projectId=1',
+    );
     const panel = screen.getByRole('complementary', { name: 'Project details' });
     expect(within(panel).getByText('Fields').nextSibling).toHaveTextContent('5');
   });
@@ -497,16 +500,16 @@ describe('ProjectDetailPage workspace', () => {
   });
 
   describe('Entries tab', () => {
-    it('lists this project’s entries with tags, durations and dates', async () => {
+    it('lists this project’s entries with durations and dates', async () => {
       renderPage();
       await openTab('Entries');
 
       const row = (await screen.findByText('Literature review notes')).closest('a');
       expect(row).toHaveAttribute('href', '/entries/1');
-      expect(within(row as HTMLElement).getByText('reading')).toBeInTheDocument();
-      expect(within(row as HTMLElement).getByText('2h 30m · Today')).toBeInTheDocument();
-      expect(screen.getByText('1h 30m · Yesterday')).toBeInTheDocument();
-      expect(screen.getByText('1h · Sep 10')).toBeInTheDocument();
+      expect(within(row as HTMLElement).getByText('2h 30m')).toBeInTheDocument();
+      expect(within(row as HTMLElement).getByText('Today')).toBeInTheDocument();
+      expect(screen.getByText('1h 30m')).toBeInTheDocument();
+      expect(screen.getByText('Sep 10')).toBeInTheDocument();
     });
 
     it('asks the API for this project only', async () => {
@@ -597,7 +600,7 @@ describe('ProjectDetailPage workspace', () => {
       });
 
       renderPage('/projects/1?tab=fields');
-      await userEvent.type(await screen.findByPlaceholderText('e.g. Time spent'), 'Hours');
+      await userEvent.type(await screen.findByPlaceholderText('Field name'), 'Hours');
       await userEvent.click(screen.getByRole('button', { name: 'Add field' }));
 
       expect(mocks.apiPost).toHaveBeenCalledWith('/api/field-definitions', {
@@ -617,7 +620,7 @@ describe('ProjectDetailPage workspace', () => {
       });
 
       renderPage('/projects/1?tab=fields');
-      await userEvent.type(await screen.findByPlaceholderText('e.g. Time spent'), 'Hours');
+      await userEvent.type(await screen.findByPlaceholderText('Field name'), 'Hours');
       await userEvent.selectOptions(screen.getByLabelText('Type'), 'duration');
       await userEvent.click(screen.getByRole('button', { name: 'Add field' }));
 

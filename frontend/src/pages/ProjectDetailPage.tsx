@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import DeleteProjectDialog from '@/components/project/DeleteProjectDialog';
 import ExportDialog from '@/components/project/ExportDialog';
 import ShareDialog from '@/components/project/ShareDialog';
+import PaneLayout from '@/components/PaneLayout';
+import { projectColor } from '@/lib/colors';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   EntriesTab,
@@ -76,32 +78,70 @@ export default function ProjectDetailPage() {
     );
   }
 
-  return (
-    <div>
-      <nav aria-label="Breadcrumb" className="text-xs text-clay">
-        <Link to="/projects" className="hover:text-espresso">
-          Projects
-        </Link>
-        <span aria-hidden> / </span>
-        <span>{project.data.name}</span>
-      </nav>
+  const outlineButton =
+    'inline-flex h-9 items-center rounded-lg border border-line px-4 text-sm font-medium text-espresso transition-colors hover:bg-cream';
 
-      <div className="mt-2 flex items-start justify-between gap-4">
+  const pane = (
+    <MetadataPanel
+      key={project.data.id}
+      project={project.data}
+      fieldCount={fields.data?.length}
+      actions={projectActions}
+      onExport={() => setExportOpen(true)}
+      onShare={() => setShareOpen(true)}
+      onDelete={() => setDeleteOpen(true)}
+    />
+  );
+
+  return (
+    <PaneLayout pane={pane} paneLabel="Project details">
+      {/* On mobile the top bar shows the project name, so this header is
+          visually hidden there (the h1 stays for screen readers). */}
+      <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-espresso">
-            <span className="size-2.5 shrink-0 rounded-full bg-caramel" aria-hidden />
+          <nav aria-label="Breadcrumb" className="hidden text-[13px] font-medium md:block">
+            <Link to="/projects" className="text-caramel hover:underline">
+              Projects
+            </Link>
+            <span aria-hidden className="text-clay">
+              {' / '}
+            </span>
+            <span className="text-clay">{project.data.name}</span>
+          </nav>
+          <h1 className="sr-only md:not-sr-only md:mt-2 md:flex md:items-center md:gap-3 md:text-[28px] md:font-bold md:text-espresso">
+            <span
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: projectColor(project.data.id) }}
+              aria-hidden
+            />
             <span className="truncate">{project.data.name}</span>
           </h1>
           {project.data.description && (
-            <p className="mt-1 text-sm text-clay">{project.data.description}</p>
+            <p className="hidden text-sm text-clay md:mt-2 md:block">{project.data.description}</p>
           )}
         </div>
-        <Link
-          to="/entries/new"
-          className="hidden shrink-0 items-center justify-center rounded-md bg-espresso px-3.5 py-2 text-sm font-medium text-paper transition-colors hover:bg-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:inline-flex"
-        >
-          Log
-        </Link>
+        <div className="hidden shrink-0 items-center gap-2 md:mt-7 md:flex">
+          <button
+            type="button"
+            onClick={() => setExportOpen(true)}
+            className={`${outlineButton} hidden lg:inline-flex`}
+          >
+            Export
+          </button>
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className={`${outlineButton} hidden lg:inline-flex`}
+          >
+            Share report
+          </button>
+          <Link
+            to={`/entries/new?projectId=${project.data.id}`}
+            className="inline-flex h-9 items-center rounded-lg bg-espresso px-4 text-[13px] font-medium text-cream transition-colors hover:bg-deep"
+          >
+            Log entry
+          </Link>
+        </div>
       </div>
 
       {project.data && (
@@ -127,7 +167,7 @@ export default function ProjectDetailPage() {
         </>
       )}
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="md:mt-8">
         <div className="min-w-0">
           <TabBar tab={tab} onChange={changeTab} />
           <TabPanel tab={tab}>
@@ -170,19 +210,7 @@ export default function ProjectDetailPage() {
             )}
           </TabPanel>
         </div>
-
-        <div className="lg:border-l lg:border-cream lg:pl-8">
-          <MetadataPanel
-            key={project.data.id}
-            project={project.data}
-            fieldCount={fields.data?.length}
-            actions={projectActions}
-            onExport={() => setExportOpen(true)}
-            onShare={() => setShareOpen(true)}
-            onDelete={() => setDeleteOpen(true)}
-          />
-        </div>
       </div>
-    </div>
+    </PaneLayout>
   );
 }
