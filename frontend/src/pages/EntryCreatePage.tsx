@@ -661,7 +661,7 @@ export default function EntryCreatePage() {
             </div>
           </div>
 
-          {formError && <p className="text-sm text-red-700">{formError}</p>}
+          {formError && <p className="text-sm text-error">{formError}</p>}
 
           <div className="pt-2 flex justify-end">
             <Button
@@ -695,7 +695,7 @@ export default function EntryCreatePage() {
                   setProjectId(e.target.value);
                   setIsDirty(true);
                 }}
-                className="w-full min-h-10 border border-stone-300 rounded bg-white px-3 py-1.5 text-sm shadow-sm focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none disabled:bg-stone-100 disabled:text-stone-500"
+                className="w-full min-h-10 rounded-lg border border-line bg-white px-3 py-1.5 text-sm shadow-sm focus:border-espresso focus:ring-1 focus:ring-espresso outline-none disabled:bg-cream disabled:text-clay"
                 required
                 disabled={isEditing}
               >
@@ -723,7 +723,7 @@ export default function EntryCreatePage() {
                   setDate(e.target.value);
                   setIsDirty(true);
                 }}
-                className="w-full min-h-10 border border-stone-300 rounded bg-white px-3 py-1.5 text-sm shadow-sm focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none"
+                className="w-full min-h-10 rounded-lg border border-line bg-white px-3 py-1.5 text-sm shadow-sm focus:border-espresso focus:ring-1 focus:ring-espresso outline-none"
                 required
               />
             </div>
@@ -758,7 +758,7 @@ export default function EntryCreatePage() {
                     setDueDate(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full min-h-10 border border-stone-300 rounded bg-white px-3 py-1.5 text-sm shadow-sm focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none"
+                  className="w-full min-h-10 rounded-lg border border-line bg-white px-3 py-1.5 text-sm shadow-sm focus:border-espresso focus:ring-1 focus:ring-espresso outline-none"
                 />
               </div>
             )}
@@ -787,8 +787,8 @@ export default function EntryCreatePage() {
               const fieldId = `field-${field.id}`;
               const value = values[field.name] ?? defaultValueForType(field.fieldType);
               const error = fieldErrors[field.name];
-              const inputClassName = `w-full min-h-10 border rounded bg-white px-3 py-1.5 text-sm shadow-sm focus:border-stone-800 focus:ring-1 focus:ring-stone-800 outline-none ${
-                error ? 'border-red-500' : 'border-stone-300'
+              const inputClassName = `w-full min-h-10 rounded-lg border bg-white px-3 py-1.5 text-sm shadow-sm focus:border-espresso focus:ring-1 focus:ring-espresso outline-none ${
+                error ? 'border-error' : 'border-stone-300'
               }`;
 
               return (
@@ -809,7 +809,7 @@ export default function EntryCreatePage() {
                           setValues((prev) => ({ ...prev, [field.name]: e.target.checked }));
                           setIsDirty(true);
                         }}
-                        className={`h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-800 ${error ? 'border-red-500' : ''}`}
+                        className={`h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-800 ${error ? 'border-error' : ''}`}
                       />
                       <span className="text-sm font-medium text-stone-800">{field.name}</span>
                     </label>
@@ -865,7 +865,7 @@ export default function EntryCreatePage() {
                       )}
                     </>
                   )}
-                  {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+                  {error && <p className="text-xs text-error mt-1">{error}</p>}
                 </div>
               );
             })}
@@ -879,13 +879,13 @@ export default function EntryCreatePage() {
           </div>
           {isEditing && (
             <div className="pt-4 border-t border-stone-200 mt-auto">
-              <span className="block text-xs uppercase tracking-wider mb-2 font-semibold text-red-600">
+              <span className="block text-xs uppercase tracking-wider mb-2 font-semibold text-error">
                 Danger Zone
               </span>
               <Button
                 type="button"
                 variant="outline"
-                className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 min-h-10"
+                className="w-full text-error border-danger-soft hover:bg-danger-soft hover:text-error min-h-10"
                 onClick={() => {
                   if (
                     window.confirm(

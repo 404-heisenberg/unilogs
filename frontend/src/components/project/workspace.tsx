@@ -33,19 +33,19 @@ import {
 } from '@/lib/project-workspace';
 import type { Entry, FieldDefinition, Project } from '@/types';
 
-const CARD = 'rounded-xl border border-[#EADFCF] bg-white';
-const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A7660]';
-const MUTED = 'text-[#8A7660]';
+const CARD = 'rounded-xl border border-cream bg-paper';
+const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-clay';
+const MUTED = 'text-clay';
 const INPUT =
-  'w-full rounded-md border border-[#D9C9AE] bg-white px-3 py-2 text-sm text-[#1C0D06] outline-none focus:ring-2 focus:ring-[#D4A843]';
+  'w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-gold';
 const DARK_BUTTON =
-  'inline-flex items-center justify-center rounded-md bg-[#1C0D06] px-3.5 py-2 text-sm font-medium text-[#FFFCF7] transition-colors hover:bg-[#3A2214] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'inline-flex items-center justify-center rounded-md bg-espresso px-3.5 py-2 text-sm font-medium text-paper transition-colors hover:bg-deep disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const OUTLINE_BUTTON =
-  'inline-flex w-full items-center justify-center rounded-md border border-[#D9C9AE] bg-white px-3 py-2 text-sm font-medium text-[#1C0D06] transition-colors hover:bg-[#F5EBE0] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'inline-flex w-full items-center justify-center rounded-md border border-line bg-white px-3 py-2 text-sm font-medium text-espresso transition-colors hover:bg-cream disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const LINK_BUTTON =
-  'rounded px-1.5 py-0.5 text-xs font-medium text-[#5C4630] transition-colors hover:text-[#1C0D06] hover:underline disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-[#D4A843]';
+  'rounded px-1.5 py-0.5 text-xs font-medium text-cocoa transition-colors hover:text-espresso hover:underline disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-gold';
 const DANGER_BUTTON =
-  'inline-flex w-full items-center justify-center rounded-md border border-[#E6B8AE] bg-white px-3 py-2 text-sm font-medium text-[#B5432F] transition-colors hover:bg-[#FBEDE9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'inline-flex w-full items-center justify-center rounded-md border border-danger-soft bg-white px-3 py-2 text-sm font-medium text-error transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -65,7 +65,7 @@ function Skeleton({ rows = 2 }: { rows?: number }) {
   return (
     <div className="flex flex-col gap-3" aria-hidden>
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="h-14 animate-pulse rounded-xl bg-[#EADFCF]/60" />
+        <div key={index} className="h-14 animate-pulse rounded-xl bg-cream/60" />
       ))}
     </div>
   );
@@ -73,7 +73,7 @@ function Skeleton({ rows = 2 }: { rows?: number }) {
 
 function ErrorNote({ children }: { children: string }) {
   return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <div className="rounded-xl border border-danger-soft bg-danger-soft p-4 text-sm text-error">
       {children}
     </div>
   );
@@ -81,11 +81,7 @@ function ErrorNote({ children }: { children: string }) {
 
 export function TabBar({ tab, onChange }: { tab: TabId; onChange: (tab: TabId) => void }) {
   return (
-    <div
-      role="tablist"
-      aria-label="Project sections"
-      className="flex gap-6 border-b border-[#EADFCF]"
-    >
+    <div role="tablist" aria-label="Project sections" className="flex gap-6 border-b border-cream">
       {TABS.map(({ id, label }) => (
         <button
           key={id}
@@ -95,10 +91,10 @@ export function TabBar({ tab, onChange }: { tab: TabId; onChange: (tab: TabId) =
           aria-selected={tab === id}
           aria-controls={`panel-${id}`}
           onClick={() => onChange(id)}
-          className={`-mb-px border-b-2 px-1 pb-2.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#D4A843] ${
+          className={`-mb-px border-b-2 px-1 pb-2.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-gold ${
             tab === id
-              ? 'border-[#D4A843] font-semibold text-[#1C0D06]'
-              : `border-transparent ${MUTED} hover:text-[#1C0D06]`
+              ? 'border-gold font-semibold text-espresso'
+              : `border-transparent ${MUTED} hover:text-espresso`
           }`}
         >
           {label}
@@ -141,9 +137,9 @@ function SummaryCards({ summary, today }: { summary: ProjectSummary | undefined;
         <div key={label} className={`${CARD} p-4`}>
           <div className="flex items-center justify-between">
             <dt className={LABEL}>{label}</dt>
-            <Icon className="h-4 w-4 text-[#B8825C]" strokeWidth={1.75} aria-hidden />
+            <Icon className="h-4 w-4 text-clay" strokeWidth={1.75} aria-hidden />
           </div>
-          <dd className="mt-2 text-2xl font-semibold text-[#1C0D06]">{value}</dd>
+          <dd className="mt-2 text-2xl font-semibold text-espresso">{value}</dd>
         </div>
       ))}
     </dl>
@@ -158,16 +154,16 @@ function InsightCard({ insight }: { insight: FieldInsight }) {
     <li className={`${CARD} p-4`}>
       <div className="flex items-center justify-between gap-2">
         <p className={`truncate ${LABEL}`}>{insight.name}</p>
-        <Icon className="h-4 w-4 shrink-0 text-[#B8825C]" strokeWidth={1.75} aria-hidden />
+        <Icon className="h-4 w-4 shrink-0 text-clay" strokeWidth={1.75} aria-hidden />
       </div>
       {insight.value === null ? (
         <p className={`mt-2 text-sm ${MUTED}`}>No data yet</p>
       ) : (
         <>
-          <p className="mt-2 truncate text-xl font-semibold text-[#1C0D06]">{insight.value}</p>
+          <p className="mt-2 truncate text-xl font-semibold text-espresso">{insight.value}</p>
           <p
             className={`mt-0.5 flex items-center gap-1 text-[11px] ${
-              insight.trend === 'up' ? 'text-[#3E7A52]' : MUTED
+              insight.trend === 'up' ? 'text-success' : MUTED
             }`}
           >
             {insight.sub}
@@ -216,11 +212,11 @@ function StillOpen({
   return (
     <section aria-labelledby="still-open-heading">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 id="still-open-heading" className="text-sm font-semibold text-[#1C0D06]">
+        <h2 id="still-open-heading" className="text-sm font-semibold text-espresso">
           Still open
         </h2>
         {stats && rows.length > 0 && (
-          <p className={`text-xs ${overdueCount > 0 ? 'text-[#B5432F]' : MUTED}`}>
+          <p className={`text-xs ${overdueCount > 0 ? 'text-error' : MUTED}`}>
             {rows.length} open{overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}
           </p>
         )}
@@ -238,15 +234,15 @@ function StillOpen({
                 aria-checked="false"
                 aria-label={`Mark ${item.label} done`}
                 onClick={() => onMarkDone(item)}
-                className={`mt-0.5 size-4 shrink-0 rounded-[3px] border-[1.5px] bg-white transition-colors hover:bg-[#EBD9A3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843] ${
-                  group === 'overdue' ? 'border-[#B5432F]' : 'border-[#5C4630]'
+                className={`mt-0.5 size-4 shrink-0 rounded-[3px] border-[1.5px] bg-white transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
+                  group === 'overdue' ? 'border-error' : 'border-cocoa'
                 }`}
               />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#1C0D06]">
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-espresso">
                 {item.label}
               </span>
               <span
-                className={`shrink-0 text-[11px] ${group === 'overdue' ? 'text-[#B5432F]' : MUTED}`}
+                className={`shrink-0 text-[11px] ${group === 'overdue' ? 'text-error' : MUTED}`}
               >
                 {dueLabel(item, group)}
               </span>
@@ -255,7 +251,7 @@ function StillOpen({
         </ul>
       )}
       {markFailed && (
-        <p role="alert" className="mt-2 text-xs text-[#B5432F]">
+        <p role="alert" className="mt-2 text-xs text-error">
           Couldn't mark that done. Try again.
         </p>
       )}
@@ -269,7 +265,7 @@ function ActivityChart({ bars }: { bars: WeekBar[] }) {
   return (
     <section aria-labelledby="activity-heading">
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 id="activity-heading" className="text-sm font-semibold text-[#1C0D06]">
+        <h2 id="activity-heading" className="text-sm font-semibold text-espresso">
           Activity
         </h2>
         <p className={`text-[11px] ${MUTED}`}>Last 8 weeks</p>
@@ -284,7 +280,7 @@ function ActivityChart({ bars }: { bars: WeekBar[] }) {
             }`}
           >
             <span
-              className="w-2 rounded-t-sm bg-[#D9A97F]"
+              className="w-2 rounded-t-sm bg-caramel"
               style={{ height: `${Math.max(4, (bar.count / max) * 72)}px` }}
             />
             <span className={`text-[9px] ${MUTED}`}>W{index + 1}</span>
@@ -298,7 +294,7 @@ function ActivityChart({ bars }: { bars: WeekBar[] }) {
 function RecentEntries({ entries, today }: { entries: Entry[]; today: string }) {
   return (
     <section aria-labelledby="recent-heading">
-      <h2 id="recent-heading" className="mb-3 text-sm font-semibold text-[#1C0D06]">
+      <h2 id="recent-heading" className="mb-3 text-sm font-semibold text-espresso">
         Recent entries
       </h2>
       {entries.length === 0 ? (
@@ -306,12 +302,12 @@ function RecentEntries({ entries, today }: { entries: Entry[]; today: string }) 
       ) : (
         <ul className="flex flex-col">
           {entries.map((entry) => (
-            <li key={entry.id} className="border-b border-[#EADFCF] last:border-b-0">
+            <li key={entry.id} className="border-b border-cream last:border-b-0">
               <Link
                 to={`/entries/${entry.id}`}
-                className="flex items-center justify-between gap-3 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-[#D4A843]"
+                className="flex items-center justify-between gap-3 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-gold"
               >
-                <span className="min-w-0 truncate font-medium text-[#1C0D06]">
+                <span className="min-w-0 truncate font-medium text-espresso">
                   {entryTitle(entry)}
                 </span>
                 <span className={`shrink-0 text-xs ${MUTED}`}>
@@ -364,7 +360,7 @@ export function OverviewTab({
       <SummaryCards summary={summary} today={today} />
 
       <section aria-labelledby="insights-heading">
-        <h2 id="insights-heading" className="mb-3 text-sm font-semibold text-[#1C0D06]">
+        <h2 id="insights-heading" className="mb-3 text-sm font-semibold text-espresso">
           Field insights
         </h2>
         {insightsLoading && <Skeleton rows={1} />}
@@ -425,8 +421,8 @@ export function EntriesTab({
   if (isError) return <ErrorNote>Failed to load entries. Try refreshing the page.</ErrorNote>;
   if (entries.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[#D9C9AE] bg-white/40 p-10 text-center">
-        <p className="text-sm text-[#4A3525]">No entries logged for this project yet.</p>
+      <div className="rounded-xl border border-dashed border-line bg-white/40 p-10 text-center">
+        <p className="text-sm text-cocoa">No entries logged for this project yet.</p>
         <Link to="/entries/new" className={`${DARK_BUTTON} mt-4`}>
           Log an entry
         </Link>
@@ -443,13 +439,13 @@ export function EntriesTab({
           const hours = entryDurationHours(entry, fields);
           const tags = entry.tags ?? [];
           return (
-            <li key={entry.id} className="border-b border-[#EADFCF] last:border-b-0">
+            <li key={entry.id} className="border-b border-cream last:border-b-0">
               <Link
                 to={`/entries/${entry.id}`}
-                className="flex items-start justify-between gap-4 py-3 focus-visible:outline-2 focus-visible:outline-[#D4A843]"
+                className="flex items-start justify-between gap-4 py-3 focus-visible:outline-2 focus-visible:outline-gold"
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium text-[#1C0D06]">
+                  <span className="block truncate text-sm font-medium text-espresso">
                     {entryTitle(entry)}
                   </span>
                   {tags.length > 0 && (
@@ -457,7 +453,7 @@ export function EntriesTab({
                       {tags.map(({ tag }) => (
                         <span
                           key={tag.id}
-                          className="rounded-full bg-[#F5EBE0] px-2 py-0.5 text-[11px] text-[#5C4630]"
+                          className="rounded-full bg-cream px-2 py-0.5 text-[11px] text-cocoa"
                         >
                           {tag.name}
                         </span>
@@ -478,7 +474,7 @@ export function EntriesTab({
         <button
           type="button"
           onClick={() => setShown((count) => count + ENTRIES_STEP)}
-          className={`mt-3 w-full py-2 text-center text-xs ${MUTED} hover:text-[#1C0D06]`}
+          className={`mt-3 w-full py-2 text-center text-xs ${MUTED} hover:text-espresso`}
         >
           {remaining} more {remaining === 1 ? 'entry' : 'entries'}
         </button>
@@ -552,9 +548,9 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 border-b border-[#EADFCF] py-3 last:border-b-0">
-      <span className="min-w-[8rem] flex-1 truncate text-sm text-[#1C0D06]">{field.name}</span>
-      <span className="rounded-full bg-[#F5EBE0] px-2.5 py-0.5 text-[11px] text-[#5C4630]">
+    <li className="flex flex-wrap items-center gap-3 border-b border-cream py-3 last:border-b-0">
+      <span className="min-w-[8rem] flex-1 truncate text-sm text-espresso">{field.name}</span>
+      <span className="rounded-full bg-cream px-2.5 py-0.5 text-[11px] text-cocoa">
         {FIELD_TYPE_LABELS[fieldType]}
       </span>
       {aggregatable && (
@@ -568,7 +564,7 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
             })
           }
           aria-label={`Aggregation for ${field.name}`}
-          className="rounded-md border border-[#D9C9AE] bg-white px-2 py-1 text-xs text-[#1C0D06]"
+          className="rounded-md border border-line bg-white px-2 py-1 text-xs text-espresso"
         >
           {AGGREGATIONS.map(({ kind, label }) => (
             <option key={kind} value={kind}>
@@ -591,7 +587,7 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
           onClick={() => actions.remove(field.id)}
           disabled={actions.deletingId === field.id}
           aria-label={`Delete ${field.name}`}
-          className={`${LINK_BUTTON} text-[#B5432F]`}
+          className={`${LINK_BUTTON} text-error`}
         >
           {actions.deletingId === field.id ? 'Deleting…' : 'Delete'}
         </button>
@@ -628,8 +624,8 @@ export function FieldsTab({
       {isLoading && <Skeleton rows={2} />}
       {isError && <ErrorNote>Failed to load fields. Try refreshing the page.</ErrorNote>}
       {!isLoading && !isError && fields.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[#D9C9AE] bg-white/40 p-10 text-center">
-          <p className="text-sm text-[#4A3525]">
+        <div className="rounded-xl border border-dashed border-line bg-white/40 p-10 text-center">
+          <p className="text-sm text-cocoa">
             No fields yet. Add your first field below to define what an entry for this project looks
             like.
           </p>
@@ -642,14 +638,14 @@ export function FieldsTab({
           ))}
         </ul>
       )}
-      {actions.updateError && <p className="mt-2 text-sm text-red-700">{actions.updateError}</p>}
+      {actions.updateError && <p className="mt-2 text-sm text-error">{actions.updateError}</p>}
 
       <form
         onSubmit={submit}
-        className="mt-6 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-[#D9C9AE] bg-white/40 p-4"
+        className="mt-6 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-line bg-white/40 p-4"
       >
         <div className="min-w-[10rem] flex-1">
-          <label htmlFor="new-field-name" className="mb-1 block text-sm text-[#4A3525]">
+          <label htmlFor="new-field-name" className="mb-1 block text-sm text-cocoa">
             Field name
           </label>
           <input
@@ -663,7 +659,7 @@ export function FieldsTab({
           />
         </div>
         <div>
-          <label htmlFor="new-field-type" className="mb-1 block text-sm text-[#4A3525]">
+          <label htmlFor="new-field-type" className="mb-1 block text-sm text-cocoa">
             Type
           </label>
           <select
@@ -683,7 +679,7 @@ export function FieldsTab({
           {actions.creating ? 'Adding…' : 'Add field'}
         </button>
       </form>
-      {actions.createError && <p className="mt-2 text-sm text-red-700">{actions.createError}</p>}
+      {actions.createError && <p className="mt-2 text-sm text-error">{actions.createError}</p>}
     </div>
   );
 }
@@ -724,14 +720,14 @@ export function MetadataPanel({
     <aside aria-label="Project details" className="flex flex-col gap-6">
       <div>
         <p className={LABEL}>Metadata</p>
-        <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-[#1C0D06]">
-          <span className="size-2 shrink-0 rounded-full bg-[#D9A97F]" aria-hidden />
+        <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-espresso">
+          <span className="size-2 shrink-0 rounded-full bg-caramel" aria-hidden />
           <span className="truncate">{project.name}</span>
         </p>
         {project.description && <p className={`mt-1 text-xs ${MUTED}`}>{project.description}</p>}
         <dl className="mt-4 flex justify-between text-xs">
           <dt className={MUTED}>Fields</dt>
-          <dd className="text-[#1C0D06]">{fieldCount ?? '—'}</dd>
+          <dd className="text-espresso">{fieldCount ?? '—'}</dd>
         </dl>
       </div>
 
@@ -740,7 +736,7 @@ export function MetadataPanel({
         <div className="mt-3 flex flex-col gap-2">
           {editing ? (
             <form onSubmit={submit} className="flex flex-col gap-2">
-              <label htmlFor="project-name" className="text-xs text-[#4A3525]">
+              <label htmlFor="project-name" className="text-xs text-cocoa">
                 Project name
               </label>
               <input
@@ -750,7 +746,7 @@ export function MetadataPanel({
                 className={INPUT}
                 required
               />
-              <label htmlFor="project-description" className="text-xs text-[#4A3525]">
+              <label htmlFor="project-description" className="text-xs text-cocoa">
                 Description
               </label>
               <textarea
@@ -792,7 +788,7 @@ export function MetadataPanel({
             Delete project
           </button>
         </div>
-        {actions.error && <p className="mt-2 text-xs text-red-700">{actions.error}</p>}
+        {actions.error && <p className="mt-2 text-xs text-error">{actions.error}</p>}
       </div>
     </aside>
   );

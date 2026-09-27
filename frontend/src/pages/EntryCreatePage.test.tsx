@@ -103,7 +103,7 @@ describe('EntryCreatePage dynamic form', () => {
     await userEvent.click(screen.getByRole('button', { name: /save entry/i }));
 
     expect(await screen.findByText("Field 'Reps' must be a number")).toBeInTheDocument();
-    expect(screen.getByLabelText('Reps')).toHaveClass('border-red-500');
+    expect(screen.getByLabelText('Reps')).toHaveClass('border-error');
   });
 
   it('does not call the API when a required field is left empty', async () => {

@@ -40,26 +40,26 @@ export const LoginPage: React.FC = () => {
 
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
-      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1c0d06] p-8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
-        <span className="absolute left-3 right-3 top-6 border-t-2 border-[#d4af37] md:left-4 md:right-4 md:top-8" />
-        <span className="absolute left-3 right-3 bottom-6 border-b-2 border-[#d4af37] md:left-4 md:right-4 md:bottom-8" />
-        <span className="absolute top-3 bottom-3 left-6 border-l-2 border-[#d4af37] md:top-4 md:bottom-4 md:left-8" />
-        <span className="absolute top-3 bottom-3 right-6 border-r-2 border-[#d4af37] md:top-4 md:bottom-4 md:right-8" />
+      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-espresso p-8 text-cream md:min-h-screen md:w-[35%]">
+        <span className="absolute left-3 right-3 top-6 border-t-2 border-gold md:left-4 md:right-4 md:top-8" />
+        <span className="absolute left-3 right-3 bottom-6 border-b-2 border-gold md:left-4 md:right-4 md:bottom-8" />
+        <span className="absolute top-3 bottom-3 left-6 border-l-2 border-gold md:top-4 md:bottom-4 md:left-8" />
+        <span className="absolute top-3 bottom-3 right-6 border-r-2 border-gold md:top-4 md:bottom-4 md:right-8" />
         <article className="z-10 flex flex-col items-center justify-center p-4 text-center max-w-xs">
           <img src="/logo.svg" alt="Company Logo" className="h-14 w-auto mb-4 md:h-20" />
-          <p className="text-base font-medium tracking-wide text-[#e6c687] md:text-xl">
+          <p className="text-base font-medium tracking-wide text-gold-light md:text-xl">
             Time wasted, never regained!
           </p>
         </article>
       </header>
-      <section className="flex flex-1 flex-col items-center justify-center bg-[#f5ebe0] p-6 text-[#1c0d06] md:w-[65%] md:p-12">
+      <section className="flex flex-1 flex-col items-center justify-center bg-cream p-6 text-espresso md:w-[65%] md:p-12">
         <form className="flex w-full max-w-sm flex-col gap-4" onSubmit={handleSubmit}>
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Sign in
           </h2>
-          {oauthErrorMessage && <p className="text-sm text-red-700">{oauthErrorMessage}</p>}
+          {oauthErrorMessage && <p className="text-sm text-error">{oauthErrorMessage}</p>}
           <label htmlFor="email" className="text-sm font-semibold">
-            Email<span className="text-red-600 ml-0.5">*</span>
+            Email<span className="text-error ml-0.5">*</span>
           </label>
           <input
             id="email"
@@ -73,14 +73,12 @@ export const LoginPage: React.FC = () => {
             }}
             onBlur={() => setEmailError(getEmailError(email))}
             className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
-              emailError
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-[#d4a373] focus:ring-[#1c0d06]'
+              emailError ? 'border-error focus:ring-error' : 'border-caramel focus:ring-espresso'
             }`}
           />
-          {emailError && <p className="text-xs text-red-700">{emailError}</p>}
+          {emailError && <p className="text-xs text-error">{emailError}</p>}
           <label htmlFor="password" className="text-sm font-semibold">
-            Password<span className="text-red-600 ml-0.5">*</span>
+            Password<span className="text-error ml-0.5">*</span>
           </label>
           <article className="relative w-full">
             <input
@@ -90,13 +88,13 @@ export const LoginPage: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-[#d4a373] bg-white p-3 pr-12 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+              className="w-full rounded-md border border-caramel bg-white p-3 pr-12 text-slate-900 outline-none focus:ring-2 focus:ring-espresso"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-[#7a5230] hover:text-[#1c0d06] focus:outline-none cursor-pointer"
+              className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-clay hover:text-espresso focus:outline-none cursor-pointer"
             >
               {showPassword ? (
                 <svg
@@ -134,18 +132,18 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </article>
-          <p className="mt-2 text-sm text-[#4a3525] ">
+          <p className="mt-2 text-sm text-cocoa ">
             Forgot password?{' '}
             <a
               href="/reset-password"
-              className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+              className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-espresso underline hover:text-gold"
             >
               Reset
             </a>
           </p>
           {signIn.isError &&
             (signIn.error.message === 'Email not verified' ? (
-              <p className="text-sm text-red-700">
+              <p className="text-sm text-error">
                 Your email isn&apos;t verified yet.{' '}
                 <Link
                   to={`/verify-email?email=${encodeURIComponent(email)}`}
@@ -155,26 +153,26 @@ export const LoginPage: React.FC = () => {
                 </Link>
               </p>
             ) : (
-              <p className="text-sm text-red-700">{signIn.error.message}</p>
+              <p className="text-sm text-error">{signIn.error.message}</p>
             ))}
           <button
             type="submit"
             disabled={signIn.isPending}
-            className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+            className="mt-2 w-full rounded-md bg-espresso p-3 font-semibold text-cream transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
           >
             {signIn.isPending ? 'Signing in…' : 'Sign in'}
           </button>
-          <p className="mt-2 text-center text-sm text-[#4a3525]">
+          <p className="mt-2 text-center text-sm text-cocoa">
             Don't have an account?{' '}
             <a
               href="/signup"
-              className="inline-block -my-3 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+              className="inline-block -my-3 py-3 font-semibold text-espresso underline hover:text-gold"
             >
               Sign up
             </a>
           </p>
-          <section className="relative my-4 flex items-center justify-center border-t border-[#d4a373]/50">
-            <span className="absolute bg-[#f5ebe0] px-3 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
+          <section className="relative my-4 flex items-center justify-center border-t border-caramel/50">
+            <span className="absolute bg-cream px-3 text-xs font-semibold uppercase tracking-wider text-clay">
               OR Sign in with :
             </span>
           </section>
@@ -183,7 +181,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={() => googleSignIn.mutate()}
               disabled={googleSignIn.isPending}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-caramel bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -207,7 +205,7 @@ export const LoginPage: React.FC = () => {
             </button>
           </section>
           {googleSignIn.isError && (
-            <p className="text-sm text-red-700">{googleSignIn.error.message}</p>
+            <p className="text-sm text-error">{googleSignIn.error.message}</p>
           )}
         </form>
       </section>

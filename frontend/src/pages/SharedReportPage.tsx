@@ -26,9 +26,9 @@ type State =
   | { status: 'error'; message: string };
 
 const DOWNLOAD_BUTTON =
-  'inline-flex items-center gap-1 rounded-md border border-[#d4a373]/60 bg-white px-2 py-1 text-[10px] font-medium text-[#1c0d06] transition-colors hover:bg-[#F5EBE0] md:text-[11px]';
+  'inline-flex items-center gap-1 rounded-md border border-caramel/60 bg-white px-2 py-1 text-[10px] font-medium text-espresso transition-colors hover:bg-cream md:text-[11px]';
 
-const CARD_LABEL = 'text-[10px] font-medium uppercase tracking-[0.08em] text-[#7a5230]';
+const CARD_LABEL = 'text-[10px] font-medium uppercase tracking-[0.08em] text-clay';
 
 const FIELD_ICONS: Record<string, LucideIcon> = {
   duration: Clock,
@@ -41,7 +41,7 @@ const FIELD_ICONS: Record<string, LucideIcon> = {
 function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <span className="flex size-5 items-center justify-center rounded bg-[#D4A843] text-[9px] font-bold text-[#1c0d06]">
+      <span className="flex size-5 items-center justify-center rounded bg-gold text-[9px] font-bold text-espresso">
         UL
       </span>
       <span className="text-sm font-semibold">UniLogs</span>
@@ -51,9 +51,9 @@ function Logo() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-[#F5EBE0] px-3 py-2.5">
+    <div className="rounded-lg bg-cream px-3 py-2.5">
       <p className={CARD_LABEL}>{label}</p>
-      <p className="mt-1 text-lg font-semibold text-[#1c0d06]">{value}</p>
+      <p className="mt-1 text-lg font-semibold text-espresso">{value}</p>
     </div>
   );
 }
@@ -62,23 +62,23 @@ function InsightCard({ insight }: { insight: Insight }) {
   const { value, sub } = insightDisplay(insight);
   const Icon = FIELD_ICONS[insight.fieldType] ?? Hash;
   return (
-    <div className="rounded-lg bg-[#F5EBE0] px-3 py-2.5">
+    <div className="rounded-lg bg-cream px-3 py-2.5">
       <p className={`flex items-center gap-1.5 ${CARD_LABEL}`}>
         <Icon className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden />
         <span className="truncate">{insight.name}</span>
       </p>
-      <p className="mt-1.5 text-base font-semibold text-[#1c0d06]">{value}</p>
-      <p className="mt-0.5 text-[10px] text-[#7a5230]">{sub}</p>
+      <p className="mt-1.5 text-base font-semibold text-espresso">{value}</p>
+      <p className="mt-0.5 text-[10px] text-clay">{sub}</p>
     </div>
   );
 }
 
 function Message({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FFFCF7] p-6 text-center text-[#1c0d06]">
+    <div className="flex min-h-screen items-center justify-center bg-paper p-6 text-center text-espresso">
       <div className="max-w-sm">
         <p className="text-lg font-semibold">{title}</p>
-        <p className="mt-1 text-sm text-[#7a5230]">{body}</p>
+        <p className="mt-1 text-sm text-clay">{body}</p>
       </div>
     </div>
   );
@@ -96,8 +96,8 @@ function Report({ report, token }: { report: SharedReport; token: string }) {
     `${BASE_URL}/share/${encodeURIComponent(token)}/export?format=${format}`;
 
   return (
-    <div className="min-h-screen bg-[#FFFCF7] text-[#1c0d06]">
-      <header className="border-b border-[#EADFCF]">
+    <div className="min-h-screen bg-paper text-espresso">
+      <header className="border-b border-cream">
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-3 px-4 py-3 md:px-0">
           <Logo />
           <div className="flex items-center gap-2">
@@ -116,13 +116,13 @@ function Report({ report, token }: { report: SharedReport; token: string }) {
       <main className="mx-auto flex max-w-[960px] flex-col gap-5 px-4 py-6 md:px-0 md:py-8">
         <section>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <span className="size-2 shrink-0 rounded-full bg-[#E8813D]" aria-hidden />
+            <span className="size-2 shrink-0 rounded-full bg-data-orange" aria-hidden />
             {report.project.name}
           </h1>
           {report.project.description && (
-            <p className="mt-1 text-sm text-[#4a3525]">{report.project.description}</p>
+            <p className="mt-1 text-sm text-cocoa">{report.project.description}</p>
           )}
-          <p className="mt-1 text-[10px] text-[#a68c73]">
+          <p className="mt-1 text-[10px] text-taupe">
             Last {report.rangeDays} days · {entriesLabel(report.entries.length)} · Updated today,{' '}
             {updated}
           </p>
@@ -153,12 +153,10 @@ function Report({ report, token }: { report: SharedReport; token: string }) {
         )}
 
         <section aria-label="Entries" className="flex flex-col gap-4">
-          {groups.length === 0 && (
-            <p className="text-sm text-[#7a5230]">No entries in this period.</p>
-          )}
+          {groups.length === 0 && <p className="text-sm text-clay">No entries in this period.</p>}
           {groups.map((group) => (
             <div key={group.day} className="flex flex-col gap-2">
-              <h2 className="text-[10px] font-medium tracking-[0.08em] text-[#a68c73]">
+              <h2 className="text-[10px] font-medium tracking-[0.08em] text-taupe">
                 {group.label}
               </h2>
               <ul className="flex flex-col gap-2">
@@ -168,15 +166,15 @@ function Report({ report, token }: { report: SharedReport; token: string }) {
                   return (
                     <li
                       key={entry.id}
-                      className="flex flex-col gap-2 rounded-lg bg-[#F5EBE0] px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4"
+                      className="flex flex-col gap-2 rounded-lg bg-cream px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">
                           {entry.title?.trim() || 'Untitled entry'}
                         </p>
-                        {preview && <p className="truncate text-xs text-[#7a5230]">{preview}</p>}
+                        {preview && <p className="truncate text-xs text-clay">{preview}</p>}
                       </div>
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs text-[#4a3525]">
+                      <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs text-cocoa">
                         {entry.tags.map((tag) => (
                           <span
                             key={tag}
@@ -244,7 +242,7 @@ export default function SharedReportPage() {
   }, [state]);
 
   if (state.status === 'loading') {
-    return <div className="min-h-screen bg-[#FFFCF7]" aria-busy="true" />;
+    return <div className="min-h-screen bg-paper" aria-busy="true" />;
   }
   if (state.status === 'gone') {
     return (

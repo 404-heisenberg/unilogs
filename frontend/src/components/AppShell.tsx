@@ -39,7 +39,7 @@ export default function AppShell() {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen flex-col bg-[#faf7f2] md:flex-row">
+    <div className="flex h-screen flex-col bg-canvas md:flex-row">
       <NavRail
         explorerCollapsed={explorerCollapsed}
         onToggleExplorer={() => setExplorerCollapsed((v) => !v)}
@@ -49,7 +49,7 @@ export default function AppShell() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <AppHeader />
         <InstallPrompt />
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 text-[#1c0d06] md:p-8">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 text-espresso md:p-8">
           <Outlet />
         </main>
         <MobileBottomNav moreOpen={moreOpen} onMoreClick={() => setMoreOpen(true)} />

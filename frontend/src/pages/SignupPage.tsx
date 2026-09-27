@@ -77,30 +77,30 @@ export const SignupPage: React.FC = () => {
 
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
-      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1c0d06] p-8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
-        <span className="absolute left-3 right-3 top-6 border-t-2 border-[#d4af37] md:left-4 md:right-4 md:top-8" />
-        <span className="absolute left-3 right-3 bottom-6 border-b-2 border-[#d4af37] md:left-4 md:right-4 md:bottom-8" />
-        <span className="absolute top-3 bottom-3 left-6 border-l-2 border-[#d4af37] md:top-4 md:bottom-4 md:left-8" />
-        <span className="absolute top-3 bottom-3 right-6 border-r-2 border-[#d4af37] md:top-4 md:bottom-4 md:right-8" />
+      <header className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-espresso p-8 text-cream md:min-h-screen md:w-[35%]">
+        <span className="absolute left-3 right-3 top-6 border-t-2 border-gold md:left-4 md:right-4 md:top-8" />
+        <span className="absolute left-3 right-3 bottom-6 border-b-2 border-gold md:left-4 md:right-4 md:bottom-8" />
+        <span className="absolute top-3 bottom-3 left-6 border-l-2 border-gold md:top-4 md:bottom-4 md:left-8" />
+        <span className="absolute top-3 bottom-3 right-6 border-r-2 border-gold md:top-4 md:bottom-4 md:right-8" />
 
         <article className="z-10 flex flex-col items-center justify-center p-4 text-center max-w-xs">
           <img src="/logo.svg" alt="Company Logo" className="h-14 w-auto mb-4 md:h-20" />
-          <p className="text-base font-medium tracking-wide text-[#e6c687] md:text-xl">
+          <p className="text-base font-medium tracking-wide text-gold-light md:text-xl">
             Time wasted, never regained!
           </p>
         </article>
       </header>
 
-      <section className="flex flex-1 flex-col items-center justify-center bg-[#f5ebe0] p-6 text-[#1c0d06] md:w-[65%] md:p-12">
+      <section className="flex flex-1 flex-col items-center justify-center bg-cream p-6 text-espresso md:w-[65%] md:p-12">
         <form className="flex w-full max-w-sm flex-col gap-4" onSubmit={handleSubmit}>
           {/* Scaled-Up Header */}
           <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
             Create an account
           </h2>
-          {oauthErrorMessage && <p className="text-sm text-red-700">{oauthErrorMessage}</p>}
+          {oauthErrorMessage && <p className="text-sm text-error">{oauthErrorMessage}</p>}
 
           <label htmlFor="name" className="text-sm font-semibold">
-            Name<span className="text-red-600 ml-0.5">*</span>
+            Name<span className="text-error ml-0.5">*</span>
           </label>
           <input
             id="name"
@@ -109,11 +109,11 @@ export const SignupPage: React.FC = () => {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            className="w-full rounded-md border border-caramel bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-espresso"
           />
 
           <label htmlFor="email" className="text-sm font-semibold">
-            Email<span className="text-red-600 ml-0.5">*</span>
+            Email<span className="text-error ml-0.5">*</span>
           </label>
           <input
             id="email"
@@ -127,15 +127,13 @@ export const SignupPage: React.FC = () => {
             }}
             onBlur={() => setEmailError(getEmailError(email))}
             className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
-              emailError
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-[#d4a373] focus:ring-[#1c0d06]'
+              emailError ? 'border-error focus:ring-error' : 'border-caramel focus:ring-espresso'
             }`}
           />
-          {emailError && <p className="text-xs text-red-700">{emailError}</p>}
+          {emailError && <p className="text-xs text-error">{emailError}</p>}
 
           <label htmlFor="password" className="text-sm font-semibold">
-            Password<span className="text-red-600 ml-0.5">*</span>
+            Password<span className="text-error ml-0.5">*</span>
           </label>
           <article className="relative w-full">
             <input
@@ -153,15 +151,15 @@ export const SignupPage: React.FC = () => {
               required
               className={`w-full rounded-md border bg-white p-3 pr-12 text-slate-900 outline-none focus:ring-2 ${
                 showValidationError
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-[#d4a373] focus:ring-[#1c0d06]'
+                  ? 'border-error focus:ring-error'
+                  : 'border-caramel focus:ring-espresso'
               }`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-[#7a5230] hover:text-[#1c0d06] focus:outline-none cursor-pointer"
+              className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-clay hover:text-espresso focus:outline-none cursor-pointer"
             >
               {showPassword ? (
                 /* Eye Off Icon */
@@ -202,7 +200,7 @@ export const SignupPage: React.FC = () => {
           </article>
 
           <label htmlFor="confirm-password" className="text-sm font-semibold">
-            Confirm Password<span className="text-red-600 ml-0.5">*</span>
+            Confirm Password<span className="text-error ml-0.5">*</span>
           </label>
           <input
             id="confirm-password"
@@ -216,34 +214,34 @@ export const SignupPage: React.FC = () => {
             }}
             className={`w-full rounded-md border bg-white p-3 pr-10 text-slate-900 outline-none focus:ring-2 ${
               showMismatchError
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-[#d4a373] focus:ring-[#1c0d06]'
+                ? 'border-error focus:ring-error'
+                : 'border-caramel focus:ring-espresso'
             }`}
           />
-          {showMismatchError && <p className="text-xs text-red-700">Passwords do not match.</p>}
+          {showMismatchError && <p className="text-xs text-error">Passwords do not match.</p>}
 
           {shouldShowRequirements && (
             <section className="mt-1 flex flex-col gap-1 text-xs transition-all">
               <p
-                className={`flex items-center gap-1.5 transition-colors ${hasMinLength ? 'font-medium text-emerald-800' : 'text-red-700'}`}
+                className={`flex items-center gap-1.5 transition-colors ${hasMinLength ? 'font-medium text-emerald-800' : 'text-error'}`}
               >
                 <span className="inline-block w-3.5 font-bold">{hasMinLength ? '✓' : '•'}</span>
                 At least 8 characters
               </p>
               <p
-                className={`flex items-center gap-1.5 transition-colors ${hasUppercase ? 'font-medium text-emerald-800' : 'text-red-700'}`}
+                className={`flex items-center gap-1.5 transition-colors ${hasUppercase ? 'font-medium text-emerald-800' : 'text-error'}`}
               >
                 <span className="inline-block w-3.5 font-bold">{hasUppercase ? '✓' : '•'}</span>
                 At least one uppercase letter (A-Z)
               </p>
               <p
-                className={`flex items-center gap-1.5 transition-colors ${hasNumber ? 'font-medium text-emerald-800' : 'text-red-700'}`}
+                className={`flex items-center gap-1.5 transition-colors ${hasNumber ? 'font-medium text-emerald-800' : 'text-error'}`}
               >
                 <span className="inline-block w-3.5 font-bold">{hasNumber ? '✓' : '•'}</span>
                 At least one number (0-9)
               </p>
               <p
-                className={`flex items-center gap-1.5 transition-colors ${hasSpecialChar ? 'font-medium text-emerald-800' : 'text-red-700'}`}
+                className={`flex items-center gap-1.5 transition-colors ${hasSpecialChar ? 'font-medium text-emerald-800' : 'text-error'}`}
               >
                 <span className="inline-block w-3.5 font-bold">{hasSpecialChar ? '✓' : '•'}</span>
                 At least one special character (!@#$%^&*)
@@ -259,53 +257,50 @@ export const SignupPage: React.FC = () => {
               required
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#d4a373] text-[#1c0d06] accent-[#1c0d06] focus:ring-2 focus:ring-[#1c0d06] cursor-pointer"
+              className="mt-0.5 h-4 w-4 rounded border-caramel text-espresso accent-espresso focus:ring-2 focus:ring-espresso cursor-pointer"
             />
-            <label
-              htmlFor="disclaimer"
-              className="text-xs text-[#4a3525] cursor-pointer leading-tight"
-            >
+            <label htmlFor="disclaimer" className="text-xs text-cocoa cursor-pointer leading-tight">
               I agree to the{' '}
               <a
                 href="/terms"
-                className="inline-block -my-4 py-4 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+                className="inline-block -my-4 py-4 font-semibold text-espresso underline hover:text-gold"
               >
                 Terms of Service
               </a>{' '}
               and{' '}
               <a
                 href="/privacy"
-                className="inline-block -my-4 py-4 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+                className="inline-block -my-4 py-4 font-semibold text-espresso underline hover:text-gold"
               >
                 Privacy Policy
               </a>
-              <span className="text-red-600 ml-0.5">*</span>
+              <span className="text-error ml-0.5">*</span>
             </label>
           </div>
 
-          {signUp.isError && <p className="text-sm text-red-700">{signUp.error.message}</p>}
+          {signUp.isError && <p className="text-sm text-error">{signUp.error.message}</p>}
           <button
             type="submit"
             disabled={signUp.isPending}
-            className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+            className="mt-2 w-full rounded-md bg-espresso p-3 font-semibold text-cream transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
           >
             {signUp.isPending ? 'Creating account…' : 'Sign Up'}
           </button>
 
           {/* Account Login Link */}
-          <p className="mt-2 text-center text-sm text-[#4a3525]">
+          <p className="mt-2 text-center text-sm text-cocoa">
             Already have an account?{' '}
             <a
               href="/login"
-              className="inline-block -my-3 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+              className="inline-block -my-3 py-3 font-semibold text-espresso underline hover:text-gold"
             >
               Sign In
             </a>
           </p>
 
           {/* OAuth Separator */}
-          <section className="relative my-4 flex items-center justify-center border-t border-[#d4a373]/50">
-            <span className="absolute bg-[#f5ebe0] px-3 text-xs font-semibold uppercase tracking-wider text-[#7a5230]">
+          <section className="relative my-4 flex items-center justify-center border-t border-caramel/50">
+            <span className="absolute bg-cream px-3 text-xs font-semibold uppercase tracking-wider text-clay">
               OR Sign up with :
             </span>
           </section>
@@ -316,7 +311,7 @@ export const SignupPage: React.FC = () => {
               type="button"
               onClick={() => googleSignUp.mutate()}
               disabled={googleSignUp.isPending}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-[#d4a373] bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-caramel bg-white p-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 cursor-pointer disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -340,7 +335,7 @@ export const SignupPage: React.FC = () => {
             </button>
           </section>
           {googleSignUp.isError && (
-            <p className="text-sm text-red-700">{googleSignUp.error.message}</p>
+            <p className="text-sm text-error">{googleSignUp.error.message}</p>
           )}
         </form>
       </section>

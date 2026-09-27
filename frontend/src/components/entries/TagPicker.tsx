@@ -15,11 +15,11 @@ export default function TagPicker({
   };
 
   if (tagsQuery.isPending) {
-    return <div className="h-9 w-full animate-pulse rounded-md bg-[#d4a373]/20" />;
+    return <div className="h-9 w-full animate-pulse rounded-md bg-caramel/20" />;
   }
 
   if (tags.length === 0) {
-    return <p className="text-sm text-[#7a5230]">No tags yet — add some in Settings.</p>;
+    return <p className="text-sm text-clay">No tags yet — add some in Settings.</p>;
   }
 
   return (
@@ -34,8 +34,8 @@ export default function TagPicker({
             aria-pressed={active}
             className={`min-h-11 rounded-full border px-3 text-sm font-medium transition-colors ${
               active
-                ? 'border-[#d4a843] bg-[#d4a843] text-[#1c0d05]'
-                : 'border-[#d4a373]/50 bg-white text-[#7a5230] hover:bg-[#f5ebe0]'
+                ? 'border-gold bg-gold text-espresso'
+                : 'border-caramel/50 bg-white text-clay hover:bg-cream'
             }`}
           >
             {tag.name}

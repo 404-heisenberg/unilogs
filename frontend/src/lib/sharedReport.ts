@@ -182,11 +182,7 @@ export function entryPreview(entry: ReportEntry): string {
   return firstLine ?? '';
 }
 
-const TAG_STYLES = [
-  'bg-[#D4A843] text-[#1c0d06]',
-  'bg-[#4A7FC1] text-white',
-  'bg-[#5B8C6B] text-white',
-];
+const TAG_STYLES = ['bg-gold text-espresso', 'bg-data-blue text-white', 'bg-success text-white'];
 
 export function tagStyle(name: string): string {
   let hash = 0;

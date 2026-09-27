@@ -34,19 +34,19 @@ function ProjectRow({
 
   if (editing) {
     return (
-      <li className="flex flex-col gap-2 rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm">
+      <li className="flex flex-col gap-2 rounded-xl border border-caramel/40 bg-paper p-4 shadow-sm">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           aria-label="Project name"
-          className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+          className="rounded-lg border border-line px-3 py-1.5 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
         />
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description"
           aria-label="Project description"
-          className="rounded-md border border-[#d4a373]/60 px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+          className="rounded-lg border border-line px-3 py-1.5 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
         />
         <div className="flex gap-2">
           <Button
@@ -68,12 +68,10 @@ function ProjectRow({
   }
 
   return (
-    <li className="flex items-stretch justify-between gap-3 rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <li className="flex items-stretch justify-between gap-3 rounded-xl border border-caramel/40 bg-paper p-4 shadow-sm transition-shadow hover:shadow-md">
       <Link to={`/projects/${project.id}`} className="min-w-0 flex-1">
-        <p className="font-semibold text-[#1c0d06]">{project.name}</p>
-        {project.description && (
-          <p className="mt-1 text-sm text-[#7a5230]">{project.description}</p>
-        )}
+        <p className="font-semibold text-espresso">{project.name}</p>
+        {project.description && <p className="mt-1 text-sm text-clay">{project.description}</p>}
       </Link>
       <div className="flex shrink-0 gap-2">
         {!archivedView && (
@@ -131,10 +129,10 @@ export default function ProjectsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
-        <Link to="/projects/new">
-          <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+      <div className="flex items-center justify-between md:mb-6">
+        <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">Projects</h1>
+        <Link to="/projects/new" className="hidden md:block">
+          <Button className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
             New Project
           </Button>
         </Link>
@@ -143,38 +141,38 @@ export default function ProjectsPage() {
       <div className="mb-4">
         <button
           onClick={() => setArchivedView((v) => !v)}
-          className="inline-block -my-3 py-3 text-sm text-[#7a5230] underline hover:text-[#1c0d06]"
+          className="inline-block -my-3 py-3 text-sm text-clay underline hover:text-espresso"
         >
           {archivedView ? '← Back to active projects' : 'Show archived projects'}
         </button>
       </div>
 
-      {mutationError && <p className="mb-4 text-sm text-red-700">{mutationError.message}</p>}
+      {mutationError && <p className="mb-4 text-sm text-error">{mutationError.message}</p>}
 
       {isPending && (
         <div className="flex flex-col gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-[#d4a373]/20" />
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-caramel/20" />
           ))}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-danger-soft bg-danger-soft p-4 text-sm text-error">
           Failed to load projects. Try refreshing the page.
         </div>
       )}
 
       {projects?.length === 0 &&
         (archivedView ? (
-          <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
-            <p className="text-sm text-[#4a3525]">No archived projects.</p>
+          <div className="rounded-xl border border-dashed border-caramel/50 bg-white/40 p-10 text-center">
+            <p className="text-sm text-cocoa">No archived projects.</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
-            <p className="text-sm text-[#4a3525]">No projects yet.</p>
+          <div className="rounded-xl border border-dashed border-caramel/50 bg-white/40 p-10 text-center">
+            <p className="text-sm text-cocoa">No projects yet.</p>
             <Link to="/projects/new">
-              <Button className="mt-4 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+              <Button className="mt-4 min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
                 Create your first project
               </Button>
             </Link>

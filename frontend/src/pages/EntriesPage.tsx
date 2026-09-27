@@ -17,7 +17,7 @@ import type { Entry, PagedEntries, Project } from '@/types';
 
 const QUICK_RANGES: DateRangeKey[] = ['all', 'today', '7d'];
 
-const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a6fa5', '#9c5a9c', '#c4664a'];
+const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a7ab5', '#8c709c', '#ef8a4b'];
 const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
 
 function groupLabel(iso: string): string {
@@ -87,10 +87,10 @@ export default function EntriesPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Entries</h1>
-        <Link to="/entries/new">
-          <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+      <div className="flex items-center justify-between md:mb-4">
+        <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">Entries</h1>
+        <Link to="/entries/new" className="hidden md:block">
+          <Button className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
             New Entry
           </Button>
         </Link>
@@ -107,8 +107,8 @@ export default function EntriesPage() {
                 onClick={() => setFilters((f) => ({ ...f, dateRange: key }))}
                 className={`min-h-11 shrink-0 rounded-full px-3 text-sm font-medium ${
                   active
-                    ? 'border border-[#d4a843] bg-[#d4a843] text-[#1c1109]'
-                    : 'border border-[#d4a373]/40 text-[#7a5230]'
+                    ? 'border border-gold bg-gold text-rail'
+                    : 'border border-caramel/40 text-clay'
                 }`}
               >
                 {DATE_RANGE_LABELS[key]}
@@ -120,7 +120,7 @@ export default function EntriesPage() {
             onClick={() => setSheetOpen(true)}
             aria-label="Filters"
             className={`flex size-11 shrink-0 items-center justify-center rounded-full border ${
-              filtering ? 'border-[#d4a843] text-[#d4a843]' : 'border-[#d4a373]/40 text-[#7a5230]'
+              filtering ? 'border-gold text-gold' : 'border-caramel/40 text-clay'
             }`}
           >
             <SlidersHorizontal size={16} strokeWidth={2} />
@@ -131,22 +131,22 @@ export default function EntriesPage() {
       {isPending && (
         <div className="flex flex-col gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-[#d4a373]/20" />
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-caramel/20" />
           ))}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-danger-soft bg-danger-soft p-4 text-sm text-error">
           Failed to load entries. Try refreshing the page.
         </div>
       )}
 
       {!isPending && !isError && entries.length === 0 && !filtering && (
-        <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
-          <p className="text-sm text-[#4a3525]">No entries yet.</p>
+        <div className="rounded-xl border border-dashed border-caramel/50 bg-white/40 p-10 text-center">
+          <p className="text-sm text-cocoa">No entries yet.</p>
           <Link to="/entries/new">
-            <Button className="mt-4 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+            <Button className="mt-4 min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
               Log your first entry
             </Button>
           </Link>
@@ -154,11 +154,11 @@ export default function EntriesPage() {
       )}
 
       {!isPending && !isError && entries.length === 0 && filtering && (
-        <div className="rounded-xl border border-dashed border-[#d4a373]/50 bg-white/40 p-10 text-center">
-          <p className="text-sm text-[#4a3525]">No entries match your filters.</p>
+        <div className="rounded-xl border border-dashed border-caramel/50 bg-white/40 p-10 text-center">
+          <p className="text-sm text-cocoa">No entries match your filters.</p>
           <Button
             onClick={() => setFilters(DEFAULT_FILTERS)}
-            className="mt-4 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
+            className="mt-4 min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0"
           >
             Clear filters
           </Button>
@@ -168,19 +168,19 @@ export default function EntriesPage() {
       <div className="flex flex-col gap-6">
         {groups.map(([label, groupEntries]) => (
           <div key={label} className="flex flex-col gap-3">
-            <p className="text-sm font-bold text-[#1c0d06]">{label}</p>
+            <p className="text-sm font-bold text-espresso">{label}</p>
             <ul className="flex flex-col gap-3">
               {groupEntries.map((entry) => {
                 const { headline, snippet } = entryHeadline(entry);
                 return (
                   <li
                     key={entry.id}
-                    className="rounded-xl border border-[#d4a373]/40 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                    className="rounded-xl border border-cream bg-paper p-4 shadow-sm transition-shadow hover:shadow-md"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <Link
                         to={`/projects/${entry.projectId}`}
-                        className="inline-flex min-h-11 items-center gap-1.5 text-xs font-bold tracking-wide text-[#7a5230] uppercase hover:underline"
+                        className="inline-flex min-h-11 items-center gap-1.5 text-xs font-bold tracking-wide text-clay uppercase hover:underline"
                       >
                         <span
                           className="size-[8px] shrink-0 rounded-full"
@@ -189,7 +189,7 @@ export default function EntriesPage() {
                         />
                         {projectNames.get(entry.projectId) ?? 'Unknown project'}
                       </Link>
-                      <p className="text-xs text-[#7a5230]">
+                      <p className="text-xs text-clay">
                         {new Date(entry.date).toLocaleTimeString([], {
                           hour: 'numeric',
                           minute: '2-digit',
@@ -197,9 +197,9 @@ export default function EntriesPage() {
                       </p>
                     </div>
                     <Link to={`/entries/${entry.id}`} className="mt-1 block min-h-11">
-                      <p className="font-semibold text-[#1c0d06]">{headline}</p>
+                      <p className="font-semibold text-espresso">{headline}</p>
                       {snippet && (
-                        <p className="mt-0.5 line-clamp-2 text-sm text-[#4a3525]">{snippet}</p>
+                        <p className="mt-0.5 line-clamp-2 text-sm text-cocoa">{snippet}</p>
                       )}
                     </Link>
                     {entry.tags && entry.tags.length > 0 && (
@@ -207,7 +207,7 @@ export default function EntriesPage() {
                         {entry.tags.map(({ tag }) => (
                           <span
                             key={tag.id}
-                            className="rounded-full bg-[#d4a373]/20 px-2 py-0.5 text-[11px] font-medium text-[#7a5230]"
+                            className="rounded-full bg-caramel/20 px-2 py-0.5 text-[11px] font-medium text-clay"
                           >
                             {tag.name}
                           </span>

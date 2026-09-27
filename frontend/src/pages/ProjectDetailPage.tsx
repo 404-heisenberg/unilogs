@@ -57,8 +57,8 @@ export default function ProjectDetailPage() {
   if (project.isPending && project.fetchStatus !== 'idle') {
     return (
       <div aria-busy className="flex flex-col gap-4">
-        <div className="h-8 w-56 animate-pulse rounded bg-[#EADFCF]" />
-        <div className="h-40 animate-pulse rounded-xl bg-[#EADFCF]/60" />
+        <div className="h-8 w-56 animate-pulse rounded bg-cream" />
+        <div className="h-40 animate-pulse rounded-xl bg-cream/60" />
       </div>
     );
   }
@@ -66,10 +66,10 @@ export default function ProjectDetailPage() {
   if (project.isError || !project.data) {
     return (
       <div>
-        <Link to="/projects" className="text-sm text-[#8A7660] hover:text-[#1C0D06]">
+        <Link to="/projects" className="text-sm text-clay hover:text-espresso">
           Projects
         </Link>
-        <p className="mt-4 text-sm text-red-700">
+        <p className="mt-4 text-sm text-error">
           Couldn't load this project. Try refreshing the page.
         </p>
       </div>
@@ -78,8 +78,8 @@ export default function ProjectDetailPage() {
 
   return (
     <div>
-      <nav aria-label="Breadcrumb" className="text-xs text-[#8A7660]">
-        <Link to="/projects" className="hover:text-[#1C0D06]">
+      <nav aria-label="Breadcrumb" className="text-xs text-clay">
+        <Link to="/projects" className="hover:text-espresso">
           Projects
         </Link>
         <span aria-hidden> / </span>
@@ -88,17 +88,17 @@ export default function ProjectDetailPage() {
 
       <div className="mt-2 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-[#1C0D06]">
-            <span className="size-2.5 shrink-0 rounded-full bg-[#D9A97F]" aria-hidden />
+          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-espresso">
+            <span className="size-2.5 shrink-0 rounded-full bg-caramel" aria-hidden />
             <span className="truncate">{project.data.name}</span>
           </h1>
           {project.data.description && (
-            <p className="mt-1 text-sm text-[#8A7660]">{project.data.description}</p>
+            <p className="mt-1 text-sm text-clay">{project.data.description}</p>
           )}
         </div>
         <Link
           to="/entries/new"
-          className="hidden shrink-0 items-center justify-center rounded-md bg-[#1C0D06] px-3.5 py-2 text-sm font-medium text-[#FFFCF7] transition-colors hover:bg-[#3A2214] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843] sm:inline-flex"
+          className="hidden shrink-0 items-center justify-center rounded-md bg-espresso px-3.5 py-2 text-sm font-medium text-paper transition-colors hover:bg-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:inline-flex"
         >
           Log
         </Link>
@@ -171,7 +171,7 @@ export default function ProjectDetailPage() {
           </TabPanel>
         </div>
 
-        <div className="lg:border-l lg:border-[#EADFCF] lg:pl-8">
+        <div className="lg:border-l lg:border-cream lg:pl-8">
           <MetadataPanel
             key={project.data.id}
             project={project.data}

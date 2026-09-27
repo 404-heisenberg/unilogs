@@ -99,7 +99,7 @@ describe('ProjectCreatePage', () => {
     expect(postMock).toHaveBeenCalledWith('/api/projects', {
       name: 'Thesis',
       description: 'Final year research',
-      color: '#3e6b48',
+      color: '#7a9e6b',
       reminder: 'weekly',
     });
     expect(postMock).toHaveBeenCalledWith('/api/field-definitions', {
@@ -143,7 +143,7 @@ describe('ProjectCreatePage', () => {
     expect(postMock).toHaveBeenCalledWith('/api/projects', {
       name: 'Journal',
       description: undefined,
-      color: '#3e6b48',
+      color: '#7a9e6b',
       reminder: 'weekly',
     });
     expect(postMock).toHaveBeenCalledWith('/api/field-definitions', {

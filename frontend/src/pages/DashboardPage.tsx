@@ -22,7 +22,7 @@ import {
 const DORMANT_AFTER_DAYS = 7;
 
 // No bg/padding/text overrides here — the app shell's own <main> already
-// provides those (bg-[#faf7f2], p-4 md:p-8, text-[#1c0d06]), so blending in
+// provides those (bg-canvas, p-4 md:p-8, text-espresso), so blending in
 // rather than breaking out keeps the dashboard from showing a visible seam
 // against the rest of the app.
 const PAGE = '';
@@ -153,12 +153,12 @@ export default function DashboardPage() {
     return (
       <div className={PAGE}>
         <div className="mx-auto flex max-w-6xl flex-col gap-4">
-          <div className="h-8 w-48 animate-pulse rounded bg-[#EADFCF]" />
-          <div className="h-12 animate-pulse rounded-xl bg-[#F5EBE0]" />
-          <div className="h-44 animate-pulse rounded-xl bg-[#F5EBE0]" />
+          <div className="h-8 w-48 animate-pulse rounded bg-cream" />
+          <div className="h-12 animate-pulse rounded-xl bg-cream" />
+          <div className="h-44 animate-pulse rounded-xl bg-cream" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="h-40 animate-pulse rounded-xl bg-[#F5EBE0]" />
-            <div className="h-40 animate-pulse rounded-xl bg-[#F5EBE0]" />
+            <div className="h-40 animate-pulse rounded-xl bg-cream" />
+            <div className="h-40 animate-pulse rounded-xl bg-cream" />
           </div>
         </div>
       </div>
@@ -169,7 +169,7 @@ export default function DashboardPage() {
     return (
       <div className={`${PAGE} flex items-center justify-center`}>
         <div className="text-center">
-          <p className="text-lg font-semibold text-[#2A1A0E]">Couldn't load your stats</p>
+          <p className="text-lg font-semibold text-espresso">Couldn't load your stats</p>
           <p className={`mt-1 text-sm ${MUTED}`}>Check your connection and try again.</p>
         </div>
       </div>
@@ -181,10 +181,10 @@ export default function DashboardPage() {
       <div className={PAGE}>
         <div className="mx-auto flex max-w-6xl flex-col gap-6">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-            <p className={`mt-1 text-sm ${MUTED}`}>{formatLongDate(today)}</p>
+            <h1 className="sr-only text-[28px] font-bold md:not-sr-only">Dashboard</h1>
+            <p className={`mt-1 hidden text-sm md:block ${MUTED}`}>{formatLongDate(today)}</p>
           </div>
-          <div className="flex flex-col items-center justify-center rounded-xl bg-[#F5EBE0] py-24 text-center">
+          <div className="flex flex-col items-center justify-center rounded-xl bg-cream py-24 text-center">
             <Flame className={`mb-4 h-10 w-10 ${MUTED}`} strokeWidth={1.5} aria-hidden />
             <p className="text-lg font-semibold">No entries yet</p>
             <p className={`mt-1 max-w-xs text-sm ${MUTED}`}>
@@ -199,14 +199,14 @@ export default function DashboardPage() {
   return (
     <div className={PAGE}>
       <div className="mx-auto max-w-6xl">
-        <header className="mb-6 flex items-start justify-between gap-4">
+        <header className="flex items-start justify-between gap-4 md:mb-6">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
+            <h1 className="sr-only text-[28px] font-bold md:not-sr-only">
               {customising ? 'Customise dashboard' : 'Dashboard'}
             </h1>
-            <p className={`mt-1 text-sm ${MUTED}`}>{formatLongDate(today)}</p>
+            <p className={`mt-1 hidden text-sm md:block ${MUTED}`}>{formatLongDate(today)}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             {customising ? (
               <>
                 <button type="button" onClick={reset} className={TEXT_BUTTON}>

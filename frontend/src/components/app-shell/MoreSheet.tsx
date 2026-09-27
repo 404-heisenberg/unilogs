@@ -16,28 +16,28 @@ function NotificationsDisclosure({ onNavigate }: { onNavigate: () => void }) {
   const unreadCount = feedQuery.data?.unreadCount ?? 0;
 
   return (
-    <div className="rounded-md border border-[#f0e7db]">
+    <div className="rounded-md border border-sand">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex min-h-11 w-full items-center gap-2 px-2 py-2 text-sm font-medium text-[#1c0d06]"
+        className="flex min-h-11 w-full items-center gap-2 px-2 py-2 text-sm font-medium text-espresso"
       >
         <Bell size={18} strokeWidth={1.75} />
         <span className="flex-1 text-left">Notifications</span>
         {unreadCount > 0 && (
-          <span className="rounded-full bg-[#d4a843] px-1.5 py-0.5 text-[11px] font-semibold text-[#1c0d06]">
+          <span className="rounded-full bg-gold px-1.5 py-0.5 text-[11px] font-semibold text-espresso">
             {unreadCount}
           </span>
         )}
         <ChevronDown
           size={14}
           strokeWidth={2}
-          className={`text-[#7a5230] transition-transform ${expanded ? 'rotate-180' : ''}`}
+          className={`text-clay transition-transform ${expanded ? 'rotate-180' : ''}`}
         />
       </button>
       {expanded && (
-        <div className="border-t border-[#f0e7db]">
+        <div className="border-t border-sand">
           <NotificationList onNavigate={onNavigate} />
         </div>
       )}
@@ -61,7 +61,7 @@ export default function MoreSheet({
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="flex w-4/5 flex-col gap-5 bg-[#fffcf7] p-4 sm:max-w-xs"
+        className="flex w-4/5 flex-col gap-5 bg-paper p-4 sm:max-w-xs"
       >
         <SheetHeader className="flex-row items-center justify-between p-0">
           <SheetTitle>More</SheetTitle>
@@ -69,7 +69,7 @@ export default function MoreSheet({
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Close"
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-black/5 text-[#7a5230]"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-black/5 text-clay"
           >
             <X size={16} strokeWidth={2} />
           </button>
@@ -84,7 +84,7 @@ export default function MoreSheet({
         <Link
           to="/settings"
           onClick={() => onOpenChange(false)}
-          className="flex min-h-11 items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-[#1c0d06] hover:bg-black/5"
+          className="flex min-h-11 items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-espresso hover:bg-black/5"
         >
           <Settings size={18} strokeWidth={1.75} />
           Settings

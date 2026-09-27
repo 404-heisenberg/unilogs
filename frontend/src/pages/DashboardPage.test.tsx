@@ -205,9 +205,9 @@ describe('DashboardPage', () => {
     expect(cells).toHaveLength(84);
 
     const today = screen.getByRole('img', { name: 'Sun 20 Sep: 1 entry' });
-    expect(today).toHaveClass('bg-[#d4a843]');
-    expect(screen.getByRole('img', { name: 'Sat 19 Sep: 1 entry' })).toHaveClass('bg-[#d4a843]');
-    expect(screen.getByRole('img', { name: 'Mon 14 Sep: 0 entries' })).toHaveClass('bg-[#e8e0d8]');
+    expect(today).toHaveClass('bg-gold');
+    expect(screen.getByRole('img', { name: 'Sat 19 Sep: 1 entry' })).toHaveClass('bg-gold');
+    expect(screen.getByRole('img', { name: 'Mon 14 Sep: 0 entries' })).toHaveClass('bg-heat-0');
 
     expect(screen.getByText('6 of 7')).toBeInTheDocument();
   });

@@ -13,13 +13,13 @@ export function FieldInput({
   onChange: (value: FieldValue) => void;
 }) {
   const inputId = `field-${field.id}`;
-  const inputClassName = `min-h-11 w-full rounded-md border px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 md:min-h-0 ${
-    error ? 'border-red-500 focus:ring-red-500' : 'border-[#d4a373]/60 focus:ring-[#1c0d06]'
+  const inputClassName = `min-h-11 w-full rounded-lg border px-3 py-2 text-sm text-espresso outline-none focus:ring-2 md:min-h-10 ${
+    error ? 'border-error focus:ring-error' : 'border-caramel/60 focus:ring-espresso'
   }`;
 
   return (
     <div>
-      <label htmlFor={inputId} className="mb-1 block text-sm text-[#4a3525]">
+      <label htmlFor={inputId} className="mb-1 block text-sm text-cocoa">
         {field.name}
       </label>
       {field.fieldType === 'boolean' ? (
@@ -28,7 +28,7 @@ export function FieldInput({
           type="checkbox"
           checked={Boolean(value)}
           onChange={(e) => onChange(e.target.checked)}
-          className="h-4 w-4 rounded border-[#d4a373] accent-[#1c0d06]"
+          className="h-4 w-4 rounded border-caramel accent-espresso"
         />
       ) : field.fieldType === 'date' ? (
         <input
@@ -56,7 +56,7 @@ export function FieldInput({
           className={inputClassName}
         />
       )}
-      {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
+      {error && <p className="mt-1 text-xs text-error">{error}</p>}
     </div>
   );
 }

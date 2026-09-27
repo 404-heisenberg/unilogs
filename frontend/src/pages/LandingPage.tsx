@@ -4,21 +4,21 @@ import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-[#f5ebe0] text-[#1c0d06]">
+    <main className="min-h-screen bg-cream text-espresso">
       {/* Nav */}
-      <nav className="sticky top-0 z-10 flex items-center justify-between border-b border-[#d4a373]/40 bg-[#f5ebe0]/90 px-6 py-4 backdrop-blur-sm md:px-12">
+      <nav className="sticky top-0 z-10 flex items-center justify-between border-b border-caramel/40 bg-cream/90 px-6 py-4 backdrop-blur-sm md:px-12">
         <span className="text-lg font-bold tracking-tight">UniLogs</span>
         <div className="flex items-center gap-2">
           <Link to="/login" className="inline-flex">
             <Button
               variant="ghost"
-              className="min-h-11 text-[#1c0d06] hover:bg-[#e6c687]/30 md:min-h-0"
+              className="min-h-11 text-espresso hover:bg-gold-light/30 md:min-h-0"
             >
               Sign in
             </Button>
           </Link>
           <Link to="/signup" className="inline-flex">
-            <Button className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0">
+            <Button className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
               Get started
             </Button>
           </Link>
@@ -27,27 +27,27 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="px-6 pt-24 pb-24 text-center md:pt-32 md:pb-32">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#b8860b]">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           Every hour has a story. Start telling yours.
         </p>
         <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight tracking-tight md:text-6xl">
           The logbook that
-          <span className="block text-[#b8860b]">finally follows you everywhere</span>
+          <span className="block text-gold">finally follows you everywhere</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-[#4a3525]">
+        <p className="mx-auto mt-6 max-w-xl text-lg text-cocoa">
           Paper forgets you the moment you close it. UniLogs is on your phone and your laptop,
           wherever the work actually happens.
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link to="/signup">
-            <Button className="w-full bg-[#1c0d06] px-8 py-6 text-base text-[#f5ebe0] hover:opacity-90 sm:w-auto">
+            <Button className="w-full bg-espresso px-8 py-6 text-base text-cream hover:opacity-90 sm:w-auto">
               Start logging for free
             </Button>
           </Link>
           <Link to="/login">
             <Button
               variant="outline"
-              className="w-full border-[#1c0d06] px-8 py-6 text-base text-[#1c0d06] hover:bg-[#e6c687]/30 sm:w-auto"
+              className="w-full border-espresso px-8 py-6 text-base text-espresso hover:bg-gold-light/30 sm:w-auto"
             >
               I have an account
             </Button>
@@ -56,7 +56,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="border-t border-[#d4a373]/40 bg-white/50 px-6 py-20 md:px-12">
+      <section className="border-t border-caramel/40 bg-white/50 px-6 py-20 md:px-12">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-2xl font-bold tracking-tight md:text-3xl">
             Built for how you actually work
@@ -86,15 +86,15 @@ export default function LandingPage() {
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
           The paper book failed because it wasn't there.
         </h2>
-        <p className="mx-auto mt-3 max-w-md text-[#4a3525]">This one always is.</p>
+        <p className="mx-auto mt-3 max-w-md text-cocoa">This one always is.</p>
         <Link to="/signup" className="inline-flex">
-          <Button className="mt-7 bg-[#1c0d06] px-8 py-6 text-base text-[#f5ebe0] hover:opacity-90">
+          <Button className="mt-7 bg-espresso px-8 py-6 text-base text-cream hover:opacity-90">
             Create your logbook
           </Button>
         </Link>
       </section>
 
-      <footer className="border-t border-[#d4a373]/40 px-6 py-6 text-center text-sm text-[#7a5230]">
+      <footer className="border-t border-caramel/40 px-6 py-6 text-center text-sm text-clay">
         © 2026 UniLogs, built by Code of Duty
       </footer>
     </main>
@@ -111,12 +111,12 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-xl border border-[#d4a373]/40 bg-[#f5ebe0] p-6 text-left">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#1c0d06] text-[#e6c687]">
+    <div className="rounded-xl border border-caramel/40 bg-cream p-6 text-left">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-espresso text-gold-light">
         {icon}
       </div>
       <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="mt-2 text-sm text-[#4a3525]">{description}</p>
+      <p className="mt-2 text-sm text-cocoa">{description}</p>
     </div>
   );
 }

@@ -15,7 +15,7 @@ const DATE_RANGE_KEYS: DateRangeKey[] = ['all', 'today', '7d', '30d', 'custom'];
 // Deterministic project dot colors, same palette as the tags settings dots —
 // there's no color field on Project either, this just gives rows a visual
 // anchor to scan by, matching the design's colored dots.
-const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a6fa5', '#9c5a9c', '#c4664a'];
+const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a7ab5', '#8c709c', '#ef8a4b'];
 const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
 
 export default function FiltersSheet({
@@ -67,17 +67,17 @@ export default function FiltersSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="flex max-h-[85vh] flex-col gap-0 rounded-t-2xl bg-[#fffcf7] p-0"
+        className="flex max-h-[85vh] flex-col gap-0 rounded-t-2xl bg-paper p-0"
       >
         <SheetHeader className="flex-row items-center justify-between p-0">
-          <SheetTitle className="px-4 pt-2 pb-1 text-lg font-bold text-[#1c0d05]">
+          <SheetTitle className="px-4 pt-2 pb-1 text-lg font-bold text-espresso">
             Filters
           </SheetTitle>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Close"
-            className="mr-3 flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f5ebe0] text-[#7a5230]"
+            className="mr-3 flex size-11 shrink-0 items-center justify-center rounded-full bg-cream text-clay"
           >
             <X size={16} strokeWidth={2} />
           </button>
@@ -90,20 +90,18 @@ export default function FiltersSheet({
             onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
             placeholder="Search title, body, or project…"
             aria-label="Search entries"
-            className="h-11 w-full rounded-lg border border-[#d4c4b0] bg-white px-3 text-[13px] text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+            className="h-11 w-full rounded-lg border border-line bg-white px-3 text-[13px] text-espresso outline-none focus:ring-2 focus:ring-espresso"
           />
 
           <div className="flex flex-col gap-2.5">
-            <p className="text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">
-              Project
-            </p>
+            <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Project</p>
             <button
               type="button"
               onClick={() => setDraft((d) => ({ ...d, projectId: null }))}
               className="flex min-h-11 w-full items-center justify-between py-1 text-left"
             >
-              <span className="text-[13px] font-semibold text-[#1c0d05]">All projects</span>
-              {draft.projectId === null && <span className="text-[#d4a843]">✓</span>}
+              <span className="text-[13px] font-semibold text-espresso">All projects</span>
+              {draft.projectId === null && <span className="text-gold">✓</span>}
             </button>
             {projects.map((project) => (
               <button
@@ -118,17 +116,15 @@ export default function FiltersSheet({
                     style={{ backgroundColor: dotColorFor(project.id) }}
                     aria-hidden
                   />
-                  <span className="text-[13px] font-medium text-[#1c0d05]">{project.name}</span>
+                  <span className="text-[13px] font-medium text-espresso">{project.name}</span>
                 </span>
-                {draft.projectId === project.id && <span className="text-[#d4a843]">✓</span>}
+                {draft.projectId === project.id && <span className="text-gold">✓</span>}
               </button>
             ))}
           </div>
 
           <div className="flex flex-col gap-2.5">
-            <p className="text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">
-              Date range
-            </p>
+            <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Date range</p>
             <div className="flex flex-wrap gap-1.5">
               {DATE_RANGE_KEYS.map((key) => {
                 const active = draft.dateRange === key;
@@ -138,9 +134,7 @@ export default function FiltersSheet({
                     type="button"
                     onClick={() => setDraft((d) => ({ ...d, dateRange: key }))}
                     className={`min-h-11 rounded-lg px-3 text-[11px] font-semibold ${
-                      active
-                        ? 'bg-[#d4a843] text-[#1c0d05]'
-                        : 'border border-[#d4c4b0] text-[#1c0d05]'
+                      active ? 'bg-gold text-espresso' : 'border border-line text-espresso'
                     }`}
                   >
                     {DATE_RANGE_LABELS[key]}
@@ -155,15 +149,15 @@ export default function FiltersSheet({
                   value={draft.customFrom}
                   onChange={(e) => setDraft((d) => ({ ...d, customFrom: e.target.value }))}
                   aria-label="From date"
-                  className="min-h-11 flex-1 rounded-lg border border-[#d4c4b0] bg-white px-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+                  className="min-h-11 flex-1 rounded-lg border border-line bg-white px-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
                 />
-                <span className="text-sm text-[#7a5230]">to</span>
+                <span className="text-sm text-clay">to</span>
                 <input
                   type="date"
                   value={draft.customTo}
                   onChange={(e) => setDraft((d) => ({ ...d, customTo: e.target.value }))}
                   aria-label="To date"
-                  className="min-h-11 flex-1 rounded-lg border border-[#d4c4b0] bg-white px-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+                  className="min-h-11 flex-1 rounded-lg border border-line bg-white px-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
                 />
               </div>
             )}
@@ -171,7 +165,7 @@ export default function FiltersSheet({
 
           {tags.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <p className="text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">Tags</p>
+              <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Tags</p>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => {
                   const active = draft.tagIds.includes(tag.id);
@@ -181,9 +175,7 @@ export default function FiltersSheet({
                       type="button"
                       onClick={() => toggleTag(tag.id)}
                       className={`flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold ${
-                        active
-                          ? 'bg-[#d4a843] text-[#1c0d05]'
-                          : 'border border-[#d4c4b0] text-[#1c0d05]'
+                        active ? 'bg-gold text-espresso' : 'border border-line text-espresso'
                       }`}
                     >
                       {tag.name}
@@ -195,18 +187,18 @@ export default function FiltersSheet({
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-[#f0e7db] px-4 py-3">
+        <div className="flex items-center justify-between border-t border-sand px-4 py-3">
           <button
             type="button"
             onClick={reset}
-            className="min-h-11 px-2 text-[13px] font-semibold text-[#7a5230]"
+            className="min-h-11 px-2 text-[13px] font-semibold text-clay"
           >
             Reset
           </button>
           <button
             type="button"
             onClick={apply}
-            className="min-h-11 rounded-lg bg-[#d4a843] px-5 text-[13px] font-semibold text-[#1c0d05]"
+            className="min-h-11 rounded-lg bg-gold px-5 text-[13px] font-semibold text-espresso"
           >
             Apply filters
           </button>

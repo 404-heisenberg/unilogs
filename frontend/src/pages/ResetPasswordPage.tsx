@@ -29,16 +29,16 @@ const RequestResetForm: React.FC = () => {
     return (
       <section className="flex flex-col gap-4 text-center md:text-left">
         <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Request received</h2>
-        <p className="text-sm text-[#7a5230]">
-          If an account exists for <span className="font-semibold text-[#1c0d06]">{email}</span>, a
+        <p className="text-sm text-clay">
+          If an account exists for <span className="font-semibold text-espresso">{email}</span>, a
           password reset link has been generated.
         </p>
         {resetUrl && (
-          <p className="text-sm text-[#7a5230]">
+          <p className="text-sm text-clay">
             This environment doesn&apos;t send real emails, so here&apos;s the link directly:{' '}
             <a
               href={resetUrl}
-              className="break-all font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+              className="break-all font-semibold text-espresso underline hover:text-gold"
             >
               {resetUrl}
             </a>
@@ -46,7 +46,7 @@ const RequestResetForm: React.FC = () => {
         )}
         <a
           href="/login"
-          className="mt-4 block w-full rounded-md bg-[#1c0d06] p-3 text-center font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90"
+          className="mt-4 block w-full rounded-md bg-espresso p-3 text-center font-semibold text-cream transition-opacity hover:opacity-90"
         >
           Return to Sign In
         </a>
@@ -59,13 +59,13 @@ const RequestResetForm: React.FC = () => {
       <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
         Reset password
       </h2>
-      <p className="text-sm text-[#7a5230]">
+      <p className="text-sm text-clay">
         Enter the email address associated with your account and we&apos;ll send you a link to reset
         your password.
       </p>
 
       <label htmlFor="reset-email" className="text-sm font-semibold mt-2">
-        Email address<span className="text-red-600 ml-0.5">*</span>
+        Email address<span className="text-error ml-0.5">*</span>
       </label>
       <input
         id="reset-email"
@@ -79,28 +79,28 @@ const RequestResetForm: React.FC = () => {
         placeholder="name@example.com"
         required
         className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
-          emailError ? 'border-red-500 focus:ring-red-500' : 'border-[#d4a373] focus:ring-[#1c0d06]'
+          emailError ? 'border-error focus:ring-error' : 'border-caramel focus:ring-espresso'
         }`}
       />
-      {emailError && <p className="text-xs text-red-700">{emailError}</p>}
+      {emailError && <p className="text-xs text-error">{emailError}</p>}
 
       {forgotPassword.isError && (
-        <p className="text-sm text-red-700">{forgotPassword.error.message}</p>
+        <p className="text-sm text-error">{forgotPassword.error.message}</p>
       )}
 
       <button
         type="submit"
         disabled={forgotPassword.isPending}
-        className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+        className="mt-2 w-full rounded-md bg-espresso p-3 font-semibold text-cream transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
       >
         {forgotPassword.isPending ? 'Sending…' : 'Send Reset Link'}
       </button>
 
-      <p className="mt-2 text-center text-sm text-[#4a3525]">
+      <p className="mt-2 text-center text-sm text-cocoa">
         Return back to sign in{' '}
         <a
           href="/login"
-          className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-[#1c0d06] underline hover:text-[#b8860b]"
+          className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-espresso underline hover:text-gold"
         >
           Sign In
         </a>
@@ -133,12 +133,12 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
     return (
       <section className="flex flex-col gap-4 text-center md:text-left">
         <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Password updated</h2>
-        <p className="text-sm text-[#7a5230]">
+        <p className="text-sm text-clay">
           Your password has been reset. You can now sign in with your new password.
         </p>
         <a
           href="/login"
-          className="mt-4 block w-full rounded-md bg-[#1c0d06] p-3 text-center font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90"
+          className="mt-4 block w-full rounded-md bg-espresso p-3 text-center font-semibold text-cream transition-opacity hover:opacity-90"
         >
           Return to Sign In
         </a>
@@ -151,10 +151,10 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
       <h2 className="text-3xl font-bold tracking-tight text-center md:text-left md:text-4xl">
         Set a new password
       </h2>
-      <p className="text-sm text-[#7a5230]">Choose a new password for your account.</p>
+      <p className="text-sm text-clay">Choose a new password for your account.</p>
 
       <label htmlFor="new-password" className="text-sm font-semibold mt-2">
-        New password<span className="text-red-600 ml-0.5">*</span>
+        New password<span className="text-error ml-0.5">*</span>
       </label>
       <input
         id="new-password"
@@ -166,11 +166,11 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
           setNewPassword(e.target.value);
           setMismatchError(null);
         }}
-        className="w-full rounded-md border border-[#d4a373] bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-[#1c0d06]"
+        className="w-full rounded-md border border-caramel bg-white p-3 text-slate-900 outline-none focus:ring-2 focus:ring-espresso"
       />
 
       <label htmlFor="confirm-new-password" className="text-sm font-semibold">
-        Confirm new password<span className="text-red-600 ml-0.5">*</span>
+        Confirm new password<span className="text-error ml-0.5">*</span>
       </label>
       <input
         id="confirm-new-password"
@@ -183,21 +183,17 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
           setMismatchError(null);
         }}
         className={`w-full rounded-md border bg-white p-3 text-slate-900 outline-none focus:ring-2 ${
-          mismatchError
-            ? 'border-red-500 focus:ring-red-500'
-            : 'border-[#d4a373] focus:ring-[#1c0d06]'
+          mismatchError ? 'border-error focus:ring-error' : 'border-caramel focus:ring-espresso'
         }`}
       />
-      {mismatchError && <p className="text-xs text-red-700">{mismatchError}</p>}
+      {mismatchError && <p className="text-xs text-error">{mismatchError}</p>}
 
-      {resetPassword.isError && (
-        <p className="text-sm text-red-700">{resetPassword.error.message}</p>
-      )}
+      {resetPassword.isError && <p className="text-sm text-error">{resetPassword.error.message}</p>}
 
       <button
         type="submit"
         disabled={resetPassword.isPending}
-        className="mt-2 w-full rounded-md bg-[#1c0d06] p-3 font-semibold text-[#f5ebe0] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+        className="mt-2 w-full rounded-md bg-espresso p-3 font-semibold text-cream transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
       >
         {resetPassword.isPending ? 'Resetting…' : 'Reset Password'}
       </button>
@@ -211,21 +207,21 @@ export const ResetPasswordPage: React.FC = () => {
 
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
-      <header className="relative flex min-h-[220px] items-center justify-center overflow-hidden bg-[#1c0d06] p-8 text-[#f5ebe0] md:min-h-screen md:w-[35%]">
-        <span className="absolute left-3 right-3 top-6 border-t-2 border-[#d4af37] md:left-4 md:right-4 md:top-8" />
-        <span className="absolute left-3 right-3 bottom-6 border-b-2 border-[#d4af37] md:left-4 md:right-4 md:bottom-8" />
-        <span className="absolute top-3 bottom-3 left-6 border-l-2 border-[#d4af37] md:top-4 md:bottom-4 md:left-8" />
-        <span className="absolute top-3 bottom-3 right-6 border-r-2 border-[#d4af37] md:top-4 md:bottom-4 md:right-8" />
+      <header className="relative flex min-h-[220px] items-center justify-center overflow-hidden bg-espresso p-8 text-cream md:min-h-screen md:w-[35%]">
+        <span className="absolute left-3 right-3 top-6 border-t-2 border-gold md:left-4 md:right-4 md:top-8" />
+        <span className="absolute left-3 right-3 bottom-6 border-b-2 border-gold md:left-4 md:right-4 md:bottom-8" />
+        <span className="absolute top-3 bottom-3 left-6 border-l-2 border-gold md:top-4 md:bottom-4 md:left-8" />
+        <span className="absolute top-3 bottom-3 right-6 border-r-2 border-gold md:top-4 md:bottom-4 md:right-8" />
 
         <article className="z-10 flex flex-col items-center justify-center p-4 text-center max-w-xs">
           <img src="/logo.svg" alt="Company Logo" className="h-14 w-auto mb-4 md:h-20" />
-          <p className="text-base font-medium tracking-wide text-[#e6c687] md:text-xl">
+          <p className="text-base font-medium tracking-wide text-gold-light md:text-xl">
             Time wasted, never regained!
           </p>
         </article>
       </header>
 
-      <section className="flex flex-1 flex-col items-center justify-center bg-[#f5ebe0] p-6 text-[#1c0d06] md:w-[65%] md:p-12">
+      <section className="flex flex-1 flex-col items-center justify-center bg-cream p-6 text-espresso md:w-[65%] md:p-12">
         <article className="w-full max-w-sm">
           {token ? <SetNewPasswordForm token={token} /> : <RequestResetForm />}
         </article>
