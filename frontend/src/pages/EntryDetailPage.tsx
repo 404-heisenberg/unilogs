@@ -3,17 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { MoreHorizontal, Trash2, CalendarCheck } from 'lucide-react';
+import PaneLayout, { PANE_LABEL } from '@/components/PaneLayout';
 import {
-  PanelRight,
-  MoreHorizontal,
-  Trash2,
-  CalendarCheck,
-  X,
-  BookOpen,
-  Code2,
-} from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
-import type { Entry } from '@/types';
+import { projectColor, tagStyle } from '@/lib/colors';
+import { entryDurationHours, formatDurationHours } from '@/lib/project-workspace';
+import type { Entry, FieldDefinition } from '@/types';
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return '';
@@ -26,15 +28,30 @@ function formatDate(dateStr?: string | null) {
   });
 }
 
+function formatFieldValue(value: unknown, fieldType: string | undefined): string {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (fieldType === 'duration' && typeof value === 'number') return formatDurationHours(value);
+  if (fieldType === 'date' && typeof value === 'string') return formatDate(value);
+  return String(value);
+}
+
+function PropertyRow({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 text-[13px]">
+      <span className="min-w-0 truncate text-clay">{label}</span>
+      <span className="min-w-0 truncate text-right text-espresso">{children}</span>
+    </div>
+  );
+}
+
 export default function EntryDetailPage() {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMobilePropertiesOpen, setIsMobilePropertiesOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [viewMode, setViewMode] = useState<'read' | 'preview'>('read');
 
   const {
     data: entry,
@@ -48,6 +65,14 @@ export default function EntryDetailPage() {
     retry: false,
   });
 
+  // Field types, so durations read "2h 30m" and dates are formatted.
+  const projectId = entry ? String(entry.projectId) : undefined;
+  const { data: fields = [] } = useQuery({
+    queryKey: ['field-definitions', projectId],
+    queryFn: () => api.get<FieldDefinition[]>(`/api/field-definitions?projectId=${projectId}`),
+    enabled: !!projectId,
+  });
+
   const deleteEntry = useMutation({
     mutationFn: () => api.delete(`/api/entries/${entryId}`),
     onSuccess: () => {
@@ -56,390 +81,228 @@ export default function EntryDetailPage() {
     },
   });
 
-  const handleDelete = () => {
-    deleteEntry.mutate();
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showDeleteConfirm) {
-          setShowDeleteConfirm(false);
-        } else if (isMobilePropertiesOpen) {
-          setIsMobilePropertiesOpen(false);
-        } else {
-          navigate('/entries');
-        }
-      }
+      if (e.key === 'Escape' && !showDeleteConfirm) navigate('/entries');
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, showDeleteConfirm, isMobilePropertiesOpen]);
+  }, [navigate, showDeleteConfirm]);
 
   const notFound = isError && error instanceof ApiError && error.status === 404;
 
-  const contentEntries = entry ? Object.entries(entry.content ?? {}) : [];
-  const tags = entry?.tags ?? [];
-  const formattedDate = entry ? formatDate(entry.date) : '';
-  const formattedDueDate = entry?.dueDate ? formatDate(entry.dueDate) : null;
+  if (!entry) {
+    return (
+      <div>
+        {isPending && (
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 animate-pulse rounded-xl bg-cream" />
+            ))}
+          </div>
+        )}
+        {notFound && (
+          <div className="rounded-xl border border-dashed border-line-strong bg-paper p-10 text-center">
+            <p className="text-sm text-cocoa">
+              This entry doesn&apos;t exist, or it isn&apos;t yours.
+            </p>
+            <Link
+              to="/entries"
+              className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-espresso px-5 text-sm font-semibold text-cream transition-opacity hover:opacity-90 md:min-h-10"
+            >
+              Back to timeline
+            </Link>
+          </div>
+        )}
+        {isError && !notFound && (
+          <div className="rounded-xl border border-danger-soft bg-danger-soft p-4 text-sm text-error">
+            Failed to load this entry. Try refreshing the page.
+          </div>
+        )}
+      </div>
+    );
+  }
 
-  const contentRecord = (entry?.content ?? {}) as Record<string, unknown>;
-  const timeSpentValue = contentRecord['Time spent'] ?? contentRecord['timeSpent'];
-  const timeSpentStr =
-    timeSpentValue !== null && timeSpentValue !== undefined ? String(timeSpentValue) : '';
+  const fieldTypes = new Map(fields.map((field) => [field.name, field.fieldType]));
+  const contentEntries = Object.entries(entry.content ?? {});
+  const contentRecord = (entry.content ?? {}) as Record<string, unknown>;
+  const tags = entry.tags ?? [];
+  const formattedDate = formatDate(entry.date);
+  const formattedDueDate = entry.dueDate ? formatDate(entry.dueDate) : null;
+  const hours = fields.length > 0 ? entryDurationHours(entry, fields) : null;
+  const projectName = entry.project?.name;
 
-  return (
-    <div className="w-full p-6 lg:p-8 min-h-full flex flex-col relative">
-      {isPending && (
-        <div className="mt-4 flex flex-col gap-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-caramel/20" />
+  const properties = (
+    <div className="flex flex-col gap-5">
+      <h2 className={PANE_LABEL}>Properties</h2>
+      <div className="flex flex-col gap-3">
+        <PropertyRow
+          label={
+            <span className="inline-flex items-center gap-2">
+              <span
+                className="size-2 rounded-full"
+                style={{ backgroundColor: projectColor(entry.projectId) }}
+                aria-hidden
+              />
+              Project
+            </span>
+          }
+        >
+          {projectName ?? '—'}
+        </PropertyRow>
+        <PropertyRow label="Date">{formattedDate || '—'}</PropertyRow>
+        {formattedDueDate && (
+          <PropertyRow
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarCheck className="size-3.5" aria-hidden />
+                Due date
+              </span>
+            }
+          >
+            {formattedDueDate}
+          </PropertyRow>
+        )}
+      </div>
+      {contentEntries.length > 0 && (
+        <div className="flex flex-col gap-3 border-t border-cream pt-5">
+          <h3 className={PANE_LABEL}>Custom fields</h3>
+          {contentEntries.map(([name, value]) => (
+            <PropertyRow key={name} label={name}>
+              {formatFieldValue(value, fieldTypes.get(name))}
+            </PropertyRow>
           ))}
         </div>
       )}
+    </div>
+  );
 
-      {notFound && (
-        <div className="mt-4 rounded-xl border border-dashed border-caramel/50 bg-white/40 p-10 text-center">
-          <p className="text-sm text-cocoa">
-            This entry doesn&apos;t exist, or it isn&apos;t yours.
-          </p>
+  return (
+    <PaneLayout pane={properties} paneLabel="Entry properties">
+      {/* Figma's thin top bar: breadcrumb, Edit and the overflow menu. */}
+      <div className="-mx-4 -mt-4 mb-6 flex min-h-12 items-center justify-between gap-3 border-b border-cream px-4 md:-mx-12 md:-mt-12 md:mb-10 md:px-12">
+        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[13px]">
           <Link
-            to="/entries"
-            className="mt-4 inline-flex min-h-11 items-center rounded-md bg-espresso px-4 py-2 text-sm font-semibold text-cream hover:opacity-90 transition-opacity"
+            to={`/projects/${entry.projectId}`}
+            className="truncate font-medium text-gold hover:underline"
           >
-            Back to timeline
+            {projectName ?? 'Project'}
           </Link>
-        </div>
-      )}
-
-      {isError && !notFound && (
-        <div className="mt-4 rounded-xl border border-danger-soft bg-danger-soft p-4 text-sm text-error">
-          Failed to load this entry. Try refreshing the page.
-        </div>
-      )}
-
-      {entry && (
-        <div className="space-y-6 flex-1 flex flex-col">
-          <header className="flex items-center justify-between pb-4 border-b border-caramel/20 shrink-0">
-            <nav className="flex items-center gap-1.5 text-xs sm:text-sm">
-              <Link
-                to="/entries"
-                className="text-caramel hover:text-espresso font-medium transition-colors"
-              >
-                {entry.project?.name ?? 'Timeline'}
-              </Link>
-              <span className="text-caramel">/</span>
-              <span className="text-espresso font-medium truncate max-w-xs sm:max-w-md lg:max-w-xl">
-                {entry.title ?? 'Entry'}
-              </span>
-            </nav>
-            <div className="flex items-center gap-2 sm:gap-3 relative">
-              <Link
-                to={`/entries/${entryId}/edit`}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-espresso px-3.5 py-1.5 text-xs font-medium text-cream hover:opacity-90 transition-opacity"
-              >
-                Edit
-              </Link>
-              <div className="relative">
+          <span className="text-clay">/</span>
+          <span className="truncate text-cocoa">{entry.title ?? 'Entry'}</span>
+        </nav>
+        <div className="relative flex shrink-0 items-center gap-2">
+          <Link
+            to={`/entries/${entryId}/edit`}
+            className="inline-flex min-h-11 items-center rounded-lg bg-espresso px-4 text-[13px] font-semibold text-cream transition-opacity hover:opacity-90 md:min-h-8"
+          >
+            Edit
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            className="flex size-11 items-center justify-center rounded-md text-clay transition-colors hover:bg-cream hover:text-espresso md:size-8"
+            aria-label="More options"
+            aria-expanded={isMenuOpen}
+          >
+            <MoreHorizontal size={18} />
+          </button>
+          {isMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setIsMenuOpen(false)} />
+              <div className="absolute top-full right-0 z-30 mt-2 w-44 rounded-lg border border-line bg-paper py-1 shadow-lg">
                 <button
                   type="button"
-                  onClick={() => setIsMenuOpen((prev) => !prev)}
-                  className="p-1.5 text-clay hover:text-espresso transition-colors rounded-md hover:bg-caramel/10"
-                  aria-label="More options"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setShowDeleteConfirm(true);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-[13px] font-medium text-danger-text transition-colors hover:bg-danger-soft"
                 >
-                  <MoreHorizontal size={18} />
+                  <Trash2 size={14} />
+                  Delete entry
                 </button>
-
-                {isMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setIsMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-44 rounded-md bg-white shadow-lg border border-caramel/30 py-1 z-30">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          setShowDeleteConfirm(true);
-                        }}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-error hover:bg-danger-soft transition-colors text-left"
-                      >
-                        <Trash2 size={14} />
-                        Delete entry
-                      </button>
-                    </div>
-                  </>
-                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setIsMobilePropertiesOpen(true)}
-                className="p-1.5 text-clay hover:text-espresso transition-colors rounded-md hover:bg-caramel/10 lg:hidden"
-                aria-label="Toggle properties panel"
-              >
-                <PanelRight size={18} />
-              </button>
-            </div>
-          </header>
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-stretch flex-1">
-            {/* Left Main Content Area */}
-            <article className="flex-1 min-w-0 space-y-6 pb-8">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <h1 className="text-3xl font-bold tracking-tight text-espresso">
-                    {entry.title ?? 'Entry'}
-                  </h1>
-                  <div className="inline-flex items-center rounded-lg border border-caramel/30 bg-white/60 p-1 shadow-sm shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('read')}
-                      className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                        viewMode === 'read'
-                          ? 'bg-espresso text-cream shadow-sm'
-                          : 'text-clay hover:text-espresso'
-                      }`}
-                    >
-                      <BookOpen size={14} />
-                      Read
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('preview')}
-                      className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                        viewMode === 'preview'
-                          ? 'bg-espresso text-cream shadow-sm'
-                          : 'text-clay hover:text-espresso'
-                      }`}
-                    >
-                      <Code2 size={14} />
-                      Preview
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-clay">
-                  {entry.project?.name && (
-                    <>
-                      <span className="font-medium">{entry.project.name}</span>
-                      <span>•</span>
-                    </>
-                  )}
-                  <span>{formattedDate}</span>
-                  {timeSpentStr.trim() !== '' && (
-                    <>
-                      <span>•</span>
-                      <span>{timeSpentStr}</span>
-                    </>
-                  )}
-                </div>
-
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {tags.map((t, index) => {
-                      const tagObj =
-                        typeof t === 'object' && t !== null && 'tag' in t
-                          ? (t as { tag: { id?: number; name: string } }).tag
-                          : t;
-                      const tagName =
-                        typeof tagObj === 'object' && tagObj !== null && 'name' in tagObj
-                          ? tagObj.name
-                          : String(tagObj);
-                      const tagId =
-                        typeof tagObj === 'object' && tagObj !== null && 'id' in tagObj
-                          ? tagObj.id
-                          : index;
-                      const isBlue = tagName.toLowerCase() === 'reading';
-                      return (
-                        <span
-                          key={tagId}
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            isBlue ? 'bg-data-blue text-white' : 'bg-caramel/30 text-cocoa'
-                          }`}
-                        >
-                          {tagName}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              {entry.body ? (
-                viewMode === 'read' ? (
-                  <div className="text-sm text-cocoa prose prose-stone prose-sm max-w-none leading-relaxed">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{entry.body}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-caramel/30 bg-canvas overflow-hidden shadow-sm">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-clay px-4 py-2.5 bg-cream/60 border-b border-caramel/20 flex items-center justify-between">
-                      <span>Raw Markdown Source</span>
-                      <Code2 className="h-3.5 w-3.5" />
-                    </div>
-                    <pre className="p-4 text-xs sm:text-sm font-mono text-cocoa whitespace-pre-wrap break-words bg-transparent overflow-x-auto select-text">
-                      {entry.body}
-                    </pre>
-                  </div>
-                )
-              ) : contentRecord['Notes'] ? (
-                <div className="text-sm text-cocoa whitespace-pre-wrap">
-                  {String(contentRecord['Notes'])}
-                </div>
-              ) : (
-                <p className="text-sm text-clay italic">No notes</p>
-              )}
-
-              <p className="pt-4 border-t border-caramel/15 text-xs text-clay">
-                Logged {new Date(entry.createdAt).toLocaleString()}
-              </p>
-            </article>
-
-            {/* Desktop Properties Sidebar */}
-            <aside className="hidden lg:block w-80 shrink-0 space-y-6 text-xs border-l border-caramel/25 pl-8">
-              <div className="flex items-center justify-between pb-2 border-b border-caramel/20">
-                <h2 className="uppercase tracking-wider font-semibold text-clay">Properties</h2>
-                <PanelRight className="h-4 w-4 text-clay" />
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-clay">
-                    <span className="h-1.5 w-1.5 rounded-full bg-caramel" />
-                    Project
-                  </span>
-                  <span className="font-semibold text-espresso text-right truncate max-w-[180px]">
-                    {entry.project?.name ?? '—'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-clay">Date</span>
-                  <span className="font-semibold text-espresso text-right">
-                    {formattedDate || '—'}
-                  </span>
-                </div>
-
-                {formattedDueDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-clay">
-                      <CalendarCheck className="h-3.5 w-3.5 text-clay" />
-                      Due Date
-                    </span>
-                    <span className="font-semibold text-espresso text-right">
-                      {formattedDueDate}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {contentEntries.length > 0 && (
-                <div className="space-y-3 pt-3 border-t border-caramel/20">
-                  <h3 className="uppercase tracking-wider font-semibold text-clay mb-3">
-                    Custom Fields
-                  </h3>
-                  <div className="space-y-3">
-                    {contentEntries.map(([name, value]) => (
-                      <div key={name} className="flex items-center justify-between gap-2">
-                        <span className="text-clay truncate max-w-[140px]">{name}</span>
-                        <span className="font-semibold text-espresso text-right truncate max-w-[180px]">
-                          {typeof value === 'boolean'
-                            ? value
-                              ? 'Yes'
-                              : 'No'
-                            : value === null || value === undefined || value === ''
-                              ? '—'
-                              : String(value)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </aside>
-          </div>
+            </>
+          )}
         </div>
-      )}
-      {isMobilePropertiesOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end bg-black/40 backdrop-blur-sm">
-          <div className="fixed inset-0" onClick={() => setIsMobilePropertiesOpen(false)} />
-          <div className="relative bg-paper rounded-t-2xl p-6 shadow-xl max-h-[80vh] overflow-y-auto space-y-6 z-10 border-t border-caramel/30">
-            <div className="flex items-center justify-between pb-3 border-b border-caramel/20">
-              <h2 className="uppercase tracking-wider font-semibold text-xs text-clay">
-                Properties
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsMobilePropertiesOpen(false)}
-                className="p-1 text-clay hover:text-espresso"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-clay">Project</span>
-                <span className="font-semibold text-espresso">{entry?.project?.name ?? '—'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-clay">Date</span>
-                <span className="font-semibold text-espresso">{formattedDate || '—'}</span>
-              </div>
-              {formattedDueDate && (
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1 text-clay">
-                    <CalendarCheck className="h-3.5 w-3.5" />
-                    Due Date
-                  </span>
-                  <span className="font-semibold text-espresso">{formattedDueDate}</span>
-                </div>
-              )}
-            </div>
-            {contentEntries.length > 0 && (
-              <div className="space-y-3 pt-3 border-t border-caramel/20 text-xs">
-                <h3 className="uppercase tracking-wider font-semibold text-clay">Custom Fields</h3>
-                <div className="space-y-3">
-                  {contentEntries.map(([name, value]) => (
-                    <div key={name} className="flex items-center justify-between gap-2">
-                      <span className="text-clay">{name}</span>
-                      <span className="font-semibold text-espresso">
-                        {typeof value === 'boolean'
-                          ? value
-                            ? 'Yes'
-                            : 'No'
-                          : value === null || value === undefined || value === ''
-                            ? '—'
-                            : String(value)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      </div>
+
+      <article className="flex flex-col gap-6 pb-8">
+        <div className="flex flex-col gap-3">
+          <h1 className="text-[26px] font-bold text-espresso">{entry.title ?? 'Entry'}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-clay">
+            {projectName && (
+              <>
+                <span>{projectName}</span>
+                <span aria-hidden>•</span>
+              </>
+            )}
+            <span>{formattedDate}</span>
+            {hours !== null && hours > 0 && (
+              <>
+                <span aria-hidden>•</span>
+                <span>{formatDurationHours(hours)}</span>
+              </>
             )}
           </div>
-        </div>
-      )}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-paper rounded-xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-caramel/30">
-            <h3 className="text-lg font-bold text-espresso">Delete Entry</h3>
-            <p className="text-sm text-cocoa">
-              Are you sure you want to delete this entry? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleteEntry.isPending}
-                className="px-4 py-2 text-xs font-semibold text-cocoa hover:bg-caramel/10 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleteEntry.isPending}
-                className="px-4 py-2 text-xs font-semibold text-white bg-danger hover:bg-danger-text rounded-lg transition-colors disabled:opacity-50"
-              >
-                {deleteEntry.isPending ? 'Deleting...' : 'Delete'}
-              </button>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map(({ tag }) => (
+                <span
+                  key={tag.id}
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tagStyle(tag.name)}`}
+                >
+                  {tag.name}
+                </span>
+              ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {entry.body ? (
+          <div className="prose prose-sm max-w-none leading-relaxed text-espresso prose-headings:text-espresso prose-p:text-espresso prose-a:text-clay prose-strong:text-espresso prose-blockquote:border-gold prose-blockquote:text-cocoa">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{entry.body}</ReactMarkdown>
+          </div>
+        ) : contentRecord['Notes'] ? (
+          <div className="text-sm whitespace-pre-wrap text-espresso">
+            {String(contentRecord['Notes'])}
+          </div>
+        ) : (
+          <p className="text-sm text-clay italic">No notes</p>
+        )}
+
+        <p className="border-t border-cream pt-4 text-xs text-clay">
+          Logged {new Date(entry.createdAt).toLocaleString()}
+        </p>
+      </article>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent showCloseButton={false}>
+          <DialogTitle>Delete entry</DialogTitle>
+          <DialogDescription>
+            This permanently deletes “{entry.title ?? 'this entry'}”. This cannot be undone.
+          </DialogDescription>
+          <DialogFooter className="gap-3">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleteEntry.isPending}
+              className="min-h-11 rounded-lg border border-line px-5 text-sm font-medium text-espresso transition-colors hover:bg-cream md:min-h-10"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => deleteEntry.mutate()}
+              disabled={deleteEntry.isPending}
+              className="min-h-11 rounded-lg bg-danger px-5 text-sm font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50 md:min-h-10"
+            >
+              {deleteEntry.isPending ? 'Deleting…' : 'Delete entry'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </PaneLayout>
   );
 }
