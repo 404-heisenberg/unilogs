@@ -1,8 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useSession } from '@/hooks/useSession';
-import { api } from '@/lib/api';
 import NavRail from './app-shell/NavRail';
 import ExplorerPane from './app-shell/ExplorerPane';
 import AppHeader from './app-shell/AppHeader';
@@ -12,16 +9,8 @@ import MoreSheet from './app-shell/MoreSheet';
 
 export default function AppShell() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { data } = useSession();
   const [explorerCollapsed, setExplorerCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-
-  const handleSignOut = async () => {
-    await api.post('/api/auth/sign-out');
-    queryClient.removeQueries({ queryKey: ['session'] });
-    navigate('/login');
-  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,7 +33,7 @@ export default function AppShell() {
         explorerCollapsed={explorerCollapsed}
         onToggleExplorer={() => setExplorerCollapsed((v) => !v)}
       />
-      <ExplorerPane collapsed={explorerCollapsed} user={data?.user} onSignOut={handleSignOut} />
+      <ExplorerPane collapsed={explorerCollapsed} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <AppHeader />
@@ -55,12 +44,7 @@ export default function AppShell() {
         <MobileBottomNav moreOpen={moreOpen} onMoreClick={() => setMoreOpen(true)} />
       </div>
 
-      <MoreSheet
-        open={moreOpen}
-        onOpenChange={setMoreOpen}
-        user={data?.user}
-        onSignOut={handleSignOut}
-      />
+      <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
     </div>
   );
 }

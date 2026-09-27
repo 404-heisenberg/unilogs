@@ -1,27 +1,102 @@
 import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { Project } from '@/types';
+import type { Entry, PagedEntries, Project } from '@/types';
 import { isNavActive } from './nav-items';
 
-const ProjectRow = memo(function ProjectRow({ project }: { project: Project }) {
+const EXPANDED_ENTRY_COUNT = 5;
+
+// The project the current page belongs to: a project page, or an entry page
+// (whose entry query the page has already loaded into the cache).
+function useCurrentProjectId(): { projectId: number | null; entryId: number | null } {
   const { pathname } = useLocation();
-  const active = isNavActive(pathname, `/projects/${project.id}`);
+  const projectMatch = pathname.match(/^\/projects\/(\d+)/);
+  const entryMatch = pathname.match(/^\/entries\/(\d+)/);
+  const entryId = entryMatch ? entryMatch[1] : null;
+  const entry = useQuery({
+    queryKey: ['entry', entryId ?? undefined],
+    queryFn: () => api.get<Entry>(`/api/entries/${entryId}`),
+    enabled: entryId !== null,
+  });
+  if (projectMatch) return { projectId: Number(projectMatch[1]), entryId: null };
+  return {
+    projectId: entry.data?.projectId ?? null,
+    entryId: entryId ? Number(entryId) : null,
+  };
+}
+
+// Figma's explorer: the current project expands to show its recent entries.
+function ProjectEntries({
+  projectId,
+  activeEntryId,
+}: {
+  projectId: number;
+  activeEntryId: number | null;
+}) {
+  const { data } = useQuery({
+    queryKey: ['explorer-entries', projectId],
+    queryFn: () =>
+      api.get<PagedEntries>(`/api/entries?projectId=${projectId}&limit=${EXPANDED_ENTRY_COUNT}`),
+  });
+  const entries = data?.entries ?? [];
+  if (entries.length === 0) return null;
 
   return (
-    <Link
-      to={`/projects/${project.id}`}
-      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors ${
-        active
-          ? 'bg-sand font-semibold text-espresso'
-          : 'font-medium text-espresso hover:bg-sand/60'
-      }`}
-    >
-      <ChevronDown size={10} strokeWidth={2.5} className="shrink-0 text-clay" />
-      <span className="min-w-0 flex-1 truncate">{project.name}</span>
-    </Link>
+    <ul className="flex flex-col gap-0.5">
+      {entries.map((entry) => {
+        const active = entry.id === activeEntryId;
+        return (
+          <li key={entry.id}>
+            <Link
+              to={`/entries/${entry.id}`}
+              aria-current={active ? 'page' : undefined}
+              className={`flex items-center gap-2 rounded-md py-1.5 pr-2 pl-6 text-[13px] transition-colors ${
+                active
+                  ? 'bg-paper font-semibold text-espresso'
+                  : 'text-clay hover:bg-sand/60 hover:text-espresso'
+              }`}
+            >
+              <FileText size={12} strokeWidth={2} className="shrink-0" aria-hidden />
+              <span className="min-w-0 truncate">{entry.title || 'Untitled entry'}</span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+const ProjectRow = memo(function ProjectRow({
+  project,
+  expanded,
+  activeEntryId,
+}: {
+  project: Project;
+  expanded: boolean;
+  activeEntryId: number | null;
+}) {
+  const { pathname } = useLocation();
+  const active = isNavActive(pathname, `/projects/${project.id}`);
+  const Chevron = expanded ? ChevronDown : ChevronRight;
+
+  return (
+    <li className="flex flex-col gap-1">
+      <Link
+        to={`/projects/${project.id}`}
+        aria-current={active ? 'page' : undefined}
+        className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors ${
+          expanded
+            ? 'bg-sand font-semibold text-espresso'
+            : 'font-medium text-espresso hover:bg-sand/60'
+        }`}
+      >
+        <Chevron size={10} strokeWidth={2.5} className="shrink-0 text-clay" aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{project.name}</span>
+      </Link>
+      {expanded && <ProjectEntries projectId={project.id} activeEntryId={activeEntryId} />}
+    </li>
   );
 });
 
@@ -36,15 +111,16 @@ export default function ProjectExplorer() {
     queryKey: ['projects', { archived: false }],
     queryFn: () => api.get<Project[]>('/api/projects'),
   });
+  const { projectId, entryId } = useCurrentProjectId();
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-clay uppercase">Projects</p>
         <Link
           to="/projects/new"
           aria-label="New Project"
-          className="rounded-[6px] border border-line-strong px-2 py-[3px] text-[11px] font-medium text-clay transition-colors hover:bg-sand"
+          className="rounded-[6px] border border-line-strong px-2 py-0.75 text-[11px] font-medium text-clay transition-colors hover:bg-sand"
         >
           New
         </Link>
@@ -60,13 +136,18 @@ export default function ProjectExplorer() {
 
       {isError && <p className="text-xs text-error">Failed to load projects.</p>}
 
-      {projects?.length === 0 && <p className="text-xs text-clay">No projects yet.</p>}
+      {projects?.length === 0 && <p className="text-xs text-clay italic">No projects yet</p>}
 
-      <div className="flex flex-col gap-0.5">
+      <ul className="flex flex-col gap-1.5">
         {(projects ?? []).map((project) => (
-          <ProjectRow key={project.id} project={project} />
+          <ProjectRow
+            key={project.id}
+            project={project}
+            expanded={project.id === projectId}
+            activeEntryId={entryId}
+          />
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
