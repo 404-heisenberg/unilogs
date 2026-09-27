@@ -190,7 +190,7 @@ export default function EntriesPage() {
                         {projectNames.get(entry.projectId) ?? 'Unknown project'}
                       </Link>
                       <p className="text-xs text-[#7a5230]">
-                        {new Date(entry.date).toLocaleTimeString([], {
+                        {new Date(entry.createdAt).toLocaleTimeString('en-US', {
                           hour: 'numeric',
                           minute: '2-digit',
                         })}
