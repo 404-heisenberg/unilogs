@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsSettings from '@/components/settings/NotificationsSettings';
 import TagsSettings from '@/components/settings/TagsSettings';
@@ -12,60 +13,73 @@ function GoogleCalendarSection() {
   const { statusQuery, connect, disconnect } = useCalendarConnection();
 
   return (
-    <div className="rounded-md border border-caramel/40 bg-white p-4">
-      <h2 className="text-sm font-semibold text-espresso">Google Calendar</h2>
-
-      {statusQuery.isPending && <p className="mt-1 text-sm text-clay">Checking connection…</p>}
-
-      {statusQuery.isError && (
-        <div className="mt-2">
-          <p className="text-sm text-error">Couldn&apos;t check the Google Calendar connection.</p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2 min-h-11 md:min-h-0"
-            onClick={() => statusQuery.refetch()}
-          >
-            Try again
-          </Button>
+    <section className="flex flex-col gap-3">
+      <h2 className="text-[13px] font-bold text-espresso uppercase">Integrations</h2>
+      <div className="rounded-xl border border-line bg-paper p-4">
+        <div className="flex items-center gap-3">
+          <Calendar className="size-5 shrink-0 text-cocoa" strokeWidth={1.75} aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-espresso">Google Calendar</p>
+            {statusQuery.isSuccess && (
+              <p
+                className={`flex items-center gap-1.5 text-xs ${statusQuery.data.connected ? 'text-success' : 'text-clay'}`}
+              >
+                <span
+                  className={`size-1.5 rounded-full ${statusQuery.data.connected ? 'bg-success' : 'bg-line-strong'}`}
+                  aria-hidden
+                />
+                {statusQuery.data.connected ? 'Connected' : 'Not connected'}
+              </p>
+            )}
+          </div>
+          {statusQuery.isSuccess &&
+            (statusQuery.data.connected ? (
+              <button
+                type="button"
+                className="min-h-11 shrink-0 rounded-lg border border-line px-4 text-[13px] font-semibold text-espresso transition-colors hover:bg-cream disabled:opacity-50 md:min-h-8"
+                onClick={() => disconnect.mutate()}
+                disabled={disconnect.isPending}
+              >
+                {disconnect.isPending ? 'Disconnecting…' : 'Disconnect'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="min-h-11 shrink-0 rounded-lg bg-espresso px-4 text-[13px] font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50 md:min-h-8"
+                onClick={() => connect.mutate()}
+                disabled={connect.isPending}
+                aria-label="Connect Google Calendar"
+              >
+                {connect.isPending ? 'Connecting…' : 'Connect'}
+              </button>
+            ))}
         </div>
-      )}
 
-      {statusQuery.isSuccess && (
-        <div className="mt-2">
-          <p className="text-sm text-cocoa">
-            {statusQuery.data.connected
-              ? 'Your Google Calendar is connected.'
-              : 'Your Google Calendar is not connected.'}
-          </p>
+        {statusQuery.isPending && <p className="mt-1 text-sm text-clay">Checking connection…</p>}
 
-          {statusQuery.data.connected ? (
+        {statusQuery.isError && (
+          <div className="mt-2">
+            <p className="text-sm text-error">
+              Couldn&apos;t check the Google Calendar connection.
+            </p>
             <Button
               type="button"
               variant="outline"
+              size="sm"
               className="mt-2 min-h-11 md:min-h-0"
-              onClick={() => disconnect.mutate()}
-              disabled={disconnect.isPending}
+              onClick={() => statusQuery.refetch()}
             >
-              {disconnect.isPending ? 'Disconnecting…' : 'Disconnect'}
+              Try again
             </Button>
-          ) : (
-            <Button
-              type="button"
-              className="mt-2 min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0"
-              onClick={() => connect.mutate()}
-              disabled={connect.isPending}
-            >
-              {connect.isPending ? 'Connecting…' : 'Connect Google Calendar'}
-            </Button>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {connect.isError && <p className="mt-2 text-sm text-error">{connect.error.message}</p>}
-      {disconnect.isError && <p className="mt-2 text-sm text-error">{disconnect.error.message}</p>}
-    </div>
+        {connect.isError && <p className="mt-2 text-sm text-error">{connect.error.message}</p>}
+        {disconnect.isError && (
+          <p className="mt-2 text-sm text-error">{disconnect.error.message}</p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -76,6 +90,19 @@ export default function SettingsPage() {
 
   const [confirming, setConfirming] = useState(false);
   const [password, setPassword] = useState('');
+
+  const signOut = async () => {
+    await api.post('/api/auth/sign-out');
+    queryClient.removeQueries({ queryKey: ['session'] });
+    navigate('/login');
+  };
+
+  const initials = (data?.user.name ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
 
   const deleteAccount = useMutation({
     mutationFn: (input: { password: string }) =>
@@ -93,15 +120,39 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-200 flex-col gap-8">
-      <h1 className="sr-only text-2xl font-bold md:not-sr-only">Settings</h1>
+    <div className="flex max-w-200 flex-col gap-8">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="sr-only text-[28px] font-bold text-espresso md:not-sr-only">Settings</h1>
+          <p className="hidden text-sm text-clay md:mt-1.5 md:block">
+            Manage your account and configurations
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={signOut}
+          className="ml-auto min-h-11 shrink-0 rounded-lg border border-line px-4 text-[13px] font-semibold text-espresso transition-colors hover:bg-cream md:min-h-9"
+        >
+          Sign out
+        </button>
+      </div>
 
       {data?.user && (
-        <div>
-          <h2 className="mb-1 text-sm font-semibold">Account</h2>
-          <p className="text-sm">{data.user.name}</p>
-          <p className="text-sm text-clay">{data.user.email}</p>
-        </div>
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[13px] font-bold text-espresso uppercase">Account</h2>
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-paper p-4">
+            <span
+              className="flex size-12 shrink-0 items-center justify-center rounded-full bg-caramel text-base font-semibold text-white"
+              aria-hidden
+            >
+              {initials || '?'}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-espresso">{data.user.name}</p>
+              <p className="truncate text-xs text-clay">{data.user.email}</p>
+            </div>
+          </div>
+        </section>
       )}
 
       <NotificationsSettings />
@@ -110,7 +161,7 @@ export default function SettingsPage() {
 
       <TagsSettings />
 
-      <div className="rounded-md border border-error/50 bg-danger-soft p-4">
+      <div className="rounded-xl border border-error/50 bg-danger-soft p-4">
         <h2 className="text-sm font-semibold text-danger-text">Delete account</h2>
         <p className="mt-1 text-sm text-error">
           This permanently deletes your account along with all of your projects and entries. This
