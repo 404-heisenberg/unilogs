@@ -52,6 +52,21 @@ function mockEntries(entries: Entry[], projects: Project[] = PROJECTS) {
     }
     if (path.startsWith('/api/projects')) return Promise.resolve(projects);
     if (path === '/api/tags') return Promise.resolve([]);
+    if (path === '/api/stats/unfinished') {
+      return Promise.resolve({
+        overdue: [
+          {
+            entryId: 11,
+            fieldName: 'Done',
+            label: 'Reps',
+            projectName: 'Gym Log',
+            dueDate: '2026-09-01',
+          },
+        ],
+        dueThisWeek: [],
+        noDueDate: [],
+      });
+    }
     return Promise.reject(new Error(`unexpected GET ${path}`));
   });
 }
@@ -103,6 +118,19 @@ describe('EntriesPage', () => {
     expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Thesis/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Gym Log/ })).toBeInTheDocument();
+  });
+
+  it('filters to overdue entries from the status chip', async () => {
+    mockEntries(ENTRIES);
+
+    renderPage();
+    await screen.findByText('Literature review notes');
+
+    await userEvent.click(await screen.findByRole('button', { name: /Overdue · 1/ }));
+
+    expect(screen.queryByText('Literature review notes')).not.toBeInTheDocument();
+    expect(screen.getByText('Reps: 12')).toBeInTheDocument();
+    expect(screen.getByText(/Overdue · due/)).toBeInTheDocument();
   });
 
   it('filters entries by search term via the Filters sheet', async () => {

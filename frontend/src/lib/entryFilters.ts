@@ -8,6 +8,28 @@ export const DATE_RANGE_LABELS: Record<DateRangeKey, string> = {
   custom: 'Custom',
 };
 
+// Open (unfinished) todo items. Filtered in the browser from
+// /api/stats/unfinished, since the entries endpoint has no status filter.
+export type EntryStatus = 'unfinished' | 'overdue';
+
+export type UnfinishedGroups = {
+  overdue: { entryId: number; dueDate: string | null }[];
+  dueThisWeek: { entryId: number; dueDate: string | null }[];
+  noDueDate: { entryId: number; dueDate: string | null }[];
+};
+
+export function statusEntryIds(
+  groups: UnfinishedGroups | undefined,
+): Record<EntryStatus, Set<number>> {
+  const overdue = new Set((groups?.overdue ?? []).map((item) => item.entryId));
+  const unfinished = new Set(
+    [...(groups?.overdue ?? []), ...(groups?.dueThisWeek ?? []), ...(groups?.noDueDate ?? [])].map(
+      (item) => item.entryId,
+    ),
+  );
+  return { unfinished, overdue };
+}
+
 export type EntryFilters = {
   search: string;
   projectId: number | null;
@@ -15,6 +37,7 @@ export type EntryFilters = {
   customFrom: string; // yyyy-mm-dd, only used when dateRange === 'custom'
   customTo: string;
   tagIds: number[];
+  status: EntryStatus | null;
 };
 
 export const DEFAULT_FILTERS: EntryFilters = {
@@ -24,6 +47,7 @@ export const DEFAULT_FILTERS: EntryFilters = {
   customFrom: '',
   customTo: '',
   tagIds: [],
+  status: null,
 };
 
 function startOfDay(date: Date): Date {
@@ -80,6 +104,7 @@ export function isFiltering(filters: EntryFilters): boolean {
     filters.search.trim().length > 0 ||
     filters.projectId !== null ||
     filters.dateRange !== 'all' ||
-    filters.tagIds.length > 0
+    filters.tagIds.length > 0 ||
+    filters.status !== null
   );
 }

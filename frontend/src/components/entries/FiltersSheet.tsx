@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Clock, Search, SquareCheck, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useTags } from '@/hooks/useTags';
 import {
@@ -7,27 +7,26 @@ import {
   DEFAULT_FILTERS,
   type DateRangeKey,
   type EntryFilters,
+  type EntryStatus,
 } from '@/lib/entryFilters';
 import type { Project } from '@/types';
-import { projectColor } from '@/lib/colors';
+import { projectColor, tagDotColor } from '@/lib/colors';
 
 const DATE_RANGE_KEYS: DateRangeKey[] = ['all', 'today', '7d', '30d', 'custom'];
-
-// Deterministic project dot colors, same palette as the tags settings dots —
-// there's no color field on Project either, this just gives rows a visual
-// anchor to scan by, matching the design's colored dots.
 
 export default function FiltersSheet({
   open,
   onOpenChange,
   projects,
   filters,
+  statusCounts,
   onApply,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projects: Project[];
   filters: EntryFilters;
+  statusCounts: Record<EntryStatus, number>;
   onApply: (filters: EntryFilters) => void;
 }) {
   const [draft, setDraft] = useState(filters);
@@ -83,14 +82,17 @@ export default function FiltersSheet({
         </SheetHeader>
 
         <div className="flex flex-col gap-5 overflow-y-auto px-4 pt-3 pb-4">
-          <input
-            type="search"
-            value={draft.search}
-            onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
-            placeholder="Search title, body, or project…"
-            aria-label="Search entries"
-            className="h-11 w-full rounded-lg border border-line bg-white px-3 text-[13px] text-espresso outline-none focus:ring-2 focus:ring-espresso"
-          />
+          <label className="flex h-11 w-full items-center gap-2.5 rounded-lg border border-line bg-white px-3 focus-within:ring-2 focus-within:ring-espresso">
+            <Search className="size-4 shrink-0 text-cocoa" strokeWidth={1.75} aria-hidden />
+            <input
+              type="search"
+              value={draft.search}
+              onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
+              placeholder="Search title, body, project or field…"
+              aria-label="Search entries"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-espresso outline-none placeholder:text-taupe"
+            />
+          </label>
 
           <div className="flex flex-col gap-2.5">
             <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Project</p>
@@ -177,6 +179,11 @@ export default function FiltersSheet({
                         active ? 'bg-gold text-espresso' : 'border border-line text-espresso'
                       }`}
                     >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: active ? undefined : tagDotColor(tag.name) }}
+                        aria-hidden
+                      />
                       {tag.name}
                     </button>
                   );
@@ -184,6 +191,30 @@ export default function FiltersSheet({
               </div>
             </div>
           )}
+
+          <div className="flex flex-col gap-2.5">
+            <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Status</p>
+            <div className="flex flex-wrap gap-2">
+              {(['unfinished', 'overdue'] as const).map((status) => {
+                const active = draft.status === status;
+                const Icon = status === 'unfinished' ? SquareCheck : Clock;
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setDraft((d) => ({ ...d, status: active ? null : status }))}
+                    className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-[11px] font-semibold ${
+                      active ? 'bg-gold text-espresso' : 'border border-line text-espresso'
+                    }`}
+                  >
+                    <Icon className="size-3.5" strokeWidth={1.75} aria-hidden />
+                    {status === 'unfinished' ? 'Unfinished' : 'Overdue'} · {statusCounts[status]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center justify-between border-t border-sand px-4 py-3">
