@@ -6,6 +6,7 @@ import { authenticate } from '../middleware/authenticate.js';
 import { FIELD_TYPES } from '../types/field-types.js';
 import { z } from 'zod';
 const fieldTypeSchema = z.enum(FIELD_TYPES);
+const aggregationOverrideSchema = z.enum(['sum', 'average', 'max', 'min']).nullable();
 
 const router = Router();
 
@@ -56,7 +57,17 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { projectId, name, fieldType } = req.body;
+    const { projectId, name, fieldType, aggregationOverride } = req.body;
+
+    if (aggregationOverride !== undefined) {
+      const aggregationOverrideResult = aggregationOverrideSchema.safeParse(aggregationOverride);
+
+      if (!aggregationOverrideResult.success) {
+        return res.status(400).json({
+          error: 'Invalid aggregation override. Valid options are: sum, average, max, min, or null',
+        });
+      }
+    }
 
     if (!projectId || !name || !fieldType) {
       return res.status(400).json({ error: 'projectId, name, and fieldType are required' });
@@ -85,6 +96,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
         projectId: projectIdInt,
         name,
         fieldType,
+        aggregationOverride,
       },
     });
 
@@ -139,7 +151,7 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'id must be a valid integer' });
     }
 
-    const { name, fieldType } = req.body;
+    const { name, fieldType, aggregationOverride } = req.body;
 
     if (fieldType !== undefined) {
       const fieldTypeResult = fieldTypeSchema.safeParse(fieldType);
@@ -147,6 +159,16 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
       if (!fieldTypeResult.success) {
         return res.status(400).json({
           error: `Invalid field type. Valid options are: ${FIELD_TYPES.join(', ')}`,
+        });
+      }
+    }
+
+    if (aggregationOverride !== undefined) {
+      const aggregationOverrideResult = aggregationOverrideSchema.safeParse(aggregationOverride);
+
+      if (!aggregationOverrideResult.success) {
+        return res.status(400).json({
+          error: 'Invalid aggregation override. Valid options are: sum, average, max, min, or null',
         });
       }
     }
@@ -169,6 +191,7 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
       data: {
         name: name ?? undefined,
         fieldType: fieldType ?? undefined,
+        aggregationOverride: aggregationOverride !== undefined ? aggregationOverride : undefined,
       },
     });
 

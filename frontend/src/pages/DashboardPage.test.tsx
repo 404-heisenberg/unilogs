@@ -149,6 +149,7 @@ beforeEach(() => {
     }
     if (path === '/api/stats/unfinished') return structuredClone(server.unfinished);
     if (path === '/api/entries/11') return { ...RECENT[0], id: 11, content: { Submitted: false } };
+    if (path === '/api/calendar/events/suggestions') return { connected: false, suggestions: [] };
     throw new Error(`unexpected GET ${path}`);
   });
   mocks.apiPut.mockImplementation(async () => {
@@ -189,11 +190,11 @@ describe('DashboardPage', () => {
     expect(await screen.findByText("What's left")).toBeInTheDocument();
     expect(await screen.findByText('Recent entries')).toBeInTheDocument();
     expect(await screen.findByText('No data yet')).toBeInTheDocument();
+    expect(await screen.findByText('No upcoming events.')).toBeInTheDocument();
 
     expect(screen.queryByText('Time by project')).not.toBeInTheDocument();
     expect(screen.queryByText('Logging frequency — last 6 weeks')).not.toBeInTheDocument();
     expect(screen.queryByText('Due & dormant projects')).not.toBeInTheDocument();
-    expect(screen.queryByText('Upcoming')).not.toBeInTheDocument();
     expect(mocks.getFrequencyStats).not.toHaveBeenCalled();
   });
 
@@ -204,9 +205,9 @@ describe('DashboardPage', () => {
     expect(cells).toHaveLength(84);
 
     const today = screen.getByRole('img', { name: 'Sun 20 Sep: 1 entry' });
-    expect(today).toHaveClass('bg-[#D4A843]');
-    expect(screen.getByRole('img', { name: 'Sat 19 Sep: 1 entry' })).toHaveClass('bg-[#D4A843]');
-    expect(screen.getByRole('img', { name: 'Mon 14 Sep: 0 entries' })).toHaveClass('bg-[#E2DCD2]');
+    expect(today).toHaveClass('bg-[#d4a843]');
+    expect(screen.getByRole('img', { name: 'Sat 19 Sep: 1 entry' })).toHaveClass('bg-[#d4a843]');
+    expect(screen.getByRole('img', { name: 'Mon 14 Sep: 0 entries' })).toHaveClass('bg-[#e8e0d8]');
 
     expect(screen.getByText('6 of 7')).toBeInTheDocument();
   });

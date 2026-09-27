@@ -90,6 +90,7 @@ export async function createProject(agent: TestAgent, input: ProjectInput = {}) 
 type FieldDefinitionInput = {
   name?: string;
   fieldType?: string;
+  aggregationOverride?: string;
 };
 
 export async function createFieldDefinition(
@@ -101,6 +102,7 @@ export async function createFieldDefinition(
     projectId,
     name: input.name ?? 'Hours',
     fieldType: input.fieldType ?? 'number',
+    aggregationOverride: input.aggregationOverride,
   });
 
   if (response.status !== 201) {

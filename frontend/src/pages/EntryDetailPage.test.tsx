@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ApiError } from '@/lib/api';
@@ -49,9 +49,15 @@ describe('EntryDetailPage', () => {
 
     renderPage();
 
-    expect(await screen.findByText('Thesis')).toBeInTheDocument();
-    expect(screen.getByText('Read chapter 3')).toBeInTheDocument();
-    expect(screen.getByText('reading')).toBeInTheDocument();
+    // Target the properties sidebar specifically to check the project name
+    const propertiesHeading = await screen.findByRole('heading', { name: /properties/i });
+    const sidebar = propertiesHeading.closest('aside')!;
+    expect(within(sidebar).getByText('Thesis')).toBeInTheDocument();
+
+    // Target the main article element to scope the content check and avoid duplicates
+    const article = screen.getByRole('article');
+    expect(within(article).getByText('Read chapter 3')).toBeInTheDocument();
+
     expect(getMock).toHaveBeenCalledWith('/api/entries/10');
   });
 

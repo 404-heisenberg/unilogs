@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import {
   CircleCheckIcon,
@@ -23,6 +24,9 @@ import EntryDetailPage from './pages/EntryDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import SuggestionsPage from './pages/SuggestionsPage';
 import SettingsPage from './pages/SettingsPage';
+
+// Public share page: lazy-loaded so no app/auth code ships with it.
+const SharedReportPage = lazy(() => import('./pages/SharedReportPage'));
 
 // This app has no theme switching (always the warm cream/gold palette), so
 // the shared Toaster is styled directly here with the same hex tokens used
@@ -72,6 +76,14 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route
+          path="/r/:token"
+          element={
+            <Suspense fallback={null}>
+              <SharedReportPage />
+            </Suspense>
+          }
+        />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
@@ -82,6 +94,7 @@ export default function App() {
             <Route path="/entries" element={<EntriesPage />} />
             <Route path="/entries/new" element={<EntryCreatePage />} />
             <Route path="/entries/:entryId" element={<EntryDetailPage />} />
+            <Route path="/entries/:id/edit" element={<EntryCreatePage />} />
             <Route path="/suggestions" element={<SuggestionsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

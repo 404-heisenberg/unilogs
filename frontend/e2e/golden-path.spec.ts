@@ -32,20 +32,23 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   // Define a project and its schema via the Details → Fields → Save wizard.
   await page.getByRole('link', { name: 'New Project' }).click();
   await expect(page).toHaveURL(/\/projects\/new$/);
-  await page.getByPlaceholder('e.g. Gym').fill('Thesis');
-  await page.getByPlaceholder("What's this project for?").fill('Final year research');
+  await page.getByPlaceholder('e.g. Data Structures Revision').fill('Thesis');
+  await page
+    .getByPlaceholder('e.g. Weekly problem sets and past-paper drills')
+    .fill('Final year research');
   await page.getByRole('button', { name: 'Continue' }).click();
 
   // A 'duration' field specifically: it's the only field type the backend's
   // stats endpoint sums into totalHours (see backend/src/routes/stats.ts) —
   // a plain 'text' field would leave the dashboard's totals at zero below.
-  await page.getByPlaceholder('Field name').fill('Hours');
-  await page.getByLabel('Field type').selectOption('duration');
   await page.getByRole('button', { name: 'Add field' }).click();
+  await page.getByPlaceholder('Field name').fill('Hours');
+  await page.locator('form select').selectOption('duration');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByText('Hours')).toBeVisible();
 
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Create project' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   // The wizard lands directly on the new project's own page.
   await expect(page).toHaveURL(/\/projects\/\d+$/);

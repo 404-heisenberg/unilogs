@@ -19,9 +19,10 @@ describe('stats routes', () => {
 
       const responses = await Promise.all([
         api.get('/api/stats'),
-        api.get('/api/stats/project/1'),
         api.get('/api/stats/frequency'),
         api.get('/api/stats/streak'),
+        api.get('/api/stats/unfinished'),
+        api.get('/api/stats/fields/1'),
       ]);
 
       for (const response of responses) {
@@ -91,43 +92,6 @@ describe('stats routes', () => {
     });
   });
 
-  describe('GET /api/stats/project/:projectId', () => {
-    it('returns stats for a specific project', async () => {
-      const { agent } = await createAuthenticatedUser();
-      const project = await createProject(agent, { name: 'Specific project' });
-      await createFieldDefinition(agent, project.id, { name: 'Hours', fieldType: 'duration' });
-      await createEntry(agent, project.id, {
-        date: new Date().toISOString().slice(0, 10),
-        content: { Hours: 7 },
-      });
-
-      const response = await agent.get(`/api/stats/project/${project.id}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
-        projectId: project.id,
-        projectName: 'Specific project',
-        totalHours: 7,
-      });
-    });
-
-    it('rejects invalid project IDs', async () => {
-      const { agent } = await createAuthenticatedUser();
-
-      const response = await agent.get('/api/stats/project/not-an-id');
-
-      expect(response.status).toBe(400);
-    });
-
-    it('returns 404 for missing projects', async () => {
-      const { agent } = await createAuthenticatedUser();
-
-      const response = await agent.get('/api/stats/project/2147483647');
-
-      expect(response.status).toBe(404);
-    });
-  });
-
   describe('GET /api/stats/frequency', () => {
     it('returns weekly counts and term totals', async () => {
       const { agent } = await createAuthenticatedUser();
@@ -188,6 +152,95 @@ describe('stats routes', () => {
     });
   });
 
+  describe('GET /api/stats/unfinished', () => {
+    it('groups unfinished boolean fields by their due date', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent, { name: 'Thesis Research' });
+      await createFieldDefinition(agent, project.id, { name: 'Submitted', fieldType: 'boolean' });
+      await createFieldDefinition(agent, project.id, { name: 'Due date', fieldType: 'date' });
+
+      const yesterday = new Date();
+      yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+      const today = new Date();
+
+      await createEntry(agent, project.id, {
+        title: 'Submit ethics form',
+        content: { Submitted: false, 'Due date': yesterday.toISOString().slice(0, 10) },
+      });
+      await createEntry(agent, project.id, {
+        title: 'Draft intro pipeline',
+        content: { Submitted: false, 'Due date': today.toISOString().slice(0, 10) },
+      });
+      await createEntry(agent, project.id, {
+        title: 'Already done',
+        content: { Submitted: true, 'Due date': yesterday.toISOString().slice(0, 10) },
+      });
+
+      const response = await agent.get('/api/stats/unfinished');
+
+      expect(response.status).toBe(200);
+      expect(response.body.overdue).toEqual([
+        expect.objectContaining({
+          fieldName: 'Submitted',
+          label: 'Submit ethics form',
+          projectName: 'Thesis Research',
+        }),
+      ]);
+      expect(response.body.dueThisWeek).toEqual([
+        expect.objectContaining({
+          fieldName: 'Submitted',
+          label: 'Draft intro pipeline',
+          projectName: 'Thesis Research',
+        }),
+      ]);
+      expect(response.body.noDueDate).toEqual([]);
+    });
+
+    it('buckets unfinished items with no date-type field as no due date', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent, { name: 'Personal Diary' });
+      await createFieldDefinition(agent, project.id, { name: 'Done', fieldType: 'boolean' });
+      await createEntry(agent, project.id, {
+        title: 'Morning pages',
+        content: { Done: false },
+      });
+
+      const response = await agent.get('/api/stats/unfinished');
+
+      expect(response.status).toBe(200);
+      expect(response.body.overdue).toEqual([]);
+      expect(response.body.dueThisWeek).toEqual([]);
+      expect(response.body.noDueDate).toEqual([
+        expect.objectContaining({ fieldName: 'Done', label: 'Morning pages', dueDate: null }),
+      ]);
+    });
+
+    it('excludes archived projects and other users projects', async () => {
+      const owner = await createAuthenticatedUser();
+      const otherUser = await createAuthenticatedUser();
+
+      const archivedProject = await createProject(owner.agent, { name: 'Old project' });
+      await createFieldDefinition(owner.agent, archivedProject.id, {
+        name: 'Done',
+        fieldType: 'boolean',
+      });
+      await createEntry(owner.agent, archivedProject.id, { content: { Done: false } });
+      await owner.agent.post(`/api/projects/${archivedProject.id}/archive`);
+
+      const otherProject = await createProject(otherUser.agent, { name: 'Other project' });
+      await createFieldDefinition(otherUser.agent, otherProject.id, {
+        name: 'Done',
+        fieldType: 'boolean',
+      });
+      await createEntry(otherUser.agent, otherProject.id, { content: { Done: false } });
+
+      const response = await owner.agent.get('/api/stats/unfinished');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ overdue: [], dueThisWeek: [], noDueDate: [] });
+    });
+  });
+
   describe('archived projects', () => {
     it('excludes archived projects from dashboard totals', async () => {
       const { agent } = await createAuthenticatedUser();
@@ -227,16 +280,6 @@ describe('stats routes', () => {
       expect(response.body.perProject).not.toEqual(
         expect.arrayContaining([expect.objectContaining({ projectId: archivedProject.id })]),
       );
-    });
-
-    it('returns 404 for an archived project', async () => {
-      const { agent } = await createAuthenticatedUser();
-      const project = await createProject(agent);
-      await agent.post(`/api/projects/${project.id}/archive`);
-
-      const response = await agent.get(`/api/stats/project/${project.id}`);
-
-      expect(response.status).toBe(404);
     });
 
     it('excludes archived projects from frequency and term totals', async () => {
@@ -303,16 +346,6 @@ describe('stats routes', () => {
   });
 
   describe('ownership', () => {
-    it('hides project stats owned by another user', async () => {
-      const owner = await createAuthenticatedUser();
-      const otherUser = await createAuthenticatedUser();
-      const project = await createProject(owner.agent);
-
-      const response = await otherUser.agent.get(`/api/stats/project/${project.id}`);
-
-      expect(response.status).toBe(404);
-    });
-
     it('only includes stats for projects owned by the signed-in user', async () => {
       const owner = await createAuthenticatedUser();
       const otherUser = await createAuthenticatedUser();
@@ -349,6 +382,358 @@ describe('stats routes', () => {
       expect(response.body.perProject).not.toEqual(
         expect.arrayContaining([expect.objectContaining({ projectId: otherProject.id })]),
       );
+    });
+  });
+
+  describe('GET /api/stats/fields/:projectId', () => {
+    it('returns number field insights with total and average', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Height',
+        fieldType: 'number',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Height: 100 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Height: 150 },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Height',
+            fieldType: 'number',
+            family: 'number',
+            value: {
+              average: 125,
+              total: 250,
+            },
+            sampleCount: 2,
+            trend: {
+              deltaPct: 50,
+              direction: 'up',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns duration field insights as total minutes', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Hours',
+        fieldType: 'duration',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Hours: 2 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Hours: 1 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Hours: 4 },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Hours',
+            fieldType: 'duration',
+            family: 'sum',
+            valueMinutes: 420,
+            sampleCount: 3,
+            trend: {
+              deltaPct: 150,
+              direction: 'up',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns text field insights with the most frequent values', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Activity',
+        fieldType: 'text',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Activity: 'coding' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Activity: 'cooking' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'coding' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'meeting' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'cooking' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'meeting' },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Activity: 'testing' },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Activity',
+            fieldType: 'text',
+            family: 'frequency',
+            value: {
+              top: [
+                { value: 'coding', count: 2 },
+                { value: 'cooking', count: 2 },
+                { value: 'meeting', count: 2 },
+              ],
+            },
+            sampleCount: 7,
+            trend: {
+              deltaPct: -60,
+              direction: 'down',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns boolean field insights as percentage true', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Completed',
+        fieldType: 'boolean',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const previousWeek = new Date();
+      previousWeek.setUTCDate(previousWeek.getUTCDate() - 7);
+      const previousWeekDate = previousWeek.toISOString().slice(0, 10);
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Completed: true },
+      });
+
+      await createEntry(agent, project.id, {
+        date: previousWeekDate,
+        content: { Completed: false },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Completed: true },
+      });
+
+      await createEntry(agent, project.id, {
+        date: today,
+        content: { Completed: false },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Completed',
+            fieldType: 'boolean',
+            family: 'percentage',
+            value: {
+              pctTrue: (2 / 4) * 100,
+            },
+            sampleCount: 4,
+            trend: {
+              deltaPct: 0,
+              direction: 'flat',
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns date field insights with the most recent date', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Due date',
+        fieldType: 'date',
+      });
+
+      const olderDate = '2026-09-20';
+      const newerDate = '2026-09-25';
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { 'Due date': olderDate },
+      });
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { 'Due date': newerDate },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Due date',
+            fieldType: 'date',
+            family: 'recency',
+            value: {
+              mostRecent: newerDate,
+            },
+            sampleCount: 2,
+            trend: {
+              deltaPct: null,
+              direction: null,
+            },
+          },
+        ],
+      });
+    });
+
+    it('uses the aggregation override for number fields', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Weight',
+        fieldType: 'number',
+        aggregationOverride: 'sum',
+      });
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { Weight: 65 },
+      });
+
+      await createEntry(agent, project.id, {
+        date: new Date().toISOString().slice(0, 10),
+        content: { Weight: 15 },
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Weight',
+            fieldType: 'number',
+            family: 'sum',
+            value: 80,
+            sampleCount: 2,
+            trend: {
+              deltaPct: null,
+              direction: null,
+            },
+          },
+        ],
+      });
+    });
+
+    it('returns no-data insight for a field with no values', async () => {
+      const { agent } = await createAuthenticatedUser();
+      const project = await createProject(agent);
+
+      await createFieldDefinition(agent, project.id, {
+        name: 'Height',
+        fieldType: 'number',
+      });
+
+      const response = await agent.get(`/api/stats/fields/${project.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        projectId: project.id,
+        fields: [
+          {
+            name: 'Height',
+            fieldType: 'number',
+            family: 'number',
+            hasData: false,
+            sampleCount: 0,
+            trend: {
+              deltaPct: null,
+              direction: null,
+            },
+          },
+        ],
+      });
     });
   });
 });

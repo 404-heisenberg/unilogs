@@ -21,8 +21,11 @@ import {
 
 const DORMANT_AFTER_DAYS = 7;
 
-const PAGE =
-  '-m-4 min-h-[calc(100%_+_2rem)] bg-[#FFFCF7] p-4 text-[#2A1A0E] md:-m-8 md:min-h-[calc(100%_+_4rem)] md:p-8';
+// No bg/padding/text overrides here — the app shell's own <main> already
+// provides those (bg-[#faf7f2], p-4 md:p-8, text-[#1c0d06]), so blending in
+// rather than breaking out keeps the dashboard from showing a visible seam
+// against the rest of the app.
+const PAGE = '';
 
 export default function DashboardPage() {
   const session = useSession();
@@ -76,6 +79,9 @@ export default function DashboardPage() {
   const frequencyData = data.frequency.data;
   const frequencyLoading = data.frequency.isLoading;
   const frequencyError = data.frequency.isError;
+  const upcomingData = data.upcoming.data;
+  const upcomingLoading = data.upcoming.isLoading;
+  const upcomingError = data.upcoming.isError;
   const markFailed = data.markDone.isError;
   const onMarkDone = data.markDone.mutate;
 
@@ -109,6 +115,7 @@ export default function DashboardPage() {
       unfinished: { stats: unfinishedData, isLoading: unfinishedLoading, isError: unfinishedError },
       insight: { stat: insightData, isLoading: insightLoading },
       frequency: { stats: frequencyData, isLoading: frequencyLoading, isError: frequencyError },
+      upcoming: { data: upcomingData, isLoading: upcomingLoading, isError: upcomingError },
       dormant,
       markFailed,
       onMarkDone,
@@ -134,6 +141,9 @@ export default function DashboardPage() {
     frequencyData,
     frequencyLoading,
     frequencyError,
+    upcomingData,
+    upcomingLoading,
+    upcomingError,
     dormant,
     markFailed,
     onMarkDone,

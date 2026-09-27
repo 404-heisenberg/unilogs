@@ -3,7 +3,7 @@ import { auth } from '../auth.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import { hashPassword } from 'better-auth/crypto';
 import { resetPasswordEmail, sendEmail } from '../services/email-service.js';
 import { authenticate } from '../middleware/authenticate.js';
 
@@ -130,7 +130,11 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'User not found' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Must match the hash format better-auth's own signInEmail verifies
+    // against at login - bcrypt here previously wrote a hash better-auth
+    // could never verify, so a reset "succeeded" but the new password never
+    // actually worked (#237).
+    const hashedPassword = await hashPassword(newPassword);
 
     const account = await prisma.account.findFirst({
       where: {
@@ -194,7 +198,14 @@ router.post('/forgot-password', async (req, res) => {
     const response: { message: string; token?: string; url?: string } = {
       message: 'Reset link sent if account exists',
     };
-    if (!emailSent) {
+    // Dev/test-only convenience so the flow is testable without a real
+    // inbox (see frontend/src/pages/ResetPasswordPage.tsx's "here's the
+    // link directly" message). Handing back a live reset token whenever
+    // email delivery fails would otherwise let anyone take over an account
+    // just by knowing its email address (#174). Read per-request, not
+    // hoisted to module scope, so it reflects the environment at request
+    // time rather than whatever it was when this module first loaded.
+    if (!emailSent && process.env.NODE_ENV !== 'production') {
       response.token = token;
       response.url = resetUrl;
     }

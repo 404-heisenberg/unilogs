@@ -7,13 +7,18 @@ export type Project = {
   archived: boolean;
   userId: string;
   reminderFrequency: ReminderFrequency;
+  todoEnabled?: boolean;
 };
+
+export type AggregationKind = 'sum' | 'average' | 'max' | 'min';
 
 export type FieldDefinition = {
   id: number;
   projectId: number;
   name: string;
   fieldType: string;
+  todoEnabled?: boolean;
+  aggregationOverride?: AggregationKind | null;
 };
 
 export type EntryContent = Record<string, unknown>;
@@ -26,12 +31,14 @@ export type Entry = {
   id: number;
   projectId: number;
   date: string;
+  dueDate?: string | null;
   createdAt: string;
   title?: string | null;
   body?: string | null;
   content: EntryContent;
   tags?: EntryTag[];
   project?: Project;
+  hasOpenFields?: boolean;
 };
 
 export type PagedEntries = {

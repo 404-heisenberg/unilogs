@@ -4,14 +4,16 @@ import {
   api,
   getFrequencyStats,
   getStatsSummary,
+  type CalendarSuggestionsResponse,
   type FrequencyStats,
   type StatsSummary,
 } from '@/lib/api';
+
 import type { Entry, FieldDefinition, PagedEntries } from '@/types';
 
 export type DailyCount = { date: string; count: number };
 
-export type HeatLevel = 0 | 1 | 2 | 3 | 4 | 5;
+export type HeatLevel = 0 | 1 | 2 | 3 | 4;
 
 export type HeatCell = {
   date: string;
@@ -59,7 +61,7 @@ export function heatmapRange(today: string): { start: string; end: string } {
 
 export function heatLevel(count: number, max: number): HeatLevel {
   if (count <= 0 || max <= 0) return 0;
-  return Math.min(5, Math.ceil((count / max) * 5)) as HeatLevel;
+  return Math.min(4, Math.ceil((count / max) * 4)) as HeatLevel;
 }
 
 function streakDays(counts: Map<string, number>, streak: number, today: string): Set<string> {
@@ -81,7 +83,7 @@ export function buildHeatmap(daily: DailyCount[], streak: number, today: string)
     const count = counts.get(date) ?? 0;
     const future = date > today;
     let level: HeatLevel = heatLevel(count, max);
-    if (streakSet.has(date) && count > 0) level = 5;
+    if (streakSet.has(date) && count > 0) level = 4;
     if (future) level = 0;
     return { date, count, level, future };
   });
@@ -214,7 +216,7 @@ export const WIDGET_META: Record<WidgetId, WidgetMeta> = {
   whatsLeft: { title: "What's left", available: true, thumbnail: 'list' },
   recent: { title: 'Recent entries', available: true, thumbnail: 'list' },
   continue: { title: 'Continue logging', available: true, thumbnail: 'card' },
-  upcoming: { title: 'Upcoming', available: false, thumbnail: 'list' },
+  upcoming: { title: 'Upcoming', available: true, thumbnail: 'list' },
   insight: { title: 'Insight', available: true, thumbnail: 'card' },
   timeByProject: { title: 'Time by project', available: true, thumbnail: 'donut' },
   frequency: { title: 'Logging frequency', available: true, thumbnail: 'bars' },
@@ -223,14 +225,17 @@ export const WIDGET_META: Record<WidgetId, WidgetMeta> = {
 
 const WIDGET_IDS = Object.keys(WIDGET_META) as WidgetId[];
 
+// Order matches the Figma mobile dashboard frame's single-column sequence:
+// summary, activity, what's left, continue logging, recent entries, insight,
+// upcoming. Desktop reflows this same order into two columns (see toBlocks).
 export const DEFAULT_LAYOUT: WidgetState[] = [
   { id: 'summary', visible: true, size: 'wide' },
   { id: 'heatmap', visible: true, size: 'wide' },
   { id: 'whatsLeft', visible: true, size: 'standard' },
-  { id: 'recent', visible: true, size: 'standard' },
   { id: 'continue', visible: true, size: 'standard' },
-  { id: 'upcoming', visible: false, size: 'standard' },
+  { id: 'recent', visible: true, size: 'standard' },
   { id: 'insight', visible: true, size: 'standard' },
+  { id: 'upcoming', visible: true, size: 'standard' },
   { id: 'timeByProject', visible: false, size: 'standard' },
   { id: 'frequency', visible: false, size: 'standard' },
   { id: 'dueDormant', visible: false, size: 'standard' },
@@ -371,6 +376,7 @@ export const QUERY_KEYS = {
   recent: ['dashboard-recent'],
   unfinished: ['dashboard-unfinished'],
   insight: ['dashboard-insight'],
+  upcoming: ['dashboard-upcoming'],
 } as const;
 
 export async function loadSummary(): Promise<StatsSummary> {
@@ -479,6 +485,69 @@ export async function loadUnfinished(): Promise<UnfinishedStats> {
 
 export async function loadInsight(): Promise<InsightStat | null> {
   return null;
+}
+
+export type UpcomingEvent = {
+  id: string;
+  title: string;
+  start: string | null;
+  end: string | null;
+  description: string | null;
+  projectId: number | null;
+};
+
+export type UpcomingData = { connected: boolean; events: UpcomingEvent[] };
+
+const UPCOMING_LIMIT = 5;
+
+export async function loadUpcoming(): Promise<UpcomingData> {
+  const response = await api.get<CalendarSuggestionsResponse>('/api/calendar/events/suggestions');
+  if (!response.connected) return { connected: false, events: [] };
+
+  const now = Date.now();
+  const events = response.suggestions
+    .map((suggestion) => ({
+      id: suggestion.id,
+      title: suggestion.title,
+      start: suggestion.start ?? null,
+      end: suggestion.end ?? null,
+      description: suggestion.description?.trim() || null,
+      projectId: suggestion.projectId ?? null,
+    }))
+    .filter((event) => event.start === null || new Date(event.start).getTime() >= now)
+    .sort((a, b) => (a.start ?? '').localeCompare(b.start ?? ''))
+    .slice(0, UPCOMING_LIMIT);
+
+  return { connected: true, events };
+}
+
+export function formatEventTime(start: string | null): string {
+  if (!start) return '';
+  if (!start.includes('T')) return formatShortDate(start);
+  return new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+export function formatEventWhen(event: UpcomingEvent, today: string): string {
+  const { start, end } = event;
+  if (!start) return '';
+  const day = start.slice(0, 10);
+  const label =
+    day === today ? 'Today' : day === addDays(today, 1) ? 'Tomorrow' : formatShortDate(day);
+  if (!start.includes('T')) return `${label} · All day`;
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const range = end && end.includes('T') ? `${time(start)} – ${time(end)}` : time(start);
+  return `${label} · ${range}`;
+}
+
+// Opens the entry editor pre-filled from a calendar event. projectId is only
+// sent when the suggestion carries one; otherwise the editor falls back to the
+// last-used project.
+export function logEventPath(event: UpcomingEvent): string {
+  const params = new URLSearchParams({ title: event.title });
+  if (event.start) params.set('date', event.start.slice(0, 10));
+  if (event.projectId !== null) params.set('projectId', String(event.projectId));
+  return `/entries/new?${params.toString()}`;
 }
 
 export async function markEntryFieldDone(entryId: number, fieldName: string): Promise<void> {
@@ -692,6 +761,12 @@ export function useDashboardData(today: string, layout: WidgetState[]) {
     enabled: isOn('frequency'),
   });
 
+  const upcoming = useQuery({
+    queryKey: QUERY_KEYS.upcoming,
+    queryFn: loadUpcoming,
+    enabled: isOn('upcoming'),
+  });
+
   const markDone = useMutation({
     mutationFn: (item: UnfinishedItem) => markEntryFieldDone(item.entryId, item.fieldName),
     onMutate: async (item) => {
@@ -711,16 +786,26 @@ export function useDashboardData(today: string, layout: WidgetState[]) {
   });
 
   return useMemo(
-    () => ({ summary, activity, recent, durations, unfinished, insight, frequency, markDone }),
-    [summary, activity, recent, durations, unfinished, insight, frequency, markDone],
+    () => ({
+      summary,
+      activity,
+      recent,
+      durations,
+      unfinished,
+      insight,
+      frequency,
+      upcoming,
+      markDone,
+    }),
+    [summary, activity, recent, durations, unfinished, insight, frequency, upcoming, markDone],
   );
 }
 
 export const CARD = 'rounded-xl bg-[#F5EBE0] p-4';
-export const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A7660]';
-export const MUTED = 'text-[#8A7660]';
+export const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-[#7a5230]';
+export const MUTED = 'text-[#7a5230]';
 export const GOLD_BUTTON =
-  'inline-flex items-center justify-center rounded-full bg-[#D4A843] px-4 py-1.5 text-sm font-semibold text-[#2A1A0E] transition-colors hover:bg-[#C99B36] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2A1A0E]';
+  'inline-flex items-center justify-center rounded-full bg-[#D4A843] px-4 py-1.5 text-sm font-semibold text-[#1c0d06] transition-colors hover:bg-[#C99B36] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1c0d06]';
 export const DARK_BUTTON =
   'inline-flex items-center justify-center gap-1.5 rounded-md bg-[#1C0D06] px-3.5 py-2 text-sm font-medium text-[#FFFCF7] transition-colors hover:bg-[#3A2214] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
 export const TEXT_BUTTON =
