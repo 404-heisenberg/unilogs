@@ -45,7 +45,7 @@ async function fillAllFields() {
   fireEvent.change(screen.getByLabelText('Reps'), { target: { value: '12' } });
   fireEvent.change(screen.getByLabelText('Day'), { target: { value: '2026-09-10' } });
   fireEvent.change(screen.getByLabelText('Length'), { target: { value: '45' } });
-  await userEvent.click(screen.getByLabelText('Warmup'));
+  await userEvent.click(screen.getByRole('switch', { name: 'Warmup' }));
 }
 
 beforeEach(() => {
@@ -66,8 +66,8 @@ describe('EntryCreatePage dynamic form', () => {
     expect(screen.getByLabelText('Reps')).toHaveAttribute('type', 'number');
     expect(screen.getByLabelText('Day')).toHaveAttribute('type', 'date');
     expect(screen.getByLabelText('Length')).toHaveAttribute('type', 'number');
-    expect(screen.getByLabelText('Length')).toHaveAttribute('placeholder', 'minutes');
-    expect(screen.getByLabelText('Warmup')).toHaveAttribute('type', 'checkbox');
+    expect(screen.getByLabelText('Length')).toHaveAttribute('placeholder', 'Hours, e.g. 1.5');
+    expect(screen.getByRole('switch', { name: 'Warmup' })).toBeInTheDocument();
   });
 
   it('submits a content payload with one value per field, typed by field type', async () => {

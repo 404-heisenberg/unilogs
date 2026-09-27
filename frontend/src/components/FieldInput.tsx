@@ -44,7 +44,8 @@ export function FieldInput({
           type="number"
           value={value as string | number}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={field.fieldType === 'duration' ? 'minutes' : undefined}
+          // Durations are stored in hours (the backend sums them as hours).
+          placeholder={field.fieldType === 'duration' ? 'Hours, e.g. 1.5' : undefined}
           className={inputClassName}
         />
       ) : (
