@@ -1,98 +1,84 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { api } from '@/lib/api';
+import { projectColor } from '@/lib/colors';
+import {
+  dayLabel,
+  formatDurationHours,
+  toDayKey,
+  type ProjectSummary,
+} from '@/lib/project-workspace';
 import type { Project } from '@/types';
 
-type SaveInput = { name: string; description: string | null };
+function entryCount(count: number) {
+  return `${count} ${count === 1 ? 'entry' : 'entries'}`;
+}
 
-function ProjectRow({
+function ProjectCard({
   project,
+  summary,
+  today,
   archivedView,
-  onSave,
-  onArchiveToggle,
-  isSaving,
-  isTogglingArchive,
+  wide,
+  onUnarchive,
+  isUnarchiving,
 }: {
   project: Project;
+  wide: boolean;
+  summary: ProjectSummary | undefined;
+  today: string;
   archivedView: boolean;
-  onSave: (input: SaveInput) => void;
-  onArchiveToggle: () => void;
-  isSaving: boolean;
-  isTogglingArchive: boolean;
+  onUnarchive: () => void;
+  isUnarchiving: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description ?? '');
-
-  const cancel = () => {
-    setEditing(false);
-    setName(project.name);
-    setDescription(project.description ?? '');
-  };
-
-  if (editing) {
-    return (
-      <li className="flex flex-col gap-2 rounded-xl border border-caramel/40 bg-paper p-4 shadow-sm">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          aria-label="Project name"
-          className="rounded-lg border border-line px-3 py-1.5 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
-        />
-        <input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
-          aria-label="Project description"
-          className="rounded-lg border border-line px-3 py-1.5 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
-        />
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            disabled={isSaving || !name.trim()}
-            onClick={() => {
-              onSave({ name: name.trim(), description: description.trim() || null });
-              setEditing(false);
-            }}
-          >
-            {isSaving ? 'Saving…' : 'Save'}
-          </Button>
-          <Button size="sm" variant="outline" onClick={cancel} disabled={isSaving}>
-            Cancel
-          </Button>
-        </div>
-      </li>
-    );
-  }
+  const tracked =
+    summary?.trackedTimeMinutes == null
+      ? 'No tracked time'
+      : `${formatDurationHours(summary.trackedTimeMinutes / 60)} tracked`;
+  const lastLogged = summary?.lastLoggedAt
+    ? dayLabel(summary.lastLoggedAt.slice(0, 10), today)
+    : '—';
 
   return (
-    <li className="flex items-stretch justify-between gap-3 rounded-xl border border-caramel/40 bg-paper p-4 shadow-sm transition-shadow hover:shadow-md">
-      <Link to={`/projects/${project.id}`} className="min-w-0 flex-1">
-        <p className="font-semibold text-espresso">{project.name}</p>
-        {project.description && <p className="mt-1 text-sm text-clay">{project.description}</p>}
-      </Link>
-      <div className="flex shrink-0 gap-2">
-        {!archivedView && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="min-h-11 md:min-h-0"
-            onClick={() => setEditing(true)}
-          >
-            Edit
-          </Button>
-        )}
-        <Button
-          size="sm"
-          variant="outline"
-          className="min-h-11 md:min-h-0"
-          onClick={onArchiveToggle}
-          disabled={isTogglingArchive}
+    <li
+      className={`relative flex flex-col gap-2.5 rounded-xl border border-cream bg-paper p-4 transition-shadow hover:shadow-md md:gap-4 md:border-line md:p-5 ${wide ? 'md:col-span-2' : ''}`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className="size-2.5 shrink-0 rounded-full"
+          style={{ backgroundColor: projectColor(project.id) }}
+          aria-hidden
+        />
+        {/* The link covers the whole card; the Unarchive button sits above it. */}
+        <Link
+          to={`/projects/${project.id}`}
+          className="min-w-0 truncate text-base font-bold text-espresso after:absolute after:inset-0 after:rounded-xl"
         >
-          {archivedView ? 'Unarchive' : 'Archive'}
-        </Button>
+          {project.name}
+        </Link>
+      </div>
+      {project.description && (
+        <p className="text-xs text-cocoa md:text-[13px]">{project.description}</p>
+      )}
+      <div className="flex items-center justify-between gap-3 text-[11px] text-clay md:border-t md:border-cream md:pt-4">
+        <span>{summary ? `${entryCount(summary.entryCount)} · ${tracked}` : ' '}</span>
+        {archivedView ? (
+          <button
+            type="button"
+            onClick={onUnarchive}
+            disabled={isUnarchiving}
+            className="relative z-10 -my-3 min-h-11 font-semibold text-espresso underline disabled:opacity-50 md:min-h-0"
+          >
+            Unarchive
+          </button>
+        ) : (
+          <span className="font-medium">
+            <span className="hidden md:inline">Last logged: </span>
+            <span className="md:font-bold md:text-espresso">{lastLogged}</span>
+          </span>
+        )}
       </div>
     </li>
   );
@@ -100,6 +86,7 @@ function ProjectRow({
 
 export default function ProjectsPage() {
   const [archivedView, setArchivedView] = useState(false);
+  const [today] = useState(() => toDayKey(new Date()));
   const queryClient = useQueryClient();
 
   const {
@@ -111,48 +98,59 @@ export default function ProjectsPage() {
     queryFn: () => api.get<Project[]>(`/api/projects${archivedView ? '?archived=true' : ''}`),
   });
 
-  const invalidateProjects = () => queryClient.invalidateQueries({ queryKey: ['projects'] });
-
-  const updateProject = useMutation({
-    mutationFn: ({ id, ...data }: { id: number } & SaveInput) =>
-      api.patch<Project>(`/api/projects/${id}`, data),
-    onSuccess: invalidateProjects,
+  // Only for the "N archived projects" count under the active list.
+  const archived = useQuery({
+    queryKey: ['projects', { archived: true }],
+    queryFn: () => api.get<Project[]>('/api/projects?archived=true'),
+    enabled: !archivedView,
   });
 
-  const archiveToggle = useMutation({
-    mutationFn: ({ id, archived }: { id: number; archived: boolean }) =>
-      api.post<Project>(`/api/projects/${id}/${archived ? 'unarchive' : 'archive'}`),
-    onSuccess: invalidateProjects,
+  // Same query key as the project workspace, so opening a project reuses it.
+  const summaries = useQueries({
+    queries: (projects ?? []).map((project) => ({
+      queryKey: ['project-summary', String(project.id)],
+      queryFn: () => api.get<ProjectSummary>(`/api/projects/${project.id}/summary`),
+    })),
   });
 
-  const mutationError = updateProject.error ?? archiveToggle.error;
+  const unarchive = useMutation({
+    mutationFn: (id: number) => api.post<Project>(`/api/projects/${id}/unarchive`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
+  });
+
+  const list = projects ?? [];
+  const archivedCount = archived.data?.length ?? 0;
 
   return (
-    <div>
-      <div className="flex items-center justify-between md:mb-6">
-        <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">Projects</h1>
-        <Link to="/projects/new" className="hidden md:block">
-          <Button className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
-            New Project
-          </Button>
+    <div className="flex flex-col gap-4 md:gap-8">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="sr-only text-[28px] font-bold text-espresso md:not-sr-only">
+            {archivedView ? 'Archived projects' : 'Projects'}
+          </h1>
+          {!isPending && !isError && (
+            <p className="hidden text-sm text-clay md:mt-1.5 md:block">
+              {archivedView
+                ? `${list.length} archived ${list.length === 1 ? 'project' : 'projects'}`
+                : `${list.length} active ${list.length === 1 ? 'project' : 'projects'}`}
+            </p>
+          )}
+        </div>
+        <Link
+          to="/projects/new"
+          className="hidden items-center gap-2 rounded-lg bg-rail px-5 py-3 text-sm font-semibold text-cream transition-opacity hover:opacity-90 md:inline-flex"
+        >
+          <Plus size={14} strokeWidth={2} aria-hidden />
+          New project
         </Link>
       </div>
 
-      <div className="mb-4">
-        <button
-          onClick={() => setArchivedView((v) => !v)}
-          className="inline-block -my-3 py-3 text-sm text-clay underline hover:text-espresso"
-        >
-          {archivedView ? '← Back to active projects' : 'Show archived projects'}
-        </button>
-      </div>
-
-      {mutationError && <p className="mb-4 text-sm text-error">{mutationError.message}</p>}
+      {unarchive.error && <p className="text-sm text-error">{unarchive.error.message}</p>}
 
       {isPending && (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-caramel/20" />
+        <div className="grid gap-3 md:grid-cols-2 md:gap-5">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 animate-pulse rounded-xl bg-cream md:h-40" />
           ))}
         </div>
       )}
@@ -165,37 +163,62 @@ export default function ProjectsPage() {
 
       {projects?.length === 0 &&
         (archivedView ? (
-          <div className="rounded-xl border border-dashed border-caramel/50 bg-white/40 p-10 text-center">
+          <div className="rounded-xl border border-dashed border-line-strong bg-paper p-10 text-center">
             <p className="text-sm text-cocoa">No archived projects.</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-caramel/50 bg-white/40 p-10 text-center">
+          <div className="rounded-xl border border-dashed border-line-strong bg-paper p-10 text-center">
             <p className="text-sm text-cocoa">No projects yet.</p>
-            <Link to="/projects/new">
-              <Button className="mt-4 min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
-                Create your first project
-              </Button>
+            <Link
+              to="/projects/new"
+              className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-espresso px-5 text-sm font-semibold text-cream hover:opacity-90 md:min-h-10"
+            >
+              Create your first project
             </Link>
           </div>
         ))}
 
-      <ul className="flex flex-col gap-3">
-        {(projects ?? []).map((project) => (
-          <ProjectRow
-            key={project.id}
-            project={project}
-            archivedView={archivedView}
-            onSave={(input) => updateProject.mutate({ id: project.id, ...input })}
-            onArchiveToggle={() =>
-              archiveToggle.mutate({ id: project.id, archived: project.archived })
-            }
-            isSaving={updateProject.isPending && updateProject.variables?.id === project.id}
-            isTogglingArchive={
-              archiveToggle.isPending && archiveToggle.variables?.id === project.id
-            }
-          />
-        ))}
-      </ul>
+      {list.length > 0 && (
+        <ul className="grid gap-3 md:grid-cols-2 md:gap-5">
+          {list.map((project, index) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              // An odd last card spans both columns, as in the Figma grid.
+              wide={index === list.length - 1 && list.length % 2 === 1}
+              summary={summaries[index]?.data}
+              today={today}
+              archivedView={archivedView}
+              onUnarchive={() => unarchive.mutate(project.id)}
+              isUnarchiving={unarchive.isPending && unarchive.variables === project.id}
+            />
+          ))}
+        </ul>
+      )}
+
+      {!isPending && (archivedView || archivedCount > 0) && (
+        <div className="flex items-center justify-between gap-2 py-2 text-[13px] text-clay md:justify-start md:border-t md:border-line md:pt-4 md:text-sm">
+          <span>
+            {archivedView ? (
+              'Showing archived projects'
+            ) : (
+              <>
+                <span className="md:hidden">Archived ({archivedCount})</span>
+                <span className="hidden md:inline">
+                  {archivedCount} archived {archivedCount === 1 ? 'project' : 'projects'}
+                </span>
+              </>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => setArchivedView((v) => !v)}
+            className="-my-3 min-h-11 font-bold text-gold hover:underline md:min-h-0"
+          >
+            {archivedView ? 'Back to active projects' : 'View'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

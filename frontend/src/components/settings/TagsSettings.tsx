@@ -1,3 +1,4 @@
+import { tagDotColor } from '@/lib/colors';
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,8 +7,6 @@ import type { Tag } from '@/types';
 
 // Tags have no color field on the backend — derive a stable, decorative dot
 // color from the tag id so rows are visually distinguishable at a glance.
-const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a7ab5', '#8c709c', '#ef8a4b'];
-const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
 
 function TagRow({ tag }: { tag: Tag }) {
   const { renameTag, deleteTag } = useTags();
@@ -64,7 +63,7 @@ function TagRow({ tag }: { tag: Tag }) {
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <span
           className="size-[10px] shrink-0 rounded-full"
-          style={{ backgroundColor: dotColorFor(tag.id) }}
+          style={{ backgroundColor: tagDotColor(tag.name) }}
           aria-hidden
         />
         <p className="truncate text-sm font-semibold text-espresso">{tag.name}</p>

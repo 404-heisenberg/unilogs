@@ -14,11 +14,9 @@ import {
   type EntryFilters,
 } from '@/lib/entryFilters';
 import type { Entry, PagedEntries, Project } from '@/types';
+import { projectColor } from '@/lib/colors';
 
 const QUICK_RANGES: DateRangeKey[] = ['all', 'today', '7d'];
-
-const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a7ab5', '#8c709c', '#ef8a4b'];
-const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
 
 function groupLabel(iso: string): string {
   const date = new Date(iso);
@@ -184,7 +182,7 @@ export default function EntriesPage() {
                       >
                         <span
                           className="size-[8px] shrink-0 rounded-full"
-                          style={{ backgroundColor: dotColorFor(entry.projectId) }}
+                          style={{ backgroundColor: projectColor(entry.projectId) }}
                           aria-hidden
                         />
                         {projectNames.get(entry.projectId) ?? 'Unknown project'}

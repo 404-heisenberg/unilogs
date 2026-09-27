@@ -9,14 +9,13 @@ import {
   type EntryFilters,
 } from '@/lib/entryFilters';
 import type { Project } from '@/types';
+import { projectColor } from '@/lib/colors';
 
 const DATE_RANGE_KEYS: DateRangeKey[] = ['all', 'today', '7d', '30d', 'custom'];
 
 // Deterministic project dot colors, same palette as the tags settings dots —
 // there's no color field on Project either, this just gives rows a visual
 // anchor to scan by, matching the design's colored dots.
-const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a7ab5', '#8c709c', '#ef8a4b'];
-const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
 
 export default function FiltersSheet({
   open,
@@ -113,7 +112,7 @@ export default function FiltersSheet({
                 <span className="flex items-center gap-2.5">
                   <span
                     className="size-[10px] shrink-0 rounded-full"
-                    style={{ backgroundColor: dotColorFor(project.id) }}
+                    style={{ backgroundColor: projectColor(project.id) }}
                     aria-hidden
                   />
                   <span className="text-[13px] font-medium text-espresso">{project.name}</span>
