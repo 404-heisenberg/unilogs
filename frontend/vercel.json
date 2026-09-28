@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://unilogs.onrender.com/api/:path*" },
+    { "source": "/share/:path*", "destination": "https://unilogs.onrender.com/share/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
