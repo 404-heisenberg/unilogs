@@ -51,9 +51,9 @@ function Logo() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-cream px-3 py-2.5">
+    <div className="rounded-xl bg-cream p-4">
       <p className={CARD_LABEL}>{label}</p>
-      <p className="mt-1 text-lg font-semibold text-espresso">{value}</p>
+      <p className="mt-2 text-xl font-bold text-espresso">{value}</p>
     </div>
   );
 }
@@ -62,13 +62,12 @@ function InsightCard({ insight }: { insight: Insight }) {
   const { value, sub } = insightDisplay(insight);
   const Icon = FIELD_ICONS[insight.fieldType] ?? Hash;
   return (
-    <div className="rounded-lg bg-cream px-3 py-2.5">
-      <p className={`flex items-center gap-1.5 ${CARD_LABEL}`}>
-        <Icon className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden />
-        <span className="truncate">{insight.name}</span>
-      </p>
-      <p className="mt-1.5 text-base font-semibold text-espresso">{value}</p>
-      <p className="mt-0.5 text-[10px] text-clay">{sub}</p>
+    <div className="rounded-xl bg-cream p-4">
+      {/* Figma: icon above the label. */}
+      <Icon className="size-4 text-cocoa" strokeWidth={1.75} aria-hidden />
+      <p className={`mt-2.5 truncate ${CARD_LABEL}`}>{insight.name}</p>
+      <p className="mt-1 text-lg font-bold text-espresso">{value}</p>
+      <p className="mt-1 text-[10px] text-cocoa">{sub}</p>
     </div>
   );
 }

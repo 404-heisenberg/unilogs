@@ -237,10 +237,10 @@ export default function ProjectCreatePage() {
       </div>
 
       {/* Responsive Dialog Overlay */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-paper sm:bg-black/40 sm:p-6 backdrop-blur-[2px]">
-        <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-[716px] sm:rounded-2xl bg-paper sm:shadow-2xl sm:border sm:border-cream flex flex-col justify-between overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-paper sm:bg-espresso/50 sm:p-6">
+        <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-[720px] sm:rounded-2xl bg-paper sm:shadow-2xl flex flex-col justify-between overflow-hidden">
           {/* Header & Stepper Progress */}
-          <div className="p-4 sm:p-6 pb-2 sm:pb-4 border-b border-cream/60 bg-paper">
+          <div className="p-4 pb-2 sm:px-8 sm:pt-8 sm:pb-2 bg-paper">
             {/* Mobile Header Navigation */}
             <div className="flex items-center justify-between mb-4 sm:hidden">
               <button
@@ -292,7 +292,7 @@ export default function ProjectCreatePage() {
           </div>
 
           {/* Scrollable Form Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:px-8 sm:py-6 space-y-6">
             {/* STEP 1: DETAILS */}
             {step === 'details' && (
               <div className="flex flex-col gap-5">
@@ -562,7 +562,7 @@ export default function ProjectCreatePage() {
           </div>
 
           {/* Footer Action Bar */}
-          <div className="p-4 sm:p-6 border-t border-cream bg-paper">
+          <div className="mx-4 border-t border-cream bg-paper py-4 sm:mx-8 sm:pt-6 sm:pb-8">
             {step === 'details' && (
               <div className="flex items-center justify-between gap-3">
                 <button
