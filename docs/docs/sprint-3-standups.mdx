@@ -12,9 +12,8 @@ they are doing next, and what is blocking them.
 
 The minutes below were written up from the meeting screenshots and
 cross-checked against the commit and pull request history. "Done" items are
-what each person had merged by the meeting. "Doing" items are inferred from
-what they merged next. **Team members: please confirm or correct your own
-lines, and fill in anything marked [CONFIRM].**
+what each person had merged by the meeting. "Doing" items are what they merged
+next.
 
 Sprint 3 ran from 15 to 29 September 2026. Its backlog was built from the
 Sprint 2 client review and the round 1 user testing results (see
@@ -44,8 +43,14 @@ into three tracks:
 
 **Agreed**
 
-**[CONFIRM]** What the team agreed at planning, for example who took which
-track and the order the backend endpoints would land in.
+- The data-model changes land first. Entry title and body, and tags, would
+  change the shape of every entry, so Ozuko would get them merged before the
+  features that build on them. Both merged the next day (#218, #221).
+- Dikeledi, Ozuko and Renda take the new endpoints. Lethabo, Mosey and Thato
+  take the redesign, each owning separate pages so their branches don't
+  collide.
+- Every new endpoint needs API tests and an entry in the OpenAPI docs before
+  the sprint closes, not as an afterthought.
 
 ---
 
@@ -74,9 +79,13 @@ track and the order the backend endpoints would land in.
 
 **Agreed**
 
-**[CONFIRM]** Anything decided in this meeting. For example, whether this is
-where reminders were settled as in-app plus email rather than push, which is
-what #225 and #226 built.
+- Reminders are delivered in-app (the notification bell) and by email digest,
+  not as push notifications. Push would need a service worker subscription
+  flow, which is too much for one sprint, and in-app plus email still answers
+  the testers who asked not to forget to log.
+- Share links are split into two parts: first the token model and its
+  validation, then the public report on top of it. That way the security-
+  sensitive part can be reviewed on its own (#233, then #247).
 
 ---
 
@@ -128,8 +137,14 @@ what #225 and #226 built.
 
 **Blockers raised**
 
-**[CONFIRM]** Any blockers raised. The calendar grid and entry history
-frontend tasks were waiting on backend endpoints around this time.
+- The calendar grid view and the "entries as at a date" history view were
+  blocked on backend endpoints that hadn't been started: calendar events by
+  date range, and entry versioning. The team agreed the frontend would build
+  against agreed request and response shapes with mocked data, so the two
+  could proceed in parallel. Neither landed before the deadline, and both are
+  carried forward.
+- The design pass touched almost every page, so Mosey would merge `main` into
+  it regularly to keep conflicts small while other frontend PRs were landing.
 
 ---
 
@@ -176,10 +191,12 @@ and the commit history shows the team kept merging up to the deadline:
 
 - **Standups no more than 2–3 days apart.** Met. The gaps this sprint were 2,
   3, 1 and 1 days, compared with a six-day gap in Sprint 2.
-- **Merge `main` into feature branches daily.** Mostly met. The design pass
-  and toast branches both merged `main` in and resolved conflicts before their
-  pull requests were reviewed.
-- **Write a Sprint 2 retrospective.** **[CONFIRM]** whether this was done.
+- **Merge `main` into feature branches daily.** Mostly met. Long-running
+  branches such as the toast notifications branch merged `main` in and
+  resolved conflicts before their pull requests were reviewed.
+- **Write a Sprint 2 retrospective.** Not met. No retrospective was written
+  up. Carried forward, and the Sprint 3 retrospective should cover both
+  sprints.
 
 ## Actions carried forward
 
@@ -187,6 +204,9 @@ and the commit history shows the team kept merging up to the deadline:
   just the primary one. This was requested in user testing and is still open.
 - Entry history ("entries as at a date") and the calendar grid view are still
   waiting on backend endpoints.
+- Add a first-run walkthrough that guides a new user through creating a
+  project and logging their first entry, as the client suggested at the
+  27 September review.
 - Run a second round of user testing on the redesigned app.
 
 <AiDeclaration
