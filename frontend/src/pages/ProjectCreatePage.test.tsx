@@ -110,7 +110,7 @@ describe('ProjectCreatePage', () => {
       fieldType: 'duration',
     });
     expect(await screen.findByText('Project detail')).toBeInTheDocument();
-  }, 10000); // 10s timeout allowance for multi-step jsdom interactions
+  });
 
   it('allows adding custom fields and saving the project', async () => {
     const user = userEvent.setup();
@@ -154,7 +154,7 @@ describe('ProjectCreatePage', () => {
       fieldType: 'text',
     });
     expect(await screen.findByText('Project detail')).toBeInTheDocument();
-  }, 10000);
+  });
 
   it('offers every field type by its display name, including Toggle', async () => {
     const user = userEvent.setup();
@@ -190,7 +190,7 @@ describe('ProjectCreatePage', () => {
       name: 'Warmed up',
       fieldType: 'boolean',
     });
-  }, 10000);
+  });
 
   it('shows an error message when creation fails', async () => {
     const user = userEvent.setup();
@@ -211,5 +211,5 @@ describe('ProjectCreatePage', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Failed to create project')).toBeInTheDocument();
-  }, 10000);
+  });
 });
