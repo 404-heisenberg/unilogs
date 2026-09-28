@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { PanelRight } from 'lucide-react';
 
 // Figma's workspace layout: the page content, plus a full-height 288px pane
 // on the right (Properties / Metadata) with a cream left border. The wrapper
@@ -35,11 +35,7 @@ export default function PaneLayout({
             aria-expanded={!collapsed}
             className="rounded-md p-1.5 text-clay transition-colors hover:bg-cream hover:text-espresso"
           >
-            {collapsed ? (
-              <ChevronLeft className="size-4" aria-hidden />
-            ) : (
-              <ChevronRight className="size-4" aria-hidden />
-            )}
+            <PanelRight size={20} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
         {!collapsed && <div className="p-4 md:p-6 lg:pt-0">{pane}</div>}
