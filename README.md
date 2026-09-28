@@ -99,7 +99,7 @@ normal development — ask the owner if something needs changing.
 ## AI declaration
 
 This repository makes use of AI code generation using the following tools:
-Claude-Code[Claude Sonnet 5], Claude-Web[Claude Opus 5], Claude-Web[Claude Sonnet 5],
+Claude-Code[Claude Sonnet 5], Claude-Code[Claude Opus 5.5], Claude-Web[Claude Opus 5], Claude-Web[Claude Sonnet 5],
 ChatGPT[GPT-5.6 Luna], opencode[big-pickle], opencode[deepseek-v4.1-flash],
 Qoder[Qoder].
 

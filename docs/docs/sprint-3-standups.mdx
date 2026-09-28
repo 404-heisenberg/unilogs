@@ -1,0 +1,196 @@
+---
+sidebar_position: 11.5
+title: Sprint 3 Standups
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Sprint 3 — Standup Log
+
+Standups are held over Discord voice. Each member covers what they did, what
+they are doing next, and what is blocking them.
+
+The minutes below were written up from the meeting screenshots and
+cross-checked against the commit and pull request history. "Done" items are
+what each person had merged by the meeting. "Doing" items are inferred from
+what they merged next. **Team members: please confirm or correct your own
+lines, and fill in anything marked [CONFIRM].**
+
+Sprint 3 ran from 15 to 29 September 2026. Its backlog was built from the
+Sprint 2 client review and the round 1 user testing results (see
+[User Testing](/user-testing)). That meant per-project stats, reminders,
+entry notes, search and filters, and export and sharing.
+
+---
+
+## Standup 1 — 18 September 2026, 20:42
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 1 — Discord voice call, 18 September](/img/standup-1-18-sep.png)
+
+This was Sprint 3 planning. Nothing new had merged to `main` since the Sprint 2
+deadline. The team went through the user testing results and split the sprint
+into three tracks:
+
+- **Backend features:** entry title and body, tags, search and filters,
+  project summary and per-field stats, reminders and notifications, export and
+  share links.
+- **Frontend redesign:** implement the Figma designs for the app shell,
+  dashboard, entry editor, project workspace, guided project creation and
+  entries timeline.
+- **Quality:** a backend performance pass, API tests and API documentation for
+  every new endpoint.
+
+**Agreed**
+
+**[CONFIRM]** What the team agreed at planning, for example who took which
+track and the order the backend endpoints would land in.
+
+---
+
+## Standup 2 — 20 September 2026, 20:48
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 2 — Discord voice call, 20 September](/img/standup-2-20-sep.png)
+
+**Updates**
+
+- **Ozuko** — Done: per-user tag CRUD with ownership checks (#218), title and
+  body fields on entries with a rule rejecting wholly empty entries (#221), and
+  entry search and filters (#224).
+- **Renda** — Done: reminder settings and the email digest (#225), the
+  notification scheduler and feed (#226), and the backend performance pass with
+  indexes and an N+1 audit (#227). Three merged PRs before midday.
+- **Mosey** — Done: redesigned app shell with the nav rail and mobile bottom
+  nav (#228), the notifications bell and settings (#229), and a fix to the
+  frontend typecheck command in the docs and scripts (#230).
+- **Lethabo** — Doing: the dashboard rebuild with a customisable widget grid,
+  with the golden-path E2E test updated to match.
+- **Dikeledi** — Done: reviewed and merged the tags and entry title/body PRs.
+  Next: per-field stats and the project summary endpoint.
+- **Thato** — Doing: the Markdown entry editor.
+
+**Agreed**
+
+**[CONFIRM]** Anything decided in this meeting. For example, whether this is
+where reminders were settled as in-app plus email rather than push, which is
+what #225 and #226 built.
+
+---
+
+## Standup 3 — 23 September 2026, 20:43
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Thato
+**Apologies:** Renda
+
+![Standup 3 — Discord voice call, 23 September](/img/standup-3-23-sep.png)
+
+**Updates**
+
+- **Dikeledi** — Done: per-field stats (#241), the project summary endpoint
+  (#242), delete project with cascading deletes (#243), and CSV and Markdown
+  export endpoints (#245).
+- **Thato** — Done: the Markdown entry editor (#244), after a round of fixes to
+  npm install errors on the branch.
+- **Ozuko** — Done: reviewed and merged the entry editor and export PRs.
+- **Mosey** — Done: mobile pass and PWA install support (#234), merged the
+  dashboard redesign (#231), fixed the dashboard's unfinished-stats 404 (#236),
+  and fixed two password reset security bugs. Reset passwords are now hashed the
+  way sign-in verifies them (#238), and the reset token no longer leaks in
+  production responses (#239).
+- **Lethabo** — Done: the dashboard redesign (#231) is merged. Next: the
+  upcoming calendar events widget.
+- **Renda** (not present, from the commit history) — Done: the share token
+  foundation for public report links (#233).
+
+---
+
+## Standup 4 — 24 September 2026, 20:46
+
+**Present:** Dikeledi, Lethabo, Mosey, Renda, Thato
+**Apologies:** Ozuko
+
+![Standup 4 — Discord voice call, 24 September](/img/standup-4-24-sep.png)
+
+**Updates**
+
+- **Lethabo** — Done: the upcoming calendar events widget with a one-click
+  "Log" action (#246), and the export, share and delete project dialogs
+  (#249), merged just before the meeting.
+- **Renda** — Done: share links for project reports (#247), building on the
+  share token work from Standup 3.
+- **Dikeledi** — Done: reviewed and merged the share links PR. Next: API tests
+  and documentation for the Sprint 3 endpoints.
+- **Thato** — Doing: guided project creation.
+- **Mosey** — Doing: the app-wide design pass against Figma.
+
+**Blockers raised**
+
+**[CONFIRM]** Any blockers raised. The calendar grid and entry history
+frontend tasks were waiting on backend endpoints around this time.
+
+---
+
+## Standup 5 — 25 September 2026, 20:55
+
+**Present:** Dikeledi, Lethabo, Mosey, Ozuko, Renda, Thato
+
+![Standup 5 — Discord voice call, 25 September](/img/standup-5-25-sep.png)
+
+**Updates**
+
+- **Dikeledi** — Done: API tests for tags, and OpenAPI documentation for
+  Google sign-in, project summary, field stats, export, Google Calendar and
+  stats (#252), so the live docs at `/api/docs` cover the Sprint 3 endpoints.
+- **Lethabo** — Done: the project workspace (#250), which brings a project's
+  entries, stats and actions onto one page.
+- **Thato** — Done: guided project creation with field templates and reminder
+  settings (#248), merged at the end of the meeting.
+- **Ozuko** — Done: reviewed and merged the API tests and docs PR. Next: the
+  entries timeline redesign.
+- **Mosey** — Doing: the app-wide design pass, toast notifications, and fixes
+  for the bugs found while comparing the app to Figma.
+- **Renda** — Doing: Markdown editor polish.
+
+---
+
+## After the last standup
+
+No further standups were screenshotted after 25 September. The client review
+took place on 27 September (see [Stakeholder Meetings](/stakeholder-meetings)),
+and the commit history shows the team kept merging up to the deadline:
+
+- **Thato** — the entries timeline redesign (#251).
+- **Mosey** — the app-wide design pass to match Figma (#275), toast
+  notifications for errors (#268), logged time on entry cards (#272), a fix
+  keeping hyphens and brackets in shared report excerpts, and frontend test
+  coverage raised above 60% on every metric with a CI-enforced threshold (#295,
+  #298).
+- **Renda** — a fix for a backend test that failed on Mondays (#277), public
+  share routes proxied to the backend (#288), editor polish (#289–#293),
+  loading skeletons app-wide (#296) and a collapsible properties pane (#297).
+
+## Actions from Sprint 2, revisited
+
+- **Standups no more than 2–3 days apart.** Met. The gaps this sprint were 2,
+  3, 1 and 1 days, compared with a six-day gap in Sprint 2.
+- **Merge `main` into feature branches daily.** Mostly met. The design pass
+  and toast branches both merged `main` in and resolved conflicts before their
+  pull requests were reviewed.
+- **Write a Sprint 2 retrospective.** **[CONFIRM]** whether this was done.
+
+## Actions carried forward
+
+- Google Calendar suggestions should read every calendar the user has, not
+  just the primary one. This was requested in user testing and is still open.
+- Entry history ("entries as at a date") and the calendar grid view are still
+  waiting on backend endpoints.
+- Run a second round of user testing on the redesigned app.
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Opus 5.5]"
+  purpose="writing up Sprint 3 standup minutes from the meeting screenshots and the commit and pull request history"
+/>
