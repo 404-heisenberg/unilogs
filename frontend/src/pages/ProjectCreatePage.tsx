@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
+import { FIELD_TYPE_LABELS, FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
 import ProjectsPage from './ProjectsPage';
@@ -374,7 +374,9 @@ export default function ProjectCreatePage() {
                               {t.fields.map((field) => (
                                 <p key={field.name} className="text-xs text-clay">
                                   {field.name} —{' '}
-                                  <span className="text-clay">{field.fieldType}</span>
+                                  <span className="text-clay">
+                                    {FIELD_TYPE_LABELS[field.fieldType]}
+                                  </span>
                                 </p>
                               ))}
                             </div>
@@ -422,7 +424,7 @@ export default function ProjectCreatePage() {
                           >
                             {FIELD_TYPES.map((type) => (
                               <option key={type} value={type}>
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                                {FIELD_TYPE_LABELS[type]}
                               </option>
                             ))}
                           </select>
@@ -459,7 +461,7 @@ export default function ProjectCreatePage() {
                           >
                             {FIELD_TYPES.map((type) => (
                               <option key={type} value={type}>
-                                {type}
+                                {FIELD_TYPE_LABELS[type]}
                               </option>
                             ))}
                           </select>
@@ -512,7 +514,7 @@ export default function ProjectCreatePage() {
                           className="flex items-center justify-between py-2.5 text-xs sm:text-sm"
                         >
                           <span className="font-medium text-espresso">{f.name}</span>
-                          <span className="text-clay">{f.fieldType}</span>
+                          <span className="text-clay">{FIELD_TYPE_LABELS[f.fieldType]}</span>
                         </div>
                       ))
                     )}

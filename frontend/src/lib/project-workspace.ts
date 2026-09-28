@@ -20,13 +20,7 @@ export const AGGREGATIONS: { kind: AggregationKind; label: string }[] = [
   { kind: 'min', label: 'Min' },
 ];
 
-export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
-  text: 'Text',
-  number: 'Number',
-  date: 'Date',
-  duration: 'Duration',
-  boolean: 'Toggle',
-};
+export { FIELD_TYPE_LABELS } from '@/lib/field-types';
 
 export function isFieldType(value: string): value is FieldType {
   return (FIELD_TYPES as readonly string[]).includes(value);
