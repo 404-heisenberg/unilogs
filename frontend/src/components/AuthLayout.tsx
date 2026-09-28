@@ -38,11 +38,12 @@ export default function AuthLayout({
         />
         {back && (
           // Figma's Button/Secondary shape (outline, 12px radius, 48px,
-          // DM Sans Medium 13) in the cover's gold, pinned to the cover's
-          // top-left corner. On mobile it sits above the inscription.
+          // DM Sans Medium 13) in the cover's gold, at the top of the cover
+          // and left-aligned with the "UL / UniLogs" inscription (88px on
+          // desktop; on mobile it sits above the inscription at its inset).
           <Link
             to={back.to}
-            className={`relative z-10 mt-4 inline-flex h-12 items-center gap-2 rounded-xl border border-gold/50 px-4 font-sans text-[13px] font-medium text-gold transition-colors hover:border-gold hover:bg-gold/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:absolute md:top-6 md:left-6 md:m-0 ${
+            className={`relative z-10 mt-4 inline-flex h-12 items-center gap-2 rounded-xl border border-gold/50 px-4 font-sans text-[13px] font-medium text-gold transition-colors hover:border-gold hover:bg-gold/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:absolute md:top-6 md:left-[88px] md:m-0 ${
               signUp ? 'ml-5' : 'ml-6'
             }`}
           >
