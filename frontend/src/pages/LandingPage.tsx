@@ -28,13 +28,15 @@ const ENTRIES = [
   },
 ];
 
+// Figma: "Sat · 12 Sep" and "12 September" (en-GB would give "Sept").
 function todayLabel() {
   const now = new Date();
-  const weekday = now.toLocaleDateString('en-GB', { weekday: 'short' });
-  const day = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const weekday = now.toLocaleDateString('en-US', { weekday: 'short' });
+  const month = now.toLocaleDateString('en-US', { month: 'short' });
+  const monthLong = now.toLocaleDateString('en-US', { month: 'long' });
   return {
-    short: `${weekday} · ${day}`,
-    long: now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }),
+    short: `${weekday} · ${now.getDate()} ${month}`,
+    long: `${now.getDate()} ${monthLong}`,
   };
 }
 
