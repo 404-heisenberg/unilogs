@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Bell } from 'lucide-react';
+import Skeleton from '@/components/Skeleton';
 import { useNotifications } from '@/hooks/useNotifications';
 import { formatRelativeTime } from '@/lib/time';
 import type { Notification } from '@/types';
@@ -62,11 +63,7 @@ export default function NotificationList({ onNavigate }: { onNavigate?: () => vo
       <div className="h-px w-full bg-sand" />
 
       {feedQuery.isPending && (
-        <div className="flex flex-col gap-2 p-4" aria-hidden>
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 animate-pulse rounded-md bg-sand" />
-          ))}
-        </div>
+        <Skeleton rows={3} barClassName="h-12 rounded-md bg-sand" className="p-4" />
       )}
 
       {feedQuery.isError && (

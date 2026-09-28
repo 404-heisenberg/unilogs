@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch } from '@/components/ui/switch';
+import Skeleton from '@/components/Skeleton';
 import { useReminderSettings } from '@/hooks/useReminderSettings';
 import { api } from '@/lib/api';
 import type { Project, ReminderFrequency } from '@/types';
@@ -99,7 +100,7 @@ export default function NotificationsSettings() {
             <p className="mt-0.5 text-xs text-clay">Master switch for every reminder and email</p>
           </div>
           {settingsQuery.isPending ? (
-            <div className="h-[22px] w-10 animate-pulse rounded-full bg-sand" />
+            <Skeleton rows={1} barClassName="h-[22px] w-10 rounded-full bg-sand" />
           ) : (
             <Switch
               checked={remindersEnabled ?? false}
@@ -130,11 +131,7 @@ export default function NotificationsSettings() {
 
       <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
         {projectsQuery.isPending && (
-          <div className="flex flex-col gap-2 p-4" aria-hidden>
-            {[1, 2].map((i) => (
-              <div key={i} className="h-10 animate-pulse rounded-md bg-sand" />
-            ))}
-          </div>
+          <Skeleton rows={2} barClassName="h-10 rounded-md bg-sand" className="p-4" />
         )}
 
         {projectsQuery.isError && (
