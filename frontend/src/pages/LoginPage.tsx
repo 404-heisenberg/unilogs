@@ -41,13 +41,13 @@ export const LoginPage: React.FC = () => {
 
   return (
     <AuthLayout>
-      <form className="flex w-full max-w-sm flex-col gap-4" onSubmit={handleSubmit}>
-        <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl text-center md:text-left">
+      <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
+        <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
           Sign in
         </h2>
         {oauthErrorMessage && <p className="text-sm text-error">{oauthErrorMessage}</p>}
         <label htmlFor="email" className="text-sm font-semibold">
-          Email<span className="text-error ml-0.5">*</span>
+          Email<span className="ml-0.5">*</span>
         </label>
         <input
           id="email"
@@ -60,13 +60,13 @@ export const LoginPage: React.FC = () => {
             if (emailError) setEmailError(null);
           }}
           onBlur={() => setEmailError(getEmailError(email))}
-          className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso outline-none focus:ring-2 ${
-            emailError ? 'border-error focus:ring-error' : 'border-line focus:ring-espresso'
+          className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
+            emailError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
           }`}
         />
         {emailError && <p className="text-xs text-error">{emailError}</p>}
         <label htmlFor="password" className="text-sm font-semibold">
-          Password<span className="text-error ml-0.5">*</span>
+          Password<span className="ml-0.5">*</span>
         </label>
         <article className="relative w-full">
           <input
@@ -76,7 +76,7 @@ export const LoginPage: React.FC = () => {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full min-h-12 rounded-lg border border-line bg-paper px-4 text-sm pr-12 text-espresso outline-none focus:ring-2 focus:ring-espresso"
+            className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel pr-12 text-espresso outline-none focus:ring-2 focus:ring-espresso"
           />
           <button
             type="button"
@@ -120,11 +120,11 @@ export const LoginPage: React.FC = () => {
             )}
           </button>
         </article>
-        <p className="mt-2 text-sm text-cocoa ">
+        <p className="mt-2 text-center text-sm text-cocoa">
           Forgot password?{' '}
           <a
             href="/reset-password"
-            className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-espresso underline hover:text-gold"
+            className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-clay underline hover:text-espresso"
           >
             Reset
           </a>
@@ -154,13 +154,13 @@ export const LoginPage: React.FC = () => {
           Don't have an account?{' '}
           <a
             href="/signup"
-            className="inline-block -my-3 py-3 font-semibold text-espresso underline hover:text-gold"
+            className="inline-block -my-3 py-3 font-semibold text-clay underline hover:text-espresso"
           >
             Sign up
           </a>
         </p>
         <section className="relative my-4 flex items-center justify-center border-t border-line-strong/60">
-          <span className="absolute bg-cream px-3 text-xs font-semibold uppercase tracking-wider text-clay">
+          <span className="absolute bg-cream px-3 text-xs font-semibold tracking-[0.05em] text-cocoa">
             OR Sign in with :
           </span>
         </section>

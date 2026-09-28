@@ -78,15 +78,13 @@ export const SignupPage: React.FC = () => {
 
   return (
     <AuthLayout variant="lora">
-      <form className="flex w-full max-w-sm flex-col gap-4" onSubmit={handleSubmit}>
+      <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
         {/* Scaled-Up Header */}
-        <h2 className="font-lora text-3xl font-semibold md:text-[34px] text-center md:text-left">
-          Create an account
-        </h2>
+        <h2 className="font-lora text-3xl font-semibold md:text-[34px]">Create an account</h2>
         {oauthErrorMessage && <p className="text-sm text-error">{oauthErrorMessage}</p>}
 
         <label htmlFor="name" className="text-sm font-semibold">
-          Name<span className="text-error ml-0.5">*</span>
+          Name<span className="ml-0.5">*</span>
         </label>
         <input
           id="name"
@@ -95,11 +93,11 @@ export const SignupPage: React.FC = () => {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full min-h-12 rounded-lg border border-line bg-paper px-4 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
+          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
         />
 
         <label htmlFor="email" className="text-sm font-semibold">
-          Email<span className="text-error ml-0.5">*</span>
+          Email<span className="ml-0.5">*</span>
         </label>
         <input
           id="email"
@@ -112,14 +110,14 @@ export const SignupPage: React.FC = () => {
             if (emailError) setEmailError(null);
           }}
           onBlur={() => setEmailError(getEmailError(email))}
-          className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso outline-none focus:ring-2 ${
-            emailError ? 'border-error focus:ring-error' : 'border-line focus:ring-espresso'
+          className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
+            emailError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
           }`}
         />
         {emailError && <p className="text-xs text-error">{emailError}</p>}
 
         <label htmlFor="password" className="text-sm font-semibold">
-          Password<span className="text-error ml-0.5">*</span>
+          Password<span className="ml-0.5">*</span>
         </label>
         <article className="relative w-full">
           <input
@@ -138,7 +136,7 @@ export const SignupPage: React.FC = () => {
             className={`w-full rounded-md border bg-white p-3 pr-12 text-espresso outline-none focus:ring-2 ${
               showValidationError
                 ? 'border-error focus:ring-error'
-                : 'border-line focus:ring-espresso'
+                : 'border-cream focus:ring-espresso'
             }`}
           />
           <button
@@ -186,7 +184,7 @@ export const SignupPage: React.FC = () => {
         </article>
 
         <label htmlFor="confirm-password" className="text-sm font-semibold">
-          Confirm Password<span className="text-error ml-0.5">*</span>
+          Confirm Password<span className="ml-0.5">*</span>
         </label>
         <input
           id="confirm-password"
@@ -199,7 +197,7 @@ export const SignupPage: React.FC = () => {
             setShowMismatchError(false);
           }}
           className={`w-full rounded-md border bg-white p-3 pr-10 text-espresso outline-none focus:ring-2 ${
-            showMismatchError ? 'border-error focus:ring-error' : 'border-line focus:ring-espresso'
+            showMismatchError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
           }`}
         />
         {showMismatchError && <p className="text-xs text-error">Passwords do not match.</p>}
@@ -247,18 +245,18 @@ export const SignupPage: React.FC = () => {
             I agree to the{' '}
             <a
               href="/terms"
-              className="inline-block -my-4 py-4 font-semibold text-espresso underline hover:text-gold"
+              className="inline-block -my-4 py-4 font-semibold text-clay hover:underline"
             >
               Terms of Service
             </a>{' '}
             and{' '}
             <a
               href="/privacy"
-              className="inline-block -my-4 py-4 font-semibold text-espresso underline hover:text-gold"
+              className="inline-block -my-4 py-4 font-semibold text-clay hover:underline"
             >
               Privacy Policy
             </a>
-            <span className="text-error ml-0.5">*</span>
+            <span className="ml-0.5">*</span>
           </label>
         </div>
 
@@ -276,17 +274,15 @@ export const SignupPage: React.FC = () => {
           Already have an account?{' '}
           <a
             href="/login"
-            className="inline-block -my-3 py-3 font-semibold text-espresso underline hover:text-gold"
+            className="inline-block -my-3 py-3 font-semibold text-clay hover:underline"
           >
             Sign In
           </a>
         </p>
 
         {/* OAuth Separator */}
-        <section className="relative my-4 flex items-center justify-center border-t border-line-strong/60">
-          <span className="absolute bg-cream px-3 text-xs font-semibold uppercase tracking-wider text-clay">
-            OR Sign up with :
-          </span>
+        <section className="flex justify-center">
+          <span className="text-xs text-taupe">OR Sign up with :</span>
         </section>
 
         {/* OAuth Provider Buttons */}
@@ -295,7 +291,7 @@ export const SignupPage: React.FC = () => {
             type="button"
             onClick={() => googleSignUp.mutate()}
             disabled={googleSignUp.isPending}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border border-line-strong bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border-[1.5px] border-clay bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path

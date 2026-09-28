@@ -39,8 +39,8 @@ export const VerifyEmailPage: React.FC = () => {
 
   return (
     <AuthLayout>
-      <form className="flex w-full max-w-sm flex-col gap-4" onSubmit={handleSubmit}>
-        <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl text-center md:text-left">
+      <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
+        <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
           Verify your email
         </h2>
         <p className="text-sm text-clay">
@@ -48,7 +48,7 @@ export const VerifyEmailPage: React.FC = () => {
         </p>
 
         <label htmlFor="verify-email" className="text-sm font-semibold mt-2">
-          Email address<span className="text-error ml-0.5">*</span>
+          Email address<span className="ml-0.5">*</span>
         </label>
         <input
           id="verify-email"
@@ -57,11 +57,11 @@ export const VerifyEmailPage: React.FC = () => {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@example.com"
           required
-          className="w-full min-h-12 rounded-lg border border-line bg-paper px-4 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
+          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
         />
 
         <label htmlFor="otp" className="text-sm font-semibold">
-          Verification code<span className="text-error ml-0.5">*</span>
+          Verification code<span className="ml-0.5">*</span>
         </label>
         <input
           id="otp"
@@ -73,7 +73,7 @@ export const VerifyEmailPage: React.FC = () => {
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="123456"
           required
-          className="w-full min-h-12 rounded-lg border border-line bg-paper px-4 text-sm tracking-[0.5em] text-center text-espresso outline-none focus:ring-2 focus:ring-espresso"
+          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel tracking-[0.5em] text-center text-espresso outline-none focus:ring-2 focus:ring-espresso"
         />
 
         {verify.isError && <p className="text-sm text-error">{verify.error.message}</p>}
@@ -101,7 +101,7 @@ export const VerifyEmailPage: React.FC = () => {
           Return back to sign in{' '}
           <a
             href="/login"
-            className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-espresso underline hover:text-gold"
+            className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-clay underline hover:text-espresso"
           >
             Sign In
           </a>

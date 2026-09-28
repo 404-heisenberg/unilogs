@@ -28,7 +28,7 @@ const RequestResetForm: React.FC = () => {
   if (forgotPassword.isSuccess) {
     const resetUrl = forgotPassword.data.url;
     return (
-      <section className="flex flex-col gap-4 text-center md:text-left">
+      <section className="flex flex-col gap-4">
         <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
           Request received
         </h2>
@@ -41,7 +41,7 @@ const RequestResetForm: React.FC = () => {
             This environment doesn&apos;t send real emails, so here&apos;s the link directly:{' '}
             <a
               href={resetUrl}
-              className="break-all font-semibold text-espresso underline hover:text-gold"
+              className="break-all font-semibold text-clay underline hover:text-espresso"
             >
               {resetUrl}
             </a>
@@ -59,7 +59,7 @@ const RequestResetForm: React.FC = () => {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl text-center md:text-left">
+      <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
         Reset password
       </h2>
       <p className="text-sm text-clay">
@@ -68,7 +68,7 @@ const RequestResetForm: React.FC = () => {
       </p>
 
       <label htmlFor="reset-email" className="text-sm font-semibold mt-2">
-        Email address<span className="text-error ml-0.5">*</span>
+        Email address<span className="ml-0.5">*</span>
       </label>
       <input
         id="reset-email"
@@ -81,8 +81,8 @@ const RequestResetForm: React.FC = () => {
         onBlur={() => setEmailError(getEmailError(email))}
         placeholder="name@example.com"
         required
-        className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso outline-none focus:ring-2 ${
-          emailError ? 'border-error focus:ring-error' : 'border-line focus:ring-espresso'
+        className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
+          emailError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
         }`}
       />
       {emailError && <p className="text-xs text-error">{emailError}</p>}
@@ -103,7 +103,7 @@ const RequestResetForm: React.FC = () => {
         Return back to sign in{' '}
         <a
           href="/login"
-          className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-espresso underline hover:text-gold"
+          className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-clay underline hover:text-espresso"
         >
           Sign In
         </a>
@@ -134,7 +134,7 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
 
   if (resetPassword.isSuccess) {
     return (
-      <section className="flex flex-col gap-4 text-center md:text-left">
+      <section className="flex flex-col gap-4">
         <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
           Password updated
         </h2>
@@ -153,13 +153,13 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl text-center md:text-left">
+      <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
         Set a new password
       </h2>
       <p className="text-sm text-clay">Choose a new password for your account.</p>
 
       <label htmlFor="new-password" className="text-sm font-semibold mt-2">
-        New password<span className="text-error ml-0.5">*</span>
+        New password<span className="ml-0.5">*</span>
       </label>
       <input
         id="new-password"
@@ -171,11 +171,11 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
           setNewPassword(e.target.value);
           setMismatchError(null);
         }}
-        className="w-full min-h-12 rounded-lg border border-line bg-paper px-4 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
+        className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
       />
 
       <label htmlFor="confirm-new-password" className="text-sm font-semibold">
-        Confirm new password<span className="text-error ml-0.5">*</span>
+        Confirm new password<span className="ml-0.5">*</span>
       </label>
       <input
         id="confirm-new-password"
@@ -187,8 +187,8 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
           setConfirmPassword(e.target.value);
           setMismatchError(null);
         }}
-        className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso outline-none focus:ring-2 ${
-          mismatchError ? 'border-error focus:ring-error' : 'border-line focus:ring-espresso'
+        className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
+          mismatchError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
         }`}
       />
       {mismatchError && <p className="text-xs text-error">{mismatchError}</p>}
