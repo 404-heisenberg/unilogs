@@ -305,6 +305,8 @@ export default function EntryCreatePage() {
         if (!isEditing && data?.id) {
           navigate(`/entries/${data.id}`, { replace: true });
         }
+      } else if (isEditing) {
+        navigate(`/entries/${id}`, { replace: true });
       } else {
         navigate('/entries');
       }
@@ -748,13 +750,15 @@ export default function EntryCreatePage() {
                 <kbd className="ml-1 font-sans text-[11px] text-taupe">Ctrl+S</kbd>
               </span>
             )}
-            <button
-              type="submit"
-              className="inline-flex min-h-11 items-center rounded-lg bg-espresso px-4 text-[13px] font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50 md:min-h-8"
-              disabled={saveEntry.isPending || !projectId || (!hasFields && !hasNarrative)}
-            >
-              {saveEntry.isPending ? 'Saving…' : isEditing ? 'Save changes' : 'Save entry'}
-            </button>
+            {(!isEditing || isDirty || saveEntry.isPending) && (
+              <button
+                type="submit"
+                className="inline-flex min-h-11 items-center rounded-lg bg-espresso px-4 text-[13px] font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50 md:min-h-8"
+                disabled={saveEntry.isPending || !projectId || (!hasFields && !hasNarrative)}
+              >
+                {saveEntry.isPending ? 'Saving…' : isEditing ? 'Save changes' : 'Save entry'}
+              </button>
+            )}
           </div>
         </div>
 
