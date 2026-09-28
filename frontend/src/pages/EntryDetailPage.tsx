@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { MoreHorizontal, Trash2, CalendarCheck } from 'lucide-react';
 import PaneLayout, { PANE_LABEL } from '@/components/PaneLayout';
+import Skeleton from '@/components/Skeleton';
 import {
   Dialog,
   DialogContent,
@@ -94,13 +95,7 @@ export default function EntryDetailPage() {
   if (!entry) {
     return (
       <div>
-        {isPending && (
-          <div className="flex flex-col gap-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-cream" />
-            ))}
-          </div>
-        )}
+        {isPending && <Skeleton rows={3} barClassName="h-16 rounded-xl" className="gap-3" />}
         {notFound && (
           <div className="rounded-xl border border-dashed border-line-strong bg-paper p-10 text-center">
             <p className="text-sm text-cocoa">

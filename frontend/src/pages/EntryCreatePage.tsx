@@ -25,6 +25,7 @@ import { toast } from '@/lib/toast';
 import type { Entry, FieldDefinition, Project } from '@/types';
 import { tagStyle } from '@/lib/colors';
 import PaneLayout, { PANE_LABEL } from '@/components/PaneLayout';
+import Skeleton from '@/components/Skeleton';
 import { Switch } from '@/components/ui/switch';
 
 const LAST_PROJECT_KEY = 'unilogs:last-project-id';
@@ -529,7 +530,11 @@ export default function EntryCreatePage() {
 
   if (isEditing && isLoadingEntry) {
     return (
-      <div className="flex h-[50vh] items-center justify-center text-clay">Loading entry...</div>
+      <div className="mx-auto max-w-3xl py-8">
+        <Skeleton rows={1} barClassName="h-8 w-64" />
+        <Skeleton rows={1} barClassName="h-4 w-40" className="mt-3" />
+        <Skeleton rows={6} className="mt-8" />
+      </div>
     );
   }
 
