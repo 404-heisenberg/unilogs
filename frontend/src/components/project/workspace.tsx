@@ -683,7 +683,6 @@ export function FieldsTab({
           </ul>
         </>
       )}
-      {actions.updateError && <p className="mt-2 text-sm text-error">{actions.updateError}</p>}
 
       <form onSubmit={submit} className="mt-6 flex flex-wrap items-center gap-2">
         <div className="min-w-[10rem] flex-1 sm:max-w-52">
@@ -721,7 +720,6 @@ export function FieldsTab({
           {actions.creating ? 'Adding…' : 'Add field'}
         </button>
       </form>
-      {actions.createError && <p className="mt-2 text-sm text-error">{actions.createError}</p>}
     </div>
   );
 }
@@ -841,7 +839,6 @@ export function MetadataPanel({
             Delete project
           </button>
         </div>
-        {actions.error && <p className="mt-2 text-xs text-error">{actions.error}</p>}
       </div>
     </div>
   );

@@ -122,13 +122,12 @@ function CreateTagRow() {
       >
         {createTag.isPending ? 'Adding…' : 'Add tag'}
       </Button>
-      {createTag.isError && <p className="text-xs text-error">{createTag.error.message}</p>}
     </form>
   );
 }
 
 export default function TagsSettings() {
-  const { tagsQuery, deleteTag } = useTags();
+  const { tagsQuery } = useTags();
   const tags = tagsQuery.data ?? [];
 
   return (
@@ -137,8 +136,6 @@ export default function TagsSettings() {
       <p className="text-xs text-clay">
         Deleting a tag removes it from entries — entries are never deleted.
       </p>
-
-      {deleteTag.isError && <p className="text-xs text-error">{deleteTag.error.message}</p>}
 
       <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
         {tagsQuery.isPending && (

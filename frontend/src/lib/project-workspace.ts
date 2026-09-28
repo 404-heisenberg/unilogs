@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
+import { toast } from '@/lib/toast';
 import type { Entry, FieldDefinition, PagedEntries, Project } from '@/types';
 
 export type TabId = 'overview' | 'entries' | 'fields';
@@ -369,8 +370,6 @@ export type FieldActions = {
   }) => void;
   remove: (id: number) => void;
   creating: boolean;
-  createError: string | null;
-  updateError: string | null;
   deletingId: number | null;
 };
 
@@ -379,7 +378,6 @@ export type ProjectActions = {
   toggleArchive: (archived: boolean) => void;
   saving: boolean;
   archiving: boolean;
-  error: string | null;
 };
 
 export function useProjectMutations(projectId: string) {
@@ -404,6 +402,7 @@ export function useProjectMutations(projectId: string) {
         ...input,
       }),
     onSuccess: invalidateFields,
+    onError: (error) => toast.error(error),
   });
 
   const updateField = useMutation({
@@ -432,23 +431,27 @@ export function useProjectMutations(projectId: string) {
       invalidateEntries();
       queryClient.invalidateQueries({ queryKey: ['project-field-stats', projectId] });
     },
+    onError: (error) => toast.error(error),
   });
 
   const deleteField = useMutation({
     mutationFn: (id: number) => api.delete(`/api/field-definitions/${id}`),
     onSuccess: invalidateFields,
+    onError: (error) => toast.error(error),
   });
 
   const saveProject = useMutation({
     mutationFn: (input: { name: string; description: string }) =>
       api.patch<Project>(`/api/projects/${projectId}`, input),
     onSuccess: invalidateProject,
+    onError: (error) => toast.error(error),
   });
 
   const archiveProject = useMutation({
     mutationFn: (archived: boolean) =>
       api.post<Project>(`/api/projects/${projectId}/${archived ? 'unarchive' : 'archive'}`),
     onSuccess: invalidateProject,
+    onError: (error) => toast.error(error),
   });
 
   const markDone = useMutation({
@@ -481,8 +484,6 @@ export function useProjectMutations(projectId: string) {
     update: updateField.mutate,
     remove: deleteField.mutate,
     creating: createField.isPending,
-    createError: createField.error?.message ?? null,
-    updateError: updateField.error?.message ?? null,
     deletingId: deleteField.isPending ? (deleteField.variables ?? null) : null,
   };
 
@@ -491,7 +492,6 @@ export function useProjectMutations(projectId: string) {
     toggleArchive: (archived) => archiveProject.mutate(archived),
     saving: saveProject.isPending,
     archiving: archiveProject.isPending,
-    error: saveProject.error?.message ?? archiveProject.error?.message ?? null,
   };
 
   return {

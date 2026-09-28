@@ -11,6 +11,7 @@ import {
   type ProjectSummary,
 } from '@/lib/project-workspace';
 import type { Project } from '@/types';
+import { toast } from '@/lib/toast';
 
 function entryCount(count: number) {
   return `${count} ${count === 1 ? 'entry' : 'entries'}`;
@@ -116,6 +117,7 @@ export default function ProjectsPage() {
   const unarchive = useMutation({
     mutationFn: (id: number) => api.post<Project>(`/api/projects/${id}/unarchive`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
+    onError: (error) => toast.error(error),
   });
 
   const list = projects ?? [];
@@ -144,8 +146,6 @@ export default function ProjectsPage() {
           New project
         </Link>
       </div>
-
-      {unarchive.error && <p className="text-sm text-error">{unarchive.error.message}</p>}
 
       {isPending && (
         <div className="grid gap-3 md:grid-cols-2 md:gap-5">

@@ -7,6 +7,7 @@ import { FieldInput } from '@/components/FieldInput';
 import TagPicker from '@/components/entries/TagPicker';
 import { api, ApiError } from '@/lib/api';
 import { buildContent, defaultValueForType, type FieldValue } from '@/lib/field-values';
+import { toast } from '@/lib/toast';
 import type { Entry, FieldDefinition } from '@/types';
 
 function entryToValues(entry: Entry, fields: FieldDefinition[]): Record<string, FieldValue> {
@@ -47,7 +48,6 @@ export default function EntryEditSheet({
   const [tagIds, setTagIds] = useState<number[]>((entry.tags ?? []).map((t) => t.tag.id));
   const [values, setValues] = useState<Record<string, FieldValue>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Seed field values from the entry's existing content once fields load.
@@ -83,7 +83,7 @@ export default function EntryEditSheet({
         else general.push(message);
       }
       setFieldErrors(nextFieldErrors);
-      setFormError(general.length > 0 ? general.join(' ') : null);
+      if (general.length > 0) toast.error(general.join(' '));
     },
   });
 
@@ -93,12 +93,12 @@ export default function EntryEditSheet({
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       navigate('/entries');
     },
+    onError: (error) => toast.error(error),
   });
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-    setFormError(null);
     updateEntry.mutate({
       date,
       title: title.trim() || null,
@@ -194,8 +194,6 @@ export default function EntryEditSheet({
             <TagPicker selected={tagIds} onChange={setTagIds} />
           </div>
 
-          {formError && <p className="text-sm text-error">{formError}</p>}
-
           <button
             type="submit"
             disabled={updateEntry.isPending}
@@ -228,9 +226,6 @@ export default function EntryEditSheet({
                   Cancel
                 </button>
               </div>
-              {deleteEntry.isError && (
-                <p className="text-sm text-error">{deleteEntry.error.message}</p>
-              )}
             </div>
           ) : (
             <button

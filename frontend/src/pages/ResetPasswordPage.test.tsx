@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import ResetPasswordPage from './ResetPasswordPage';
 
 const { postMock } = vi.hoisted(() => ({ postMock: vi.fn() }));
@@ -17,6 +18,7 @@ function renderPage(initialEntry = '/reset-password') {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
+        <Toaster />
         <ResetPasswordPage />
       </MemoryRouter>
     </QueryClientProvider>,

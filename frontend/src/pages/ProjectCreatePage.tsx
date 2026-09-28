@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FIELD_TYPE_LABELS, FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
+import { toast } from '@/lib/toast';
 import ProjectsPage from './ProjectsPage';
 
 export const LAST_PROJECT_KEY = 'last_selected_project_id';
@@ -160,6 +161,7 @@ export default function ProjectCreatePage() {
 
       return project;
     },
+    onError: (error) => toast.error(error),
   });
 
   const handleCancel = () => {
@@ -553,12 +555,6 @@ export default function ProjectCreatePage() {
                     {reminder === 'off' && 'Reminders turned off for this project'}
                   </p>
                 </div>
-
-                {createProject.isError && (
-                  <p className="text-xs text-error">
-                    {(createProject.error as Error)?.message || 'Failed to create project.'}
-                  </p>
-                )}
               </div>
             )}
           </div>

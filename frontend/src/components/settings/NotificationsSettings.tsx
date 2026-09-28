@@ -3,6 +3,7 @@ import { Switch } from '@/components/ui/switch';
 import { useReminderSettings } from '@/hooks/useReminderSettings';
 import { api } from '@/lib/api';
 import type { Project, ReminderFrequency } from '@/types';
+import { toast } from '@/lib/toast';
 
 const FREQUENCY_LABEL: Record<ReminderFrequency, string> = {
   DAILY: 'daily',
@@ -39,6 +40,7 @@ function ProjectFrequencyRow({ project }: { project: Project }) {
     mutationFn: (reminderFrequency: ReminderFrequency) =>
       api.patch<Project>(`/api/projects/${project.id}`, { reminderFrequency }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
+    onError: (error) => toast.error(error),
   });
 
   const frequency = updateFrequency.isPending

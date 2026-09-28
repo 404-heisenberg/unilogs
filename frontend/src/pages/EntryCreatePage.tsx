@@ -21,6 +21,7 @@ import {
 import { api, ApiError } from '@/lib/api';
 import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
+import { toast } from '@/lib/toast';
 import type { Entry, FieldDefinition, Project } from '@/types';
 import { tagStyle } from '@/lib/colors';
 import PaneLayout, { PANE_LABEL } from '@/components/PaneLayout';
@@ -196,7 +197,6 @@ export default function EntryCreatePage() {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [values, setValues] = useState<Record<string, FieldValue>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
 
   const [isDirty, setIsDirty] = useState(false);
   const hasInitialized = useRef(false);
@@ -324,7 +324,7 @@ export default function EntryCreatePage() {
         }
       }
       setFieldErrors(nextFieldErrors);
-      setFormError(general.length > 0 ? general.join(' ') : null);
+      if (general.length > 0) toast.error(general.join(' '));
     },
   });
 
@@ -343,12 +343,12 @@ export default function EntryCreatePage() {
     if (e) e.preventDefault();
 
     if (!projectId) {
-      setFormError('Please select a project.');
+      toast.error('Please select a project.');
       return;
     }
 
     if (!hasFields && !hasNarrative) {
-      setFormError(
+      toast.error(
         'Entries cannot be wholly empty. Please provide a title, notes, or fill in custom fields.',
       );
       return;
@@ -366,14 +366,12 @@ export default function EntryCreatePage() {
     }
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
-      setFormError(null);
       return;
     }
 
     const content = buildContent(fields, values);
 
     setFieldErrors({});
-    setFormError(null);
     saveEntry.mutate({
       projectId: Number(projectId),
       date,
@@ -895,8 +893,6 @@ export default function EntryCreatePage() {
             </div>
           )}
         </div>
-
-        {formError && <p className="mt-2 text-sm text-error">{formError}</p>}
       </PaneLayout>
     </form>
   );

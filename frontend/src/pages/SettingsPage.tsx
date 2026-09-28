@@ -8,6 +8,7 @@ import TagsSettings from '@/components/settings/TagsSettings';
 import { useCalendarConnection } from '@/hooks/useCalendarConnection';
 import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
+import { toast } from '@/lib/toast';
 
 function GoogleCalendarSection() {
   const { statusQuery, connect, disconnect } = useCalendarConnection();
@@ -73,11 +74,6 @@ function GoogleCalendarSection() {
             </Button>
           </div>
         )}
-
-        {connect.isError && <p className="mt-2 text-sm text-error">{connect.error.message}</p>}
-        {disconnect.isError && (
-          <p className="mt-2 text-sm text-error">{disconnect.error.message}</p>
-        )}
       </div>
     </section>
   );
@@ -111,6 +107,7 @@ export default function SettingsPage() {
       queryClient.removeQueries({ queryKey: ['session'] });
       navigate('/', { replace: true });
     },
+    onError: (error) => toast.error(error),
   });
 
   const handleDelete = (e: React.FormEvent) => {
@@ -194,10 +191,6 @@ export default function SettingsPage() {
                 className="min-h-11 w-full rounded-lg border border-error/50 bg-white px-3 py-2 text-espresso outline-none focus:ring-2 focus:ring-error md:min-h-10"
               />
             </div>
-
-            {deleteAccount.isError && (
-              <p className="text-sm text-error">{deleteAccount.error.message}</p>
-            )}
 
             <div className="flex gap-2">
               <Button
