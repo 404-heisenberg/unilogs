@@ -120,6 +120,21 @@ describe('EntriesPage', () => {
     expect(screen.getByRole('link', { name: /Gym Log/ })).toBeInTheDocument();
   });
 
+  it('shows the time each entry was logged, not the midnight of its date', async () => {
+    // `date` is stored as midnight UTC, so formatting it gave every card the
+    // same time (#270). `createdAt` holds the real logging time.
+    const date = '2026-09-01T00:00:00.000Z';
+    const createdAt = '2026-09-01T16:35:00.000Z';
+    const format = (iso: string) =>
+      new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    mockEntries([{ ...ENTRIES[0], date, createdAt }]);
+
+    renderPage();
+
+    expect(await screen.findByText(format(createdAt))).toBeInTheDocument();
+    expect(screen.queryByText(format(date))).not.toBeInTheDocument();
+  });
+
   it('filters to overdue entries from the status chip', async () => {
     mockEntries(ENTRIES);
 
