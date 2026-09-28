@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { ApiError } from '@/lib/api';
 import EntryCreatePage from './EntryCreatePage';
 
@@ -31,11 +31,16 @@ const FIELDS = [
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const router = createMemoryRouter(
+    [
+      { path: '/entries/new', element: <EntryCreatePage /> },
+      { path: '*', element: <div /> },
+    ],
+    { initialEntries: ['/entries/new'] },
+  );
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <EntryCreatePage />
-      </MemoryRouter>
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   );
 }
