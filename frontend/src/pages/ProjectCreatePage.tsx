@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
+import { FIELD_TYPE_LABELS, FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
 import { toast } from '@/lib/toast';
@@ -20,11 +20,11 @@ const STEPS: { key: Step; label: string }[] = [
 ];
 
 const COLOR_OPTIONS = [
-  { label: 'Amber', hex: '#d4a268' },
-  { label: 'Gold', hex: '#cbbb40' },
-  { label: 'Olive Green', hex: '#3e6b48' },
-  { label: 'Purple', hex: '#7b5e7b' },
-  { label: 'Slate Blue', hex: '#527a9c' },
+  { label: 'Amber', hex: '#d4a373' },
+  { label: 'Gold', hex: '#c9b559' },
+  { label: 'Olive Green', hex: '#7a9e6b' },
+  { label: 'Purple', hex: '#8c709c' },
+  { label: 'Slate Blue', hex: '#6b8fad' },
 ];
 
 type DraftField = { name: string; fieldType: FieldType };
@@ -161,7 +161,7 @@ export default function ProjectCreatePage() {
 
       return project;
     },
-    onError: (error) => toast.error(error, { fallback: 'Failed to create project.' }),
+    onError: (error) => toast.error(error),
   });
 
   const handleCancel = () => {
@@ -229,7 +229,7 @@ export default function ProjectCreatePage() {
   const stepIndex = STEPS.findIndex((s) => s.key === step);
 
   return (
-    <div className="relative min-h-screen bg-[#fffcf8]">
+    <div className="relative min-h-screen bg-paper">
       {/* Background Projects page (Blurred on desktop modal view) */}
       <div
         className="pointer-events-none select-none opacity-40 filter blur-[1px] hidden sm:block"
@@ -239,36 +239,34 @@ export default function ProjectCreatePage() {
       </div>
 
       {/* Responsive Dialog Overlay */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#fffcf8] sm:bg-black/40 sm:p-6 backdrop-blur-[2px]">
-        <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-[716px] sm:rounded-2xl bg-[#fffcf8] sm:shadow-2xl sm:border sm:border-[#e6ded5] flex flex-col justify-between overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-paper sm:bg-espresso/50 sm:p-6">
+        <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-[720px] sm:rounded-2xl bg-paper sm:shadow-2xl flex flex-col justify-between overflow-hidden">
           {/* Header & Stepper Progress */}
-          <div className="p-4 sm:p-6 pb-2 sm:pb-4 border-b border-[#f0e6da]/60 bg-[#fffcf8]">
+          <div className="p-4 pb-2 sm:px-8 sm:pt-8 sm:pb-2 bg-paper">
             {/* Mobile Header Navigation */}
             <div className="flex items-center justify-between mb-4 sm:hidden">
               <button
                 type="button"
                 onClick={handleTopBack}
-                className="p-1 -ml-1 text-[#4a3d31]"
+                className="p-1 -ml-1 text-cocoa"
                 aria-label="Back"
               >
                 <ChevronLeft size={22} />
               </button>
-              <h2 className="text-base font-bold text-[#1c0d06] text-center flex-1">
+              <h2 className="text-base font-bold text-espresso text-center flex-1">
                 Create project
               </h2>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="text-sm font-medium text-[#c05621]"
+                className="text-sm font-medium text-clay"
               >
                 Cancel
               </button>
             </div>
 
             {/* Desktop Header Title */}
-            <h2 className="hidden sm:block text-lg font-bold text-[#1c0d06] mb-4">
-              Create project
-            </h2>
+            <h2 className="hidden sm:block text-lg font-bold text-espresso mb-4">Create project</h2>
 
             {/* Step Indicators */}
             <div className="flex flex-col gap-1.5">
@@ -276,9 +274,7 @@ export default function ProjectCreatePage() {
                 {STEPS.map((s, i) => (
                   <span
                     key={s.key}
-                    className={`h-1 flex-1 rounded-full ${
-                      i <= stepIndex ? 'bg-[#d9a74a]' : 'bg-[#ebdccb]'
-                    }`}
+                    className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-gold' : 'bg-cream'}`}
                   />
                 ))}
               </div>
@@ -287,7 +283,7 @@ export default function ProjectCreatePage() {
                   <span
                     key={s.key}
                     className={`flex-1 text-center text-[11px] ${
-                      i === stepIndex ? 'font-bold text-[#4a3d31]' : 'font-normal text-[#8c7a6b]'
+                      i === stepIndex ? 'font-bold text-cocoa' : 'font-normal text-clay'
                     }`}
                   >
                     {s.label}
@@ -298,24 +294,24 @@ export default function ProjectCreatePage() {
           </div>
 
           {/* Scrollable Form Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:px-8 sm:py-6 space-y-6">
             {/* STEP 1: DETAILS */}
             {step === 'details' && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <label className="block text-xs font-semibold text-[#4a3d31] mb-1.5">Name</label>
+                  <label className="block text-xs font-semibold text-cocoa mb-1.5">Name</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Data Structures Revision"
-                    className="w-full rounded-xl border border-[#e0d6cc] bg-white px-3.5 py-3 text-sm text-[#1c0d06] outline-none focus:border-[#d9a74a]"
+                    className="w-full rounded-lg border border-line bg-white min-h-10 px-3 py-2 text-sm text-espresso outline-none focus:border-gold"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#4a3d31] mb-1.5">
+                  <label className="block text-xs font-semibold text-cocoa mb-1.5">
                     Description
                   </label>
                   <textarea
@@ -323,12 +319,12 @@ export default function ProjectCreatePage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="e.g. Weekly problem sets and past-paper drills"
-                    className="w-full rounded-xl border border-[#e0d6cc] bg-white px-3.5 py-3 text-sm text-[#1c0d06] outline-none focus:border-[#d9a74a] resize-none"
+                    className="w-full rounded-lg border border-line bg-white min-h-10 px-3 py-2 text-sm text-espresso outline-none focus:border-gold resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#4a3d31] mb-2">Colour</label>
+                  <label className="block text-xs font-semibold text-cocoa mb-2">Colour</label>
                   <div className="flex items-center gap-3">
                     {COLOR_OPTIONS.map((c) => {
                       const isSelected = color === c.hex;
@@ -339,7 +335,7 @@ export default function ProjectCreatePage() {
                           onClick={() => setColor(c.hex)}
                           style={{ backgroundColor: c.hex }}
                           className={`relative size-8 rounded-full transition-transform ${
-                            isSelected ? 'ring-2 ring-[#1c0d06] ring-offset-2 scale-105' : ''
+                            isSelected ? 'ring-2 ring-espresso ring-offset-2 scale-105' : ''
                           }`}
                           aria-label={`Select ${c.label}`}
                         >
@@ -359,7 +355,7 @@ export default function ProjectCreatePage() {
               <div className="flex flex-col gap-6">
                 {/* Template Section Header & Cards */}
                 <div className="flex flex-col gap-3">
-                  <p className="text-xs font-semibold text-[#1c0d06]">Start from a template</p>
+                  <p className="text-xs font-semibold text-espresso">Start from a template</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {displayedTemplates.map((t) => {
                       const selected = template === t.name;
@@ -370,22 +366,24 @@ export default function ProjectCreatePage() {
                           onClick={() => applyTemplate(t)}
                           className={`relative w-full rounded-2xl p-4 text-left transition-all ${
                             selected
-                              ? 'border-2 border-[#d9a74a] bg-white shadow-xs'
-                              : 'border border-[#e0d6cc] bg-white hover:border-[#b8a48e]'
+                              ? 'border-2 border-gold bg-white shadow-xs'
+                              : 'border border-line bg-white hover:border-line-strong'
                           }`}
                         >
-                          <p className="font-bold text-sm text-[#1c0d06]">{t.name}</p>
+                          <p className="font-bold text-sm text-espresso">{t.name}</p>
                           {t.fields.length > 0 ? (
                             <div className="mt-2 flex flex-col gap-1">
                               {t.fields.map((field) => (
-                                <p key={field.name} className="text-xs text-[#7a6e65]">
+                                <p key={field.name} className="text-xs text-clay">
                                   {field.name} —{' '}
-                                  <span className="text-[#8c7a6b]">{field.fieldType}</span>
+                                  <span className="text-clay">
+                                    {FIELD_TYPE_LABELS[field.fieldType]}
+                                  </span>
                                 </p>
                               ))}
                             </div>
                           ) : (
-                            <p className="mt-2 text-xs text-[#8c7a6b]">
+                            <p className="mt-2 text-xs text-clay">
                               {t.description || 'No fields — add your own'}
                             </p>
                           )}
@@ -398,13 +396,13 @@ export default function ProjectCreatePage() {
                 {/* Custom Fields Section */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-[#1c0d06]">Custom fields</p>
+                    <p className="text-xs font-semibold text-espresso">Custom fields</p>
                     {!isAddingField && (
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setIsAddingField(true)}
-                        className="rounded-xl border-[#e0d6cc] bg-white px-4 py-1.5 text-xs font-medium text-[#1c0d06] hover:bg-[#f7f4f0] shadow-2xs h-auto"
+                        className="rounded-xl border-line bg-white px-4 py-1.5 text-xs font-medium text-espresso hover:bg-canvas shadow-2xs h-auto"
                       >
                         Add field
                       </Button>
@@ -415,27 +413,27 @@ export default function ProjectCreatePage() {
                     {fields.map((field, i) => (
                       <div
                         key={`${field.name}-${i}`}
-                        className="flex items-center justify-between gap-2 rounded-xl border border-[#e0d6cc] bg-white p-2.5"
+                        className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white p-2.5"
                       >
-                        <span className="text-sm font-medium text-[#1c0d06] px-1 truncate flex-1">
+                        <span className="text-sm font-medium text-espresso px-1 truncate flex-1">
                           {field.name}
                         </span>
                         <div className="flex items-center gap-2">
                           <select
                             value={field.fieldType}
                             onChange={(e) => retypeField(i, e.target.value as FieldType)}
-                            className="rounded-lg border border-[#e0d6cc] bg-white px-2.5 py-1 text-xs text-[#1c0d06] outline-none"
+                            className="rounded-lg border border-line bg-white px-2.5 py-1 text-xs text-espresso outline-none"
                           >
                             {FIELD_TYPES.map((type) => (
                               <option key={type} value={type}>
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                                {FIELD_TYPE_LABELS[type]}
                               </option>
                             ))}
                           </select>
                           <button
                             type="button"
                             onClick={() => removeField(i)}
-                            className="text-[#9e9083] hover:text-red-700 p-1"
+                            className="text-clay hover:text-error p-1"
                           >
                             <X size={16} />
                           </button>
@@ -455,31 +453,31 @@ export default function ProjectCreatePage() {
                           onChange={(e) => setNewFieldName(e.target.value)}
                           placeholder="Field name"
                           autoFocus
-                          className="w-full sm:flex-1 rounded-xl border border-[#e0d6cc] bg-white px-3 py-2 text-xs text-[#1c0d06] outline-none"
+                          className="w-full sm:flex-1 rounded-lg border border-line bg-white px-3 py-2 text-xs text-espresso outline-none"
                         />
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                           <select
                             value={newFieldType}
                             onChange={(e) => setNewFieldType(e.target.value as FieldType)}
-                            className="flex-1 sm:flex-none rounded-xl border border-[#e0d6cc] bg-white px-3 py-2 text-xs text-[#1c0d06] outline-none"
+                            className="flex-1 sm:flex-none rounded-lg border border-line bg-white px-3 py-2 text-xs text-espresso outline-none"
                           >
                             {FIELD_TYPES.map((type) => (
                               <option key={type} value={type}>
-                                {type}
+                                {FIELD_TYPE_LABELS[type]}
                               </option>
                             ))}
                           </select>
                           <Button
                             type="submit"
                             size="sm"
-                            className="bg-[#1c0d06] text-xs text-white rounded-xl"
+                            className="bg-espresso text-xs text-white rounded-xl"
                           >
                             Add
                           </Button>
                           <button
                             type="button"
                             onClick={() => setIsAddingField(false)}
-                            className="p-1 text-[#9e9083] hover:text-[#1c0d06]"
+                            className="p-1 text-clay hover:text-espresso"
                           >
                             <X size={16} />
                           </button>
@@ -498,27 +496,27 @@ export default function ProjectCreatePage() {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="size-3 rounded-full" style={{ backgroundColor: color }} />
-                    <h3 className="text-base font-bold text-[#1c0d06]">
+                    <h3 className="text-base font-bold text-espresso">
                       {name || 'Untitled project'}
                     </h3>
                   </div>
-                  {description && <p className="text-xs text-[#7a6e65] ml-5">{description}</p>}
+                  {description && <p className="text-xs text-clay ml-5">{description}</p>}
                 </div>
 
                 {/* Defined Fields Summary Table */}
                 <div>
-                  <p className="text-xs font-semibold text-[#8c7a6b] mb-2">Fields</p>
-                  <div className="divide-y divide-[#f0e6da]">
+                  <p className="text-xs font-semibold text-clay mb-2">Fields</p>
+                  <div className="divide-y divide-cream">
                     {fields.length === 0 ? (
-                      <p className="py-2 text-xs text-[#8c7a6b]">No fields added.</p>
+                      <p className="py-2 text-xs text-clay">No fields added.</p>
                     ) : (
                       fields.map((f, i) => (
                         <div
                           key={`${f.name}-${i}`}
                           className="flex items-center justify-between py-2.5 text-xs sm:text-sm"
                         >
-                          <span className="font-medium text-[#1c0d06]">{f.name}</span>
-                          <span className="text-[#9e9083]">{f.fieldType}</span>
+                          <span className="font-medium text-espresso">{f.name}</span>
+                          <span className="text-clay">{FIELD_TYPE_LABELS[f.fieldType]}</span>
                         </div>
                       ))
                     )}
@@ -527,8 +525,8 @@ export default function ProjectCreatePage() {
 
                 {/* Reminders Toggle Control */}
                 <div>
-                  <p className="text-xs font-semibold text-[#8c7a6b] mb-2">Reminders</p>
-                  <div className="flex rounded-xl bg-[#ebdccb]/50 p-1">
+                  <p className="text-xs font-semibold text-clay mb-2">Reminders</p>
+                  <div className="flex rounded-xl bg-cream/50 p-1">
                     {(['off', 'daily', 'weekly'] as const).map((option) => {
                       const active = reminder === option;
                       return (
@@ -538,8 +536,8 @@ export default function ProjectCreatePage() {
                           onClick={() => setReminder(option)}
                           className={`flex-1 rounded-lg py-2 text-xs font-medium capitalize transition-all ${
                             active
-                              ? 'bg-[#d9a74a] text-[#1c0d06] shadow-xs'
-                              : 'text-[#7a6e65] hover:text-[#1c0d06]'
+                              ? 'bg-gold text-espresso shadow-xs'
+                              : 'text-clay hover:text-espresso'
                           }`}
                         >
                           {option === 'off'
@@ -549,7 +547,7 @@ export default function ProjectCreatePage() {
                       );
                     })}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-[#8c7a6b]">
+                  <p className="mt-1.5 text-[10px] text-clay">
                     {reminder === 'weekly' &&
                       'Weekly email reminder — change this any time in project settings'}
                     {reminder === 'daily' &&
@@ -562,13 +560,13 @@ export default function ProjectCreatePage() {
           </div>
 
           {/* Footer Action Bar */}
-          <div className="p-4 sm:p-6 border-t border-[#f0e6da] bg-[#fffcf8]">
+          <div className="mx-4 border-t border-cream bg-paper py-4 sm:mx-8 sm:pt-6 sm:pb-8">
             {step === 'details' && (
               <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="text-xs font-medium text-[#1c0d06] hover:opacity-80 transition-opacity"
+                  className="text-xs font-medium text-espresso hover:opacity-80 transition-opacity"
                 >
                   Cancel
                 </button>
@@ -576,7 +574,7 @@ export default function ProjectCreatePage() {
                   type="button"
                   disabled={!name.trim()}
                   onClick={() => setStep('fields')}
-                  className="bg-[#1c0d06] px-6 py-2 text-xs font-medium text-white hover:bg-[#382012] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-espresso px-6 py-2 text-xs font-medium text-white hover:bg-deep rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continue
                 </Button>
@@ -588,7 +586,7 @@ export default function ProjectCreatePage() {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="text-xs font-medium text-[#1c0d06] hover:opacity-80 transition-opacity"
+                  className="text-xs font-medium text-espresso hover:opacity-80 transition-opacity"
                 >
                   Cancel
                 </button>
@@ -597,7 +595,7 @@ export default function ProjectCreatePage() {
                     type="button"
                     variant="outline"
                     onClick={() => setStep('details')}
-                    className="rounded-xl border-[#e0d6cc] bg-white px-5 py-2 text-xs font-medium text-[#1c0d06] hover:bg-[#f7f4f0]"
+                    className="rounded-xl border-line bg-white px-5 py-2 text-xs font-medium text-espresso hover:bg-canvas"
                   >
                     Back
                   </Button>
@@ -605,7 +603,7 @@ export default function ProjectCreatePage() {
                     type="button"
                     disabled={fields.length === 0}
                     onClick={() => setStep('save')}
-                    className="bg-[#1c0d06] px-6 py-2 text-xs font-medium text-white hover:bg-[#382012] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-espresso px-6 py-2 text-xs font-medium text-white hover:bg-deep rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Continue
                   </Button>
@@ -618,7 +616,7 @@ export default function ProjectCreatePage() {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="text-xs font-medium text-[#1c0d06] hover:opacity-80 transition-opacity"
+                  className="text-xs font-medium text-espresso hover:opacity-80 transition-opacity"
                 >
                   Cancel
                 </button>
@@ -628,7 +626,7 @@ export default function ProjectCreatePage() {
                     variant="outline"
                     onClick={() => setStep('fields')}
                     disabled={createProject.isPending}
-                    className="rounded-xl border-[#e0d6cc] bg-white px-4 py-2 text-xs font-medium text-[#1c0d06] hover:bg-[#f7f4f0]"
+                    className="rounded-xl border-line bg-white px-4 py-2 text-xs font-medium text-espresso hover:bg-canvas"
                   >
                     Back
                   </Button>
@@ -637,7 +635,7 @@ export default function ProjectCreatePage() {
                     variant="outline"
                     onClick={() => handleSave(false)}
                     disabled={createProject.isPending}
-                    className="rounded-xl border-[#e0d6cc] bg-white px-4 py-2 text-xs font-medium text-[#1c0d06] hover:bg-[#f7f4f0]"
+                    className="rounded-xl border-line bg-white px-4 py-2 text-xs font-medium text-espresso hover:bg-canvas"
                   >
                     Save
                   </Button>
@@ -645,7 +643,7 @@ export default function ProjectCreatePage() {
                     type="button"
                     onClick={() => handleSave(true)}
                     disabled={createProject.isPending}
-                    className="bg-[#1c0d06] px-5 py-2 text-xs font-medium text-white hover:bg-[#382012] rounded-xl"
+                    className="bg-espresso px-5 py-2 text-xs font-medium text-white hover:bg-deep rounded-xl"
                   >
                     {createProject.isPending ? 'Saving…' : 'Save and log first entry'}
                   </Button>

@@ -1,13 +1,62 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/geist';
+@import '@fontsource-variable/dm-sans';
+/* Public pages (landing, auth) only; browsers fetch these files on first use. */
+@import '@fontsource-variable/lora';
+@import '@fontsource-variable/lora/wght-italic.css';
+@import '@fontsource-variable/caveat';
+@import '@fontsource-variable/cormorant-garamond';
+@import '@fontsource-variable/cormorant-garamond/wght-italic.css';
 
 @custom-variant dark (&:is(.dark *));
 
+/* UniLogs palette, taken from the Figma screens (Prototype page). Use these
+   (text-clay, bg-paper, border-line, …) instead of hard-coded hex values. */
+@theme {
+  /* Display fonts from the Figma landing and auth screens. */
+  --font-lora: 'Lora Variable', Georgia, serif;
+  --font-script: 'Caveat Variable', cursive;
+  --font-cormorant: 'Cormorant Garamond Variable', Georgia, serif;
+
+  --color-espresso: #1c0d06; /* primary text, dark buttons */
+  --color-deep: #2e1a0c; /* dark button hover */
+  --color-cocoa: #4a3525; /* secondary text */
+  --color-clay: #7a5230; /* muted text, labels */
+  --color-taupe: #a68c73; /* faint text: timestamps, captions */
+  --color-caramel: #d4a373; /* accents, chart bars, links */
+  --color-gold: #d4a843; /* brand, active states, primary accent */
+  --color-gold-light: #e6c687; /* accent bars, light gold hover */
+  --color-cream: #f5ebe0; /* card fill, dividers */
+  --color-sand: #f0e7db; /* hovered / selected rows */
+  --color-paper: #fffcf7; /* raised surfaces: cards, dialogs */
+  --color-canvas: #faf7f2; /* page background */
+  --color-line: #d4c4b0; /* input and button borders */
+  --color-line-strong: #baa38c; /* outline buttons, dashed outlines */
+  --color-rule: #5c4a3a; /* app-shell pane borders */
+  --color-explorer: #e8ddd0; /* explorer pane */
+  --color-rail: #1c1109; /* nav rail, mobile bottom nav */
+  --color-rail-active: #3a2a1e; /* active nav item */
+  --color-heat-0: #e8e0d8; /* heatmap: none; chart tracks */
+  --color-heat-1: #faf0e6;
+  --color-heat-2: #e6d4c3;
+  --color-success: #3e7a52;
+  --color-error: #b34536; /* error text and borders */
+  --color-danger: #9c2a2a; /* destructive buttons */
+  --color-danger-text: #8c2121;
+  --color-danger-soft: #f5e0e0; /* destructive button fill */
+  /* Categorical colours for projects, tags and charts. */
+  --color-data-orange: #ef8a4b;
+  --color-data-olive: #c9b559;
+  --color-data-sage: #7a9e6b;
+  --color-data-plum: #8c709c;
+  --color-data-slate: #6b8fad;
+  --color-data-blue: #4a7ab5;
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: 'DM Sans Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -127,4 +176,15 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Figma's notebook paper (landing and auth pages): faint ruled lines every
+   32px. */
+@utility paper-ruled {
+  background-color: var(--color-cream);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 31px,
+    rgb(183 169 156 / 0.45) 31px 32px
+  );
 }

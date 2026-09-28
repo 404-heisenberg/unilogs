@@ -60,7 +60,7 @@ describe('Google Calendar settings', () => {
     mockCalendarStatus(false);
     renderPage();
 
-    expect(await screen.findByText('Your Google Calendar is not connected.')).toBeInTheDocument();
+    expect(await screen.findByText('Not connected')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /connect google calendar/i })).toBeInTheDocument();
     // The disconnected state never fires a request for events.
     expect(getMock).not.toHaveBeenCalledWith(expect.stringContaining('/api/calendar/events'));
@@ -70,7 +70,7 @@ describe('Google Calendar settings', () => {
     mockCalendarStatus(true);
     renderPage();
 
-    expect(await screen.findByText('Your Google Calendar is connected.')).toBeInTheDocument();
+    expect(await screen.findByText('Connected')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^disconnect$/i })).toBeInTheDocument();
   });
 
@@ -110,12 +110,12 @@ describe('Google Calendar settings', () => {
     });
 
     renderPage();
-    expect(await screen.findByText('Your Google Calendar is connected.')).toBeInTheDocument();
+    expect(await screen.findByText('Connected')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
 
     expect(deleteMock).toHaveBeenCalledWith('/api/calendar/disconnect');
-    expect(await screen.findByText('Your Google Calendar is not connected.')).toBeInTheDocument();
+    expect(await screen.findByText('Not connected')).toBeInTheDocument();
   });
 
   it('shows an error state when the status check fails, with a retry action', async () => {

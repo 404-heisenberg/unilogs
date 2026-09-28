@@ -32,20 +32,22 @@ import {
   type WeekBar,
 } from '@/lib/project-workspace';
 import type { Entry, FieldDefinition, Project } from '@/types';
+import { projectColor } from '@/lib/colors';
 
-const CARD = 'rounded-xl border border-[#EADFCF] bg-white';
-const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A7660]';
-const MUTED = 'text-[#8A7660]';
+const CARD = 'rounded-xl border border-cream bg-paper';
+const LABEL = 'text-[11px] font-bold uppercase text-clay';
+const SECTION_HEADING = 'text-base font-bold text-espresso';
+const MUTED = 'text-clay';
 const INPUT =
-  'w-full rounded-md border border-[#D9C9AE] bg-white px-3 py-2 text-sm text-[#1C0D06] outline-none focus:ring-2 focus:ring-[#D4A843]';
+  'w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-gold';
 const DARK_BUTTON =
-  'inline-flex items-center justify-center rounded-md bg-[#1C0D06] px-3.5 py-2 text-sm font-medium text-[#FFFCF7] transition-colors hover:bg-[#3A2214] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'inline-flex min-h-11 items-center justify-center rounded-lg bg-espresso px-4 text-[13px] font-semibold text-cream transition-colors hover:bg-deep md:min-h-9 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const OUTLINE_BUTTON =
-  'inline-flex w-full items-center justify-center rounded-md border border-[#D9C9AE] bg-white px-3 py-2 text-sm font-medium text-[#1C0D06] transition-colors hover:bg-[#F5EBE0] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-line-strong px-3 text-[13px] font-medium text-espresso transition-colors hover:bg-cream md:min-h-9 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const LINK_BUTTON =
-  'rounded px-1.5 py-0.5 text-xs font-medium text-[#5C4630] transition-colors hover:text-[#1C0D06] hover:underline disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-[#D4A843]';
+  'rounded px-1.5 py-0.5 text-xs font-medium text-cocoa transition-colors hover:text-espresso hover:underline disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-gold';
 const DANGER_BUTTON =
-  'inline-flex w-full items-center justify-center rounded-md border border-[#E6B8AE] bg-white px-3 py-2 text-sm font-medium text-[#B5432F] transition-colors hover:bg-[#FBEDE9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-danger-soft px-3 text-[13px] font-medium text-danger-text transition-opacity hover:opacity-90 md:min-h-9 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -65,7 +67,7 @@ function Skeleton({ rows = 2 }: { rows?: number }) {
   return (
     <div className="flex flex-col gap-3" aria-hidden>
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="h-14 animate-pulse rounded-xl bg-[#EADFCF]/60" />
+        <div key={index} className="h-14 animate-pulse rounded-xl bg-cream/60" />
       ))}
     </div>
   );
@@ -73,7 +75,7 @@ function Skeleton({ rows = 2 }: { rows?: number }) {
 
 function ErrorNote({ children }: { children: string }) {
   return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <div className="rounded-xl border border-danger-soft bg-danger-soft p-4 text-sm text-error">
       {children}
     </div>
   );
@@ -81,11 +83,7 @@ function ErrorNote({ children }: { children: string }) {
 
 export function TabBar({ tab, onChange }: { tab: TabId; onChange: (tab: TabId) => void }) {
   return (
-    <div
-      role="tablist"
-      aria-label="Project sections"
-      className="flex gap-6 border-b border-[#EADFCF]"
-    >
+    <div role="tablist" aria-label="Project sections" className="flex gap-6 border-b border-cream">
       {TABS.map(({ id, label }) => (
         <button
           key={id}
@@ -95,10 +93,10 @@ export function TabBar({ tab, onChange }: { tab: TabId; onChange: (tab: TabId) =
           aria-selected={tab === id}
           aria-controls={`panel-${id}`}
           onClick={() => onChange(id)}
-          className={`-mb-px border-b-2 px-1 pb-2.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#D4A843] ${
+          className={`-mb-px min-h-11 flex-1 border-b-2 px-1 pb-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-gold md:min-h-0 md:flex-none ${
             tab === id
-              ? 'border-[#D4A843] font-semibold text-[#1C0D06]'
-              : `border-transparent ${MUTED} hover:text-[#1C0D06]`
+              ? 'border-gold font-bold text-espresso'
+              : `border-transparent ${MUTED} hover:text-espresso`
           }`}
         >
           {label}
@@ -141,12 +139,40 @@ function SummaryCards({ summary, today }: { summary: ProjectSummary | undefined;
         <div key={label} className={`${CARD} p-4`}>
           <div className="flex items-center justify-between">
             <dt className={LABEL}>{label}</dt>
-            <Icon className="h-4 w-4 text-[#B8825C]" strokeWidth={1.75} aria-hidden />
+            <Icon className="size-4.5 text-cocoa" strokeWidth={1.75} aria-hidden />
           </div>
-          <dd className="mt-2 text-2xl font-semibold text-[#1C0D06]">{value}</dd>
+          <dd className="mt-2 truncate text-[28px] leading-9 font-bold text-espresso">{value}</dd>
         </div>
       ))}
     </dl>
+  );
+}
+
+// Figma's Mood bar: one segment per answer, sized by count.
+const DISTRIBUTION_COLORS = [
+  'bg-gold',
+  'bg-line-strong',
+  'bg-success',
+  'bg-caramel',
+  'bg-data-plum',
+];
+
+function DistributionBar({ items }: { items: { value: string; count: number }[] }) {
+  const total = items.reduce((sum, item) => sum + item.count, 0) || 1;
+  return (
+    <div
+      className="mt-2 flex h-1.5 gap-0.5"
+      role="img"
+      aria-label={items.map((item) => `${item.value}: ${item.count}`).join(', ')}
+    >
+      {items.map((item, index) => (
+        <span
+          key={item.value}
+          className={`rounded-[2px] ${DISTRIBUTION_COLORS[index % DISTRIBUTION_COLORS.length]}`}
+          style={{ width: `${(item.count / total) * 100}%` }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -155,19 +181,26 @@ function InsightCard({ insight }: { insight: FieldInsight }) {
   const TrendIcon = insight.trend === 'down' ? ArrowDownRight : ArrowUpRight;
 
   return (
-    <li className={`${CARD} p-4`}>
+    <li className={`${CARD} p-3.5`}>
       <div className="flex items-center justify-between gap-2">
         <p className={`truncate ${LABEL}`}>{insight.name}</p>
-        <Icon className="h-4 w-4 shrink-0 text-[#B8825C]" strokeWidth={1.75} aria-hidden />
+        <Icon className="size-4.5 shrink-0 text-cocoa" strokeWidth={1.75} aria-hidden />
       </div>
       {insight.value === null ? (
         <p className={`mt-2 text-sm ${MUTED}`}>No data yet</p>
+      ) : insight.distribution ? (
+        <>
+          <p className="mt-1.5 line-clamp-2 text-base leading-5 font-bold text-espresso">
+            {insight.value}
+          </p>
+          <DistributionBar items={insight.distribution} />
+        </>
       ) : (
         <>
-          <p className="mt-2 truncate text-xl font-semibold text-[#1C0D06]">{insight.value}</p>
+          <p className="mt-1.5 truncate text-2xl font-bold text-espresso">{insight.value}</p>
           <p
-            className={`mt-0.5 flex items-center gap-1 text-[11px] ${
-              insight.trend === 'up' ? 'text-[#3E7A52]' : MUTED
+            className={`mt-1 flex items-center gap-1 text-[11px] ${
+              insight.trend === 'up' ? 'text-success' : 'text-cocoa'
             }`}
           >
             {insight.sub}
@@ -216,11 +249,11 @@ function StillOpen({
   return (
     <section aria-labelledby="still-open-heading">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 id="still-open-heading" className="text-sm font-semibold text-[#1C0D06]">
+        <h2 id="still-open-heading" className={SECTION_HEADING}>
           Still open
         </h2>
         {stats && rows.length > 0 && (
-          <p className={`text-xs ${overdueCount > 0 ? 'text-[#B5432F]' : MUTED}`}>
+          <p className={`text-xs ${overdueCount > 0 ? 'text-error' : MUTED}`}>
             {rows.length} open{overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}
           </p>
         )}
@@ -238,15 +271,15 @@ function StillOpen({
                 aria-checked="false"
                 aria-label={`Mark ${item.label} done`}
                 onClick={() => onMarkDone(item)}
-                className={`mt-0.5 size-4 shrink-0 rounded-[3px] border-[1.5px] bg-white transition-colors hover:bg-[#EBD9A3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843] ${
-                  group === 'overdue' ? 'border-[#B5432F]' : 'border-[#5C4630]'
+                className={`mt-0.5 size-3.5 shrink-0 rounded-[3px] border-[1.5px] bg-white transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
+                  group === 'overdue' ? 'border-error' : 'border-cocoa'
                 }`}
               />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#1C0D06]">
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-espresso">
                 {item.label}
               </span>
               <span
-                className={`shrink-0 text-[11px] ${group === 'overdue' ? 'text-[#B5432F]' : MUTED}`}
+                className={`shrink-0 text-xs font-medium ${group === 'overdue' ? 'text-error' : 'text-cocoa'}`}
               >
                 {dueLabel(item, group)}
               </span>
@@ -255,7 +288,7 @@ function StillOpen({
         </ul>
       )}
       {markFailed && (
-        <p role="alert" className="mt-2 text-xs text-[#B5432F]">
+        <p role="alert" className="mt-2 text-xs text-error">
           Couldn't mark that done. Try again.
         </p>
       )}
@@ -269,12 +302,12 @@ function ActivityChart({ bars }: { bars: WeekBar[] }) {
   return (
     <section aria-labelledby="activity-heading">
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 id="activity-heading" className="text-sm font-semibold text-[#1C0D06]">
+        <h2 id="activity-heading" className={SECTION_HEADING}>
           Activity
         </h2>
         <p className={`text-[11px] ${MUTED}`}>Last 8 weeks</p>
       </div>
-      <ul className={`${CARD} flex h-32 items-end justify-between gap-2 p-4`}>
+      <ul className={`${CARD} flex h-41 items-end justify-between gap-1 p-3`}>
         {bars.map((bar, index) => (
           <li
             key={bar.weekStart}
@@ -284,10 +317,10 @@ function ActivityChart({ bars }: { bars: WeekBar[] }) {
             }`}
           >
             <span
-              className="w-2 rounded-t-sm bg-[#D9A97F]"
-              style={{ height: `${Math.max(4, (bar.count / max) * 72)}px` }}
+              className="w-3 rounded-t-sm bg-caramel"
+              style={{ height: `${Math.max(4, (bar.count / max) * 120)}px` }}
             />
-            <span className={`text-[9px] ${MUTED}`}>W{index + 1}</span>
+            <span className={`text-[10px] ${MUTED}`}>W{index + 1}</span>
           </li>
         ))}
       </ul>
@@ -298,23 +331,26 @@ function ActivityChart({ bars }: { bars: WeekBar[] }) {
 function RecentEntries({ entries, today }: { entries: Entry[]; today: string }) {
   return (
     <section aria-labelledby="recent-heading">
-      <h2 id="recent-heading" className="mb-3 text-sm font-semibold text-[#1C0D06]">
-        Recent entries
-      </h2>
+      <div className="mb-4">
+        <h2 id="recent-heading" className={SECTION_HEADING}>
+          Recent entries
+        </h2>
+        <span className="mt-1 block h-1 w-12 rounded-sm bg-gold-light" aria-hidden />
+      </div>
       {entries.length === 0 ? (
         <p className={`text-sm ${MUTED}`}>Entries you log will show up here.</p>
       ) : (
         <ul className="flex flex-col">
           {entries.map((entry) => (
-            <li key={entry.id} className="border-b border-[#EADFCF] last:border-b-0">
+            <li key={entry.id} className="border-b border-cream last:border-b-0">
               <Link
                 to={`/entries/${entry.id}`}
-                className="flex items-center justify-between gap-3 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-[#D4A843]"
+                className="flex min-h-11 items-center justify-between gap-3 py-3 text-sm focus-visible:outline-2 focus-visible:outline-gold"
               >
-                <span className="min-w-0 truncate font-medium text-[#1C0D06]">
+                <span className="min-w-0 truncate font-semibold text-espresso">
                   {entryTitle(entry)}
                 </span>
-                <span className={`shrink-0 text-xs ${MUTED}`}>
+                <span className={`shrink-0 text-[13px] ${MUTED}`}>
                   {dayLabel(entry.date.slice(0, 10), today)}
                 </span>
               </Link>
@@ -364,7 +400,7 @@ export function OverviewTab({
       <SummaryCards summary={summary} today={today} />
 
       <section aria-labelledby="insights-heading">
-        <h2 id="insights-heading" className="mb-3 text-sm font-semibold text-[#1C0D06]">
+        <h2 id="insights-heading" className={`mb-3 ${SECTION_HEADING}`}>
           Field insights
         </h2>
         {insightsLoading && <Skeleton rows={1} />}
@@ -425,8 +461,8 @@ export function EntriesTab({
   if (isError) return <ErrorNote>Failed to load entries. Try refreshing the page.</ErrorNote>;
   if (entries.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[#D9C9AE] bg-white/40 p-10 text-center">
-        <p className="text-sm text-[#4A3525]">No entries logged for this project yet.</p>
+      <div className="rounded-xl border border-dashed border-line bg-white/40 p-10 text-center">
+        <p className="text-sm text-cocoa">No entries logged for this project yet.</p>
         <Link to="/entries/new" className={`${DARK_BUTTON} mt-4`}>
           Log an entry
         </Link>
@@ -441,33 +477,27 @@ export function EntriesTab({
       <ul className="flex flex-col">
         {entries.slice(0, shown).map((entry) => {
           const hours = entryDurationHours(entry, fields);
-          const tags = entry.tags ?? [];
+          const day = dayLabel(entry.date.slice(0, 10), today);
+          const duration = hours !== null ? formatDurationHours(hours) : null;
           return (
-            <li key={entry.id} className="border-b border-[#EADFCF] last:border-b-0">
+            <li key={entry.id} className="border-b border-cream last:border-b-0">
+              {/* Figma: one compact line on desktop; on mobile the date and
+                  duration sit under the title. */}
               <Link
                 to={`/entries/${entry.id}`}
-                className="flex items-start justify-between gap-4 py-3 focus-visible:outline-2 focus-visible:outline-[#D4A843]"
+                className="flex flex-col gap-1 py-4 focus-visible:outline-2 focus-visible:outline-gold sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-3"
               >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium text-[#1C0D06]">
-                    {entryTitle(entry)}
-                  </span>
-                  {tags.length > 0 && (
-                    <span className="mt-1 flex flex-wrap gap-1.5">
-                      {tags.map(({ tag }) => (
-                        <span
-                          key={tag.id}
-                          className="rounded-full bg-[#F5EBE0] px-2 py-0.5 text-[11px] text-[#5C4630]"
-                        >
-                          {tag.name}
-                        </span>
-                      ))}
-                    </span>
+                <span className="min-w-0 truncate text-sm text-espresso">{entryTitle(entry)}</span>
+                <span className="flex shrink-0 gap-2 text-xs text-clay sm:gap-3">
+                  <span className="sm:order-2">{day}</span>
+                  {duration && (
+                    <>
+                      <span aria-hidden className="sm:hidden">
+                        ·
+                      </span>
+                      <span className="sm:order-1">{duration}</span>
+                    </>
                   )}
-                </span>
-                <span className={`shrink-0 text-xs ${MUTED}`}>
-                  {hours !== null && `${formatDurationHours(hours)} · `}
-                  {dayLabel(entry.date.slice(0, 10), today)}
                 </span>
               </Link>
             </li>
@@ -478,7 +508,7 @@ export function EntriesTab({
         <button
           type="button"
           onClick={() => setShown((count) => count + ENTRIES_STEP)}
-          className={`mt-3 w-full py-2 text-center text-xs ${MUTED} hover:text-[#1C0D06]`}
+          className={`mt-3 w-full py-2 text-center text-xs ${MUTED} hover:text-espresso`}
         >
           {remaining} more {remaining === 1 ? 'entry' : 'entries'}
         </button>
@@ -552,9 +582,9 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 border-b border-[#EADFCF] py-3 last:border-b-0">
-      <span className="min-w-[8rem] flex-1 truncate text-sm text-[#1C0D06]">{field.name}</span>
-      <span className="rounded-full bg-[#F5EBE0] px-2.5 py-0.5 text-[11px] text-[#5C4630]">
+    <li className="flex flex-wrap items-center gap-3 border-b border-cream py-2.5 last:border-b-0">
+      <span className="min-w-[8rem] flex-1 truncate text-sm text-espresso">{field.name}</span>
+      <span className="w-24 rounded bg-cream py-1 text-center text-[11px] text-cocoa">
         {FIELD_TYPE_LABELS[fieldType]}
       </span>
       {aggregatable && (
@@ -568,7 +598,7 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
             })
           }
           aria-label={`Aggregation for ${field.name}`}
-          className="rounded-md border border-[#D9C9AE] bg-white px-2 py-1 text-xs text-[#1C0D06]"
+          className="rounded-md border border-line bg-white px-2 py-1 text-xs text-espresso"
         >
           {AGGREGATIONS.map(({ kind, label }) => (
             <option key={kind} value={kind}>
@@ -591,7 +621,7 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
           onClick={() => actions.remove(field.id)}
           disabled={actions.deletingId === field.id}
           aria-label={`Delete ${field.name}`}
-          className={`${LINK_BUTTON} text-[#B5432F]`}
+          className={`${LINK_BUTTON} text-error`}
         >
           {actions.deletingId === field.id ? 'Deleting…' : 'Delete'}
         </button>
@@ -628,27 +658,35 @@ export function FieldsTab({
       {isLoading && <Skeleton rows={2} />}
       {isError && <ErrorNote>Failed to load fields. Try refreshing the page.</ErrorNote>}
       {!isLoading && !isError && fields.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[#D9C9AE] bg-white/40 p-10 text-center">
-          <p className="text-sm text-[#4A3525]">
+        <div className="rounded-xl border border-dashed border-line bg-white/40 p-10 text-center">
+          <p className="text-sm text-cocoa">
             No fields yet. Add your first field below to define what an entry for this project looks
             like.
           </p>
         </div>
       )}
       {fields.length > 0 && (
-        <ul className="flex flex-col">
-          {fields.map((field) => (
-            <FieldRow key={field.id} field={field} actions={actions} />
-          ))}
-        </ul>
+        <>
+          {/* Figma's table header; rows below line up with it. */}
+          <div
+            aria-hidden
+            className={`hidden gap-3 border-b border-cream pb-2 sm:flex ${LABEL} normal-case`}
+          >
+            <span className="flex-1">Name</span>
+            <span className="w-24 text-center">Type</span>
+            <span className="w-24">Actions</span>
+          </div>
+          <ul className="flex flex-col">
+            {fields.map((field) => (
+              <FieldRow key={field.id} field={field} actions={actions} />
+            ))}
+          </ul>
+        </>
       )}
 
-      <form
-        onSubmit={submit}
-        className="mt-6 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-[#D9C9AE] bg-white/40 p-4"
-      >
-        <div className="min-w-[10rem] flex-1">
-          <label htmlFor="new-field-name" className="mb-1 block text-sm text-[#4A3525]">
+      <form onSubmit={submit} className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="min-w-[10rem] flex-1 sm:max-w-52">
+          <label htmlFor="new-field-name" className="sr-only">
             Field name
           </label>
           <input
@@ -656,13 +694,13 @@ export function FieldsTab({
             type="text"
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            placeholder="e.g. Time spent"
+            placeholder="Field name"
             className={INPUT}
             required
           />
         </div>
         <div>
-          <label htmlFor="new-field-type" className="mb-1 block text-sm text-[#4A3525]">
+          <label htmlFor="new-field-type" className="sr-only">
             Type
           </label>
           <select
@@ -719,26 +757,36 @@ export function MetadataPanel({
   };
 
   return (
-    <aside aria-label="Project details" className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
+      <p className="text-xs font-bold text-clay uppercase">Metadata</p>
       <div>
-        <p className={LABEL}>Metadata</p>
-        <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-[#1C0D06]">
-          <span className="size-2 shrink-0 rounded-full bg-[#D9A97F]" aria-hidden />
+        <p className="flex items-center gap-2 text-lg font-bold text-espresso">
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: projectColor(project.id) }}
+            aria-hidden
+          />
           <span className="truncate">{project.name}</span>
         </p>
-        {project.description && <p className={`mt-1 text-xs ${MUTED}`}>{project.description}</p>}
-        <dl className="mt-4 flex justify-between text-xs">
-          <dt className={MUTED}>Fields</dt>
-          <dd className="text-[#1C0D06]">{fieldCount ?? '—'}</dd>
-        </dl>
+        {project.description && (
+          <p className={`mt-2 text-[13px] ${MUTED}`}>{project.description}</p>
+        )}
       </div>
+      <dl className="flex justify-between border-y border-cream py-5 text-[13px]">
+        <dt className={MUTED}>Fields</dt>
+        <dd className="font-medium text-espresso">
+          {fieldCount === undefined
+            ? '—'
+            : `${fieldCount} ${fieldCount === 1 ? 'field' : 'fields'}`}
+        </dd>
+      </dl>
 
       <div>
-        <p className={LABEL}>Actions</p>
+        <p className="text-xs font-bold text-clay uppercase">Actions</p>
         <div className="mt-3 flex flex-col gap-2">
           {editing ? (
             <form onSubmit={submit} className="flex flex-col gap-2">
-              <label htmlFor="project-name" className="text-xs text-[#4A3525]">
+              <label htmlFor="project-name" className="text-xs text-cocoa">
                 Project name
               </label>
               <input
@@ -748,7 +796,7 @@ export function MetadataPanel({
                 className={INPUT}
                 required
               />
-              <label htmlFor="project-description" className="text-xs text-[#4A3525]">
+              <label htmlFor="project-description" className="text-xs text-cocoa">
                 Description
               </label>
               <textarea
@@ -780,10 +828,11 @@ export function MetadataPanel({
           >
             {project.archived ? 'Unarchive project' : 'Archive project'}
           </button>
-          <button type="button" onClick={onExport} className={OUTLINE_BUTTON}>
+          {/* On desktop these live in the page header, as in Figma. */}
+          <button type="button" onClick={onExport} className={`${OUTLINE_BUTTON} lg:hidden`}>
             Export…
           </button>
-          <button type="button" onClick={onShare} className={OUTLINE_BUTTON}>
+          <button type="button" onClick={onShare} className={`${OUTLINE_BUTTON} lg:hidden`}>
             Share report…
           </button>
           <button type="button" onClick={onDelete} className={DANGER_BUTTON}>
@@ -791,6 +840,6 @@ export function MetadataPanel({
           </button>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

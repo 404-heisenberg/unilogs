@@ -11,8 +11,8 @@ import {
 import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
 import { useCalendarConnection } from '@/hooks/useCalendarConnection';
-import type { FieldDefinition, Project } from '@/types';
 import { toast } from '@/lib/toast';
+import type { FieldDefinition, Project } from '@/types';
 
 function eventDate(suggestion: CalendarSuggestion): string {
   const start = suggestion.start;
@@ -120,12 +120,12 @@ function AcceptForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-3 flex flex-col gap-4 border-t border-[#d4a373]/40 pt-3"
+      className="mt-3 flex flex-col gap-4 border-t border-caramel/40 pt-3"
     >
       <div>
         <label
           htmlFor={`accept-project-${suggestion.id}`}
-          className="mb-1 block text-sm text-[#4a3525]"
+          className="mb-1 block text-sm text-cocoa"
         >
           Project
         </label>
@@ -133,7 +133,7 @@ function AcceptForm({
           id={`accept-project-${suggestion.id}`}
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
-          className="min-h-11 w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
+          className="min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso md:min-h-10"
           required
         >
           <option value="">Select a project…</option>
@@ -146,10 +146,7 @@ function AcceptForm({
       </div>
 
       <div>
-        <label
-          htmlFor={`accept-date-${suggestion.id}`}
-          className="mb-1 block text-sm text-[#4a3525]"
-        >
+        <label htmlFor={`accept-date-${suggestion.id}`} className="mb-1 block text-sm text-cocoa">
           Date
         </label>
         <input
@@ -157,18 +154,14 @@ function AcceptForm({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="min-h-11 w-full rounded-md border border-[#d4a373]/60 bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-0"
+          className="min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso md:min-h-10"
           required
         />
       </div>
 
-      {projectId && fieldsQuery.isPending && (
-        <p className="text-sm text-slate-500">Loading fields…</p>
-      )}
+      {projectId && fieldsQuery.isPending && <p className="text-sm text-clay">Loading fields…</p>}
       {projectId && !fieldsQuery.isPending && fields.length === 0 && (
-        <p className="text-sm text-[#7a5230]">
-          This project has no fields — no extra values needed.
-        </p>
+        <p className="text-sm text-clay">This project has no fields — no extra values needed.</p>
       )}
 
       {fields.map((field) => (
@@ -225,17 +218,15 @@ export default function SuggestionsPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-2xl font-bold">Calendar suggestions</h1>
-      <p className="mb-6 text-sm text-[#7a5230]">
+      <p className="mb-6 text-sm text-clay">
         Events from your Google Calendar, ready to log as entries.
       </p>
 
-      {statusQuery.isPending && <p className="text-sm text-[#7a5230]">Checking connection…</p>}
+      {statusQuery.isPending && <p className="text-sm text-clay">Checking connection…</p>}
 
       {statusQuery.isError && (
         <div className="mt-2">
-          <p className="text-sm text-red-700">
-            Couldn&apos;t check the Google Calendar connection.
-          </p>
+          <p className="text-sm text-error">Couldn&apos;t check the Google Calendar connection.</p>
           <Button
             type="button"
             variant="outline"
@@ -249,13 +240,13 @@ export default function SuggestionsPage() {
       )}
 
       {statusQuery.isSuccess && !statusQuery.data.connected && (
-        <div className="rounded-md border border-[#d4a373]/40 bg-white p-4">
-          <p className="text-sm text-[#4a3525]">
+        <div className="rounded-md border border-caramel/40 bg-white p-4">
+          <p className="text-sm text-cocoa">
             Connect your Google Calendar to turn upcoming events into entry suggestions.
           </p>
           <Button
             type="button"
-            className="mt-3 min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
+            className="mt-3 min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0"
             onClick={() => connect.mutate()}
             disabled={connect.isPending}
           >
@@ -266,13 +257,11 @@ export default function SuggestionsPage() {
 
       {statusQuery.isSuccess && statusQuery.data.connected && (
         <div>
-          {suggestionsQuery.isPending && (
-            <p className="text-sm text-[#7a5230]">Loading suggestions…</p>
-          )}
+          {suggestionsQuery.isPending && <p className="text-sm text-clay">Loading suggestions…</p>}
 
           {suggestionsQuery.isError && (
             <div className="mt-2">
-              <p className="text-sm text-red-700">Couldn&apos;t load calendar suggestions.</p>
+              <p className="text-sm text-error">Couldn&apos;t load calendar suggestions.</p>
               <Button
                 type="button"
                 variant="outline"
@@ -286,8 +275,8 @@ export default function SuggestionsPage() {
           )}
 
           {suggestionsQuery.isSuccess && suggestions.length === 0 && (
-            <div className="rounded-md border border-[#d4a373]/40 bg-white p-4">
-              <p className="text-sm text-[#4a3525]">
+            <div className="rounded-md border border-caramel/40 bg-white p-4">
+              <p className="text-sm text-cocoa">
                 No upcoming events to suggest. Check back after you&apos;ve had something worth
                 logging.
               </p>
@@ -299,18 +288,18 @@ export default function SuggestionsPage() {
             return (
               <div
                 key={suggestion.id}
-                className="mb-4 rounded-md border border-[#d4a373]/40 bg-white p-4"
+                className="mb-4 rounded-md border border-caramel/40 bg-white p-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#1c0d06]">{suggestion.title}</p>
-                    <p className="text-sm text-[#7a5230]">{formatTime(suggestion)}</p>
+                    <p className="text-sm font-semibold text-espresso">{suggestion.title}</p>
+                    <p className="text-sm text-clay">{formatTime(suggestion)}</p>
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <Button
                       type="button"
                       size="sm"
-                      className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
+                      className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0"
                       onClick={() =>
                         setAcceptingId((current) =>
                           current === suggestion.id ? null : suggestion.id,

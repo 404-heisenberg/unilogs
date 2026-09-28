@@ -18,11 +18,11 @@ export default function NotificationBell() {
         <button
           type="button"
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-          className="relative flex size-10 items-center justify-center rounded-lg text-[#f5ebe0] transition-colors hover:bg-white/5"
+          className="relative flex size-10 items-center justify-center rounded-lg text-cream transition-colors hover:bg-white/5"
         >
           <Bell size={20} strokeWidth={1.75} />
           {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 flex size-[8px] rounded-full bg-[#d4a843]" />
+            <span className="absolute top-1.5 right-1.5 flex size-[8px] rounded-full bg-gold" />
           )}
         </button>
       </PopoverTrigger>
@@ -30,7 +30,7 @@ export default function NotificationBell() {
         side="right"
         align="end"
         sideOffset={12}
-        className="w-[320px] rounded-xl border border-[#d4c4b0] bg-[#fffcf7] p-0 shadow-[0px_4px_16px_0px_rgba(0,0,0,0.12)]"
+        className="w-[320px] rounded-xl border border-line bg-paper p-0 shadow-[0px_4px_16px_0px_rgba(0,0,0,0.12)]"
       >
         <NotificationList onNavigate={() => setOpen(false)} />
       </PopoverContent>

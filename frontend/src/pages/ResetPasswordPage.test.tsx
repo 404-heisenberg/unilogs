@@ -81,3 +81,11 @@ describe('ResetPasswordPage with a token', () => {
     expect(await screen.findByText('Password updated')).toBeInTheDocument();
   });
 });
+
+describe('ResetPasswordPage navigation', () => {
+  it('links back to sign in', () => {
+    renderPage();
+
+    expect(screen.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/login');
+  });
+});
