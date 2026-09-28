@@ -45,13 +45,13 @@ export default defineConfig({
         'src/lib/sharedReportDemo.ts',
       ],
       reporter: ['text', 'html', 'lcov', 'json-summary'],
-      // A few points under the measured figures (65.5 / 56.5 / 58.9 / 66.6 at
+      // A few points under the measured figures (70.3 / 62.4 / 63.3 / 71.4 at
       // #285) so CI catches a real drop without failing on noise.
       thresholds: {
-        statements: 60,
-        branches: 50,
-        functions: 55,
-        lines: 60,
+        statements: 65,
+        branches: 57,
+        functions: 58,
+        lines: 65,
       },
     },
   },
