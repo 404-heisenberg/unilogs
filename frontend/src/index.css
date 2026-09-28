@@ -2,12 +2,23 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/dm-sans';
+/* Public pages (landing, auth) only; browsers fetch these files on first use. */
+@import '@fontsource-variable/lora';
+@import '@fontsource-variable/lora/wght-italic.css';
+@import '@fontsource-variable/caveat';
+@import '@fontsource-variable/cormorant-garamond';
+@import '@fontsource-variable/cormorant-garamond/wght-italic.css';
 
 @custom-variant dark (&:is(.dark *));
 
 /* UniLogs palette, taken from the Figma screens (Prototype page). Use these
    (text-clay, bg-paper, border-line, …) instead of hard-coded hex values. */
 @theme {
+  /* Display fonts from the Figma landing and auth screens. */
+  --font-lora: 'Lora Variable', Georgia, serif;
+  --font-script: 'Caveat Variable', cursive;
+  --font-cormorant: 'Cormorant Garamond Variable', Georgia, serif;
+
   --color-espresso: #1c0d06; /* primary text, dark buttons */
   --color-deep: #2e1a0c; /* dark button hover */
   --color-cocoa: #4a3525; /* secondary text */
@@ -165,4 +176,29 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Figma's notebook paper (landing and auth pages): faint ruled lines every
+   32px. Add paper-margin for the double red-brown margin rule on the left. */
+@utility paper-ruled {
+  background-color: var(--color-cream);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 31px,
+    rgb(183 169 156 / 0.45) 31px 32px
+  );
+}
+
+@utility paper-margin {
+  background-color: var(--color-cream);
+  background-image:
+    linear-gradient(
+      to right,
+      transparent 91px,
+      rgb(122 82 48 / 0.35) 91px 92px,
+      transparent 92px 95px,
+      rgb(122 82 48 / 0.35) 95px 96px,
+      transparent 96px
+    ),
+    repeating-linear-gradient(to bottom, transparent 0 31px, rgb(183 169 156 / 0.45) 31px 32px);
 }

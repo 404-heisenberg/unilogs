@@ -1,154 +1,150 @@
 // src/pages/LandingPage.tsx
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+
+// Figma "Landing": an open notebook page. Ruled paper with a double margin
+// rule, a Lora masthead, handwritten (Caveat) asides and three dated
+// "journal entries" instead of feature cards.
+
+const PRIMARY =
+  'inline-flex min-h-12 items-center justify-center rounded-xl bg-espresso px-4 text-[13px] font-medium text-paper transition-opacity hover:opacity-90';
+const SECONDARY =
+  'inline-flex min-h-12 items-center justify-center rounded-xl border border-caramel px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/30';
+
+const ENTRIES = [
+  {
+    day: '1 Sep',
+    title: 'Your projects, your way',
+    body: "Split your work into projects like coursework, gym, or reading, and keep each one's entries where they belong.",
+  },
+  {
+    day: '2 Sep',
+    title: 'Three seconds, not three excuses',
+    body: "If logging takes a minute, you won't do it. So here, it doesn't.",
+  },
+  {
+    day: '3 Sep',
+    title: 'Everywhere you are',
+    body: 'One account, every device. Log in on your phone or your laptop and pick up right where you left off.',
+  },
+];
+
+function todayLabel() {
+  const now = new Date();
+  const weekday = now.toLocaleDateString('en-GB', { weekday: 'short' });
+  const day = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return {
+    short: `${weekday} · ${day}`,
+    long: now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }),
+  };
+}
 
 export default function LandingPage() {
+  const today = todayLabel();
+
   return (
-    <main className="min-h-screen bg-cream text-espresso">
-      {/* Nav */}
-      <nav className="sticky top-0 z-10 flex items-center justify-between border-b border-caramel/40 bg-cream/90 px-6 py-4 backdrop-blur-sm md:px-12">
-        <span className="text-lg font-bold tracking-tight">UniLogs</span>
-        <div className="flex items-center gap-2">
-          <Link to="/login" className="inline-flex">
-            <Button
-              variant="ghost"
-              className="min-h-11 text-espresso hover:bg-gold-light/30 md:min-h-0"
-            >
-              Sign in
-            </Button>
-          </Link>
-          <Link to="/signup" className="inline-flex">
-            <Button className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0">
-              Get started
-            </Button>
-          </Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="px-6 pt-24 pb-24 text-center md:pt-32 md:pb-32">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-          Every hour has a story. Start telling yours.
-        </p>
-        <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-          The logbook that
-          <span className="block text-gold">finally follows you everywhere</span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-cocoa">
-          Paper forgets you the moment you close it. UniLogs is on your phone and your laptop,
-          wherever the work actually happens.
-        </p>
-        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/signup">
-            <Button className="w-full bg-espresso px-8 py-6 text-base text-cream hover:opacity-90 sm:w-auto">
-              Start logging for free
-            </Button>
-          </Link>
-          <Link to="/login">
-            <Button
-              variant="outline"
-              className="w-full border-espresso px-8 py-6 text-base text-espresso hover:bg-gold-light/30 sm:w-auto"
-            >
-              I have an account
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="border-t border-caramel/40 bg-white/50 px-6 py-20 md:px-12">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-2xl font-bold tracking-tight md:text-3xl">
-            Built for how you actually work
-          </h2>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            <FeatureCard
-              icon={<PencilIcon />}
-              title="Your projects, your way"
-              description="Split your work into projects like coursework, gym, or reading, and keep each one's entries where they belong."
-            />
-            <FeatureCard
-              icon={<BoltIcon />}
-              title="Three seconds, not three excuses"
-              description="If logging takes a minute, you won't do it. So here, it doesn't."
-            />
-            <FeatureCard
-              icon={<ChartIcon />}
-              title="Everywhere you are"
-              description="One account, every device. Log in on your phone or your laptop and pick up right where you left off."
-            />
+    <main className="paper-ruled min-h-screen text-espresso md:paper-margin">
+      <div className="mx-auto flex min-h-screen max-w-[1296px] flex-col px-4 md:px-0">
+        {/* Masthead */}
+        <header className="flex flex-col gap-3 pt-5 md:mx-[72px] md:flex-row md:items-center md:justify-between md:pt-[22px]">
+          <div className="flex items-baseline justify-between gap-2.5 md:justify-start">
+            <span className="font-lora text-[26px] font-bold tracking-[-0.03em] md:text-[30px]">
+              UniLogs
+            </span>
+            <span className="hidden text-[11px] tracking-[0.14em] text-clay uppercase md:inline">
+              Open logbook
+            </span>
+            <span className="text-xs font-medium text-cocoa md:hidden">{today.short}</span>
           </div>
-        </div>
-      </section>
+          <div className="flex items-center justify-end gap-5">
+            <span className="hidden text-[13px] font-medium text-cocoa md:inline">
+              {today.short}
+            </span>
+            <nav className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="inline-flex min-h-11 items-center rounded-xl px-4 text-[13px] font-medium text-cocoa hover:bg-gold-light/30"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex min-h-11 items-center rounded-xl bg-espresso px-4 text-[13px] font-medium text-paper hover:opacity-90"
+              >
+                Get started
+              </Link>
+            </nav>
+          </div>
+        </header>
 
-      {/* Closing CTA */}
-      <section className="px-6 py-20 text-center md:py-24">
-        <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-          The paper book failed because it wasn't there.
-        </h2>
-        <p className="mx-auto mt-3 max-w-md text-cocoa">This one always is.</p>
-        <Link to="/signup" className="inline-flex">
-          <Button className="mt-7 bg-espresso px-8 py-6 text-base text-cream hover:opacity-90">
+        {/* Hero entry */}
+        <section className="relative pt-6 md:mx-[72px] md:pt-[43px] md:pr-20 md:pl-[65px]">
+          <div className="absolute top-[43px] right-0 hidden text-right md:block">
+            <p className="text-[11px] font-semibold tracking-[0.13em] text-clay uppercase">
+              Entry 001
+            </p>
+            <span className="mt-2 ml-auto block h-0.5 w-[52px] bg-gold" aria-hidden />
+            <p className="mt-2 font-script text-lg text-cocoa">{today.long}</p>
+          </div>
+          <div className="flex max-w-[870px] flex-col gap-[18px]">
+            <p className="font-script text-xl text-clay md:text-[23px]">
+              Every hour has a story. Start telling yours.
+            </p>
+            <h1 className="font-lora text-[38px] leading-[1.05] font-semibold tracking-[-0.03em] md:text-[54px] md:leading-[54px]">
+              The logbook that <span className="text-gold">finally follows you everywhere</span>
+            </h1>
+            <p className="max-w-[560px] text-[15px] leading-[1.55] text-cocoa md:text-[17px]">
+              Paper forgets you the moment you close it. UniLogs is on your phone and your laptop,
+              wherever the work actually happens.
+            </p>
+            <div className="flex flex-col gap-2.5 sm:flex-row">
+              <Link to="/signup" className={PRIMARY}>
+                Start logging for free
+              </Link>
+              <Link to="/login" className={SECONDARY}>
+                I have an account
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Journal entries */}
+        <section
+          aria-label="Why UniLogs"
+          className="mt-10 grid gap-6 md:mx-[72px] md:mt-[80px] md:grid-cols-3 md:gap-[26px] md:pr-2 md:pl-16"
+        >
+          {ENTRIES.map((entry, index) => (
+            <article
+              key={entry.day}
+              className={`flex flex-col gap-1.5 py-3 md:px-3 ${
+                index < ENTRIES.length - 1 ? 'md:border-r md:border-line-strong/60' : ''
+              }`}
+            >
+              <p className="text-[13px] font-medium text-clay">{entry.day}</p>
+              <h2 className="font-lora text-[17px] text-espresso">{entry.title}</h2>
+              <p className="text-xs text-cocoa">{entry.body}</p>
+            </article>
+          ))}
+        </section>
+
+        {/* Closing note */}
+        <section className="mt-12 flex flex-col gap-4 md:mx-[72px] md:mt-[104px] md:flex-row md:items-start md:justify-between md:pr-2 md:pl-16">
+          <div className="flex flex-col gap-0.5">
+            <p className="font-script text-xl leading-[1.2] text-clay md:text-[27px]">
+              The paper book failed because it wasn&apos;t there.
+            </p>
+            <p className="font-lora text-2xl font-semibold italic md:text-[28px]">
+              This one always is.
+            </p>
+          </div>
+          <Link to="/signup" className={`${PRIMARY} self-start`}>
             Create your logbook
-          </Button>
-        </Link>
-      </section>
+          </Link>
+        </section>
 
-      <footer className="border-t border-caramel/40 px-6 py-6 text-center text-sm text-clay">
-        © 2026 UniLogs, built by Code of Duty
-      </footer>
-    </main>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-xl border border-caramel/40 bg-cream p-6 text-left">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-espresso text-gold-light">
-        {icon}
+        <footer className="mt-auto pt-16 pb-8 text-[11px] tracking-[0.02em] text-clay md:mx-[72px] md:pl-16">
+          © 2026 UniLogs, built by Code of Duty
+        </footer>
       </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="mt-2 text-sm text-cocoa">{description}</p>
-    </div>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-      />
-    </svg>
-  );
-}
-
-function BoltIcon() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  );
-}
-
-function ChartIcon() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-      />
-    </svg>
+    </main>
   );
 }
