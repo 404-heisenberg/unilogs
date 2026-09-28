@@ -53,23 +53,23 @@ export default function AuthLayout({
           />
         )}
         {back && (
+          // Figma design system "Button/Secondary" (caramel outline, 12px
+          // radius, 48px; hover: cream fill at 90%), pinned to the paper's
+          // top-left corner. Paper fill so the margin line doesn't show
+          // through it.
           <Link
             to={back.to}
-            className={`relative inline-flex min-h-11 items-center gap-1.5 self-start pt-2 ${signUp ? 'px-4' : 'px-6'} text-[13px] font-medium text-clay transition-colors hover:text-espresso md:absolute md:top-6 md:left-[118px] md:px-0 md:pt-0`}
+            className={`relative z-10 mt-4 inline-flex h-12 items-center gap-2 self-start rounded-xl border border-caramel bg-paper px-4 text-[13px] font-medium text-cocoa transition-[background-color,opacity] hover:bg-cream hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:absolute md:top-6 md:left-6 md:m-0 ${
+              signUp ? 'ml-4' : 'ml-6'
+            }`}
           >
-            <ArrowLeft size={14} strokeWidth={2} aria-hidden />
+            <ArrowLeft size={16} strokeWidth={2} aria-hidden />
             {back.label}
           </Link>
         )}
         <div
           className={`relative flex w-full flex-col items-stretch md:items-center md:p-12 ${
-            signUp
-              ? back
-                ? 'px-4 pt-1 pb-8'
-                : 'px-4 pt-3.5 pb-8'
-              : back
-                ? 'px-6 pt-2 pb-8'
-                : 'px-6 pt-6 pb-8'
+            signUp ? (back ? 'px-4 pt-4 pb-8' : 'px-4 pt-3.5 pb-8') : 'px-6 pt-6 pb-8'
           }`}
         >
           {children}
