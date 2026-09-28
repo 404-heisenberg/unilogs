@@ -163,12 +163,16 @@ afterEach(() => {
 });
 
 describe('DashboardPage', () => {
-  it('shows an empty state when there are no entries yet', async () => {
+  it('shows the first-run setup prompt when there are no entries yet', async () => {
     mocks.getStatsSummary.mockResolvedValue({ perProject: [], totalHours: 0, streak: 0 });
 
     renderPage();
 
-    expect(await screen.findByText('No entries yet')).toBeInTheDocument();
+    expect(await screen.findByText('Set up your first project')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create project' })).toHaveAttribute(
+      'href',
+      '/projects/new',
+    );
   });
 
   it("shows an error state when the stats can't be loaded", async () => {
@@ -205,9 +209,9 @@ describe('DashboardPage', () => {
     expect(cells).toHaveLength(84);
 
     const today = screen.getByRole('img', { name: 'Sun 20 Sep: 1 entry' });
-    expect(today).toHaveClass('bg-[#d4a843]');
-    expect(screen.getByRole('img', { name: 'Sat 19 Sep: 1 entry' })).toHaveClass('bg-[#d4a843]');
-    expect(screen.getByRole('img', { name: 'Mon 14 Sep: 0 entries' })).toHaveClass('bg-[#e8e0d8]');
+    expect(today).toHaveClass('bg-gold');
+    expect(screen.getByRole('img', { name: 'Sat 19 Sep: 1 entry' })).toHaveClass('bg-gold');
+    expect(screen.getByRole('img', { name: 'Mon 14 Sep: 0 entries' })).toHaveClass('bg-heat-0');
 
     expect(screen.getByText('6 of 7')).toBeInTheDocument();
   });

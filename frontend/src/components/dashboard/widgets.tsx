@@ -13,7 +13,6 @@ import { Link } from 'react-router-dom';
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Calendar,
   Clock,
   Eye,
   Flame,
@@ -93,10 +92,10 @@ export type DashboardCtx = {
 function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className={CARD} aria-hidden>
-      <div className="mb-3 h-3 w-24 animate-pulse rounded bg-[#E7D9C6]" />
+      <div className="mb-3 h-3 w-24 animate-pulse rounded bg-cream" />
       <div className="flex flex-col gap-2">
         {Array.from({ length: rows }, (_, index) => (
-          <div key={index} className="h-4 animate-pulse rounded bg-[#EADFCF]" />
+          <div key={index} className="h-4 animate-pulse rounded bg-cream" />
         ))}
       </div>
     </div>
@@ -106,7 +105,7 @@ function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
 function WidgetMessage({ title, message }: { title: string; message: string }) {
   return (
     <section className={CARD}>
-      <h2 className="text-sm font-semibold text-[#1c0d06]">{title}</h2>
+      <h2 className="text-sm font-semibold text-espresso">{title}</h2>
       <p className={`mt-1 text-xs ${MUTED}`}>{message}</p>
     </section>
   );
@@ -126,9 +125,9 @@ function SummaryStripWidgetBase({
   topProject,
 }: SummaryStripProps) {
   return (
-    <section className="flex flex-col gap-1 rounded-xl bg-[#F5EBE0] px-4 py-3 text-sm text-[#1c0d06] md:flex-row md:items-center md:justify-between">
+    <section className="flex flex-col gap-1 rounded-xl bg-cream px-4 py-3 text-sm text-espresso md:flex-row md:items-center md:justify-between">
       <p className="flex items-center gap-2">
-        <Flame className="h-4 w-4 text-[#D4A843]" strokeWidth={1.75} aria-hidden />
+        <Flame className="h-4 w-4 text-gold" strokeWidth={1.75} aria-hidden />
         <span className="font-semibold">{streak}-day streak</span>
         <span className={MUTED}>·</span>
         <span>{totalHours}h total</span>
@@ -137,7 +136,7 @@ function SummaryStripWidgetBase({
         {topProject && (
           <>
             Top project:{' '}
-            <span className="font-semibold text-[#1c0d06]">
+            <span className="font-semibold text-espresso">
               {topProject.name} ({topProject.percent}%)
             </span>{' '}
             ·{' '}
@@ -152,11 +151,11 @@ function SummaryStripWidgetBase({
 const SummaryStripWidget = memo(SummaryStripWidgetBase);
 
 const LEVEL_CLASS: Record<HeatLevel, string> = {
-  0: 'bg-[#e8e0d8]',
-  1: 'bg-[#faf0e6]',
-  2: 'bg-[#e6d4c3]',
-  3: 'bg-[#d4a373]',
-  4: 'bg-[#d4a843]',
+  0: 'bg-heat-0',
+  1: 'bg-heat-1',
+  2: 'bg-heat-2',
+  3: 'bg-caramel',
+  4: 'bg-gold',
 };
 
 const LEGEND_LEVELS: HeatLevel[] = [0, 1, 2, 3, 4];
@@ -178,20 +177,20 @@ const HeatmapGrid = memo(function HeatmapGrid({ cells, onHover }: HeatmapGridPro
 
   return (
     <div
-      className="grid grid-flow-col grid-rows-7 gap-[3px]"
+      className="grid w-max grid-flow-col grid-rows-7 gap-[2px] md:gap-[3px]"
       onMouseOver={handleOver}
       onMouseLeave={() => onHover(null)}
     >
       {cells.map((cell, index) =>
         cell.future ? (
-          <div key={cell.date} aria-hidden className="size-3.5" />
+          <div key={cell.date} aria-hidden className="size-2.5 md:size-3" />
         ) : (
           <div
             key={cell.date}
             data-index={index}
             role="img"
             aria-label={`${formatDayLabel(cell.date)}: ${entryCount(cell.count)}`}
-            className={`size-3.5 rounded-[3px] ${LEVEL_CLASS[cell.level]}`}
+            className={`size-2.5 rounded-[2px] md:size-3 ${LEVEL_CLASS[cell.level]}`}
           />
         ),
       )}
@@ -238,7 +237,7 @@ function HeatmapWidgetBase({ cells, stats, isLoading, isError, size }: HeatmapPr
       >
         <HeatmapGrid cells={cells} onHover={setHovered} />
 
-        <dl className="grid grid-cols-3 gap-6 text-center md:gap-10 md:pr-8">
+        <dl className="hidden grid-cols-3 gap-6 text-center md:grid md:gap-12 md:pr-8">
           <Stat value={String(stats.activeDays)} label="Active days" />
           <Stat value={`${stats.daysThisWeek} of 7`} label="Days this week" />
           <Stat value={String(stats.avgDaysPerWeek)} label="Avg days per week" />
@@ -252,7 +251,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col-reverse gap-0.5">
       <dt className={LABEL}>{label}</dt>
-      <dd className="text-2xl font-semibold text-[#1c0d06]">{value}</dd>
+      <dd className="text-2xl font-semibold text-espresso">{value}</dd>
     </div>
   );
 }
@@ -275,8 +274,8 @@ function ContinueWidgetBase({ latest, isLoading, isDesktop }: ContinueProps) {
       className={`${CARD} flex flex-col gap-3 md:flex-row md:items-center md:justify-between`}
     >
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-[#1c0d06]">
-          <span className="size-2 shrink-0 rounded-full bg-[#E8813D]" aria-hidden />
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-espresso">
+          <span className="size-2 shrink-0 rounded-full bg-data-orange" aria-hidden />
           <span className="truncate">{projectName ?? 'Start logging'}</span>
         </h2>
         <p className={`mt-1 text-xs ${MUTED}`}>
@@ -322,16 +321,16 @@ function RecentEntriesWidgetBase({
 
   return (
     <section className={CARD}>
-      <h2 className="mb-2 text-sm font-semibold text-[#1c0d06]">Recent entries</h2>
+      <h2 className="mb-2 text-sm font-semibold text-espresso">Recent entries</h2>
       <ul className="flex flex-col">
         {entries.map((entry) => (
           <li key={entry.id}>
             <Link
               to={`/entries/${entry.id}`}
-              className="flex items-start justify-between gap-3 rounded-md py-2 focus-visible:outline-2 focus-visible:outline-[#D4A843]"
+              className="flex items-start justify-between gap-3 rounded-md py-2 focus-visible:outline-2 focus-visible:outline-gold"
             >
               <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-[#1c0d06]">
+                <span className="block truncate text-sm font-semibold text-espresso">
                   {entryTitle(entry)}
                 </span>
                 <span className={`block truncate text-xs ${MUTED}`}>{entry.project?.name}</span>
@@ -373,7 +372,7 @@ function InsightWidgetBase({ stat, isLoading }: InsightProps) {
     return (
       <section className={CARD}>
         <Header />
-        <p className="mt-3 text-base font-semibold text-[#1c0d06]">No data yet</p>
+        <p className="mt-3 text-base font-semibold text-espresso">No data yet</p>
         <p className={`mt-1 text-xs ${MUTED}`}>Your pinned stat will show up here.</p>
       </section>
     );
@@ -386,14 +385,14 @@ function InsightWidgetBase({ stat, isLoading }: InsightProps) {
   return (
     <section className={CARD}>
       <Header />
-      <p className={`mt-2 inline-block rounded bg-[#FFFCF7] px-2 py-0.5 text-[11px] ${MUTED}`}>
+      <p className={`mt-2 inline-block rounded bg-paper px-2 py-0.5 text-[11px] ${MUTED}`}>
         {stat.projectName} · {stat.fieldName}
       </p>
-      <p className="mt-2 text-lg font-semibold text-[#1c0d06]">
+      <p className="mt-2 text-lg font-semibold text-espresso">
         {stat.current} {stat.fieldName.toLowerCase()} this week
       </p>
       <p
-        className={`mt-1 flex items-center gap-1 text-xs ${same ? MUTED : up ? 'text-[#3E7A52]' : 'text-[#9A5B3A]'}`}
+        className={`mt-1 flex items-center gap-1 text-xs ${same ? MUTED : up ? 'text-success' : 'text-error'}`}
       >
         {!same && <TrendIcon className="h-3 w-3" strokeWidth={2} aria-hidden />}
         {same ? 'Same as last week' : `${up ? 'Up' : 'Down'} from ${stat.previous} last week`}
@@ -426,10 +425,10 @@ function EventDetails({ event, today, heading, stacked, onDismiss }: EventDetail
     <div className="flex flex-col gap-2">
       {heading}
       {when && <p className={`text-xs ${MUTED}`}>{when}</p>}
-      <span className="w-fit rounded bg-[#F5EBE0] px-2 py-0.5 text-[10px] font-medium text-[#7a5230]">
+      <span className="w-fit rounded bg-cream px-2 py-0.5 text-[10px] font-medium text-clay">
         From Google Calendar
       </span>
-      {event.description && <p className="text-xs text-[#4a3525]">{event.description}</p>}
+      {event.description && <p className="text-xs text-cocoa">{event.description}</p>}
       <div
         className={
           stacked ? 'mt-3 flex flex-col items-stretch gap-1' : 'mt-2 flex items-center gap-3'
@@ -447,9 +446,9 @@ function EventDetails({ event, today, heading, stacked, onDismiss }: EventDetail
 }
 
 const EVENT_ROW =
-  'flex min-w-0 flex-1 items-center gap-3 rounded text-left text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'flex min-w-0 flex-1 items-center gap-3 rounded text-left text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const LOG_LINK =
-  'shrink-0 rounded border border-[#B59F82] px-2 py-1 text-[11px] font-semibold text-[#5C4630] transition-colors hover:bg-[#EFE0CC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'shrink-0 rounded px-1 py-1 text-[11px] font-medium text-cocoa transition-colors hover:text-espresso hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: UpcomingProps) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -465,25 +464,20 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
 
   return (
     <section className={CARD}>
-      <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-[#1c0d06]">
-        <Calendar className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-        Upcoming from Google Calendar
-      </h2>
+      <h2 className="mb-3 text-sm font-bold text-espresso">Upcoming</h2>
       <ul className="flex flex-col gap-1">
         {data.events.map((event) => {
           const label = (
             <>
-              <span className="shrink-0 font-bold text-[#7a5230]">
-                {formatEventTime(event.start)}
-              </span>
-              <span className="truncate text-[#1c0d06]">{event.title}</span>
+              <span className="shrink-0 font-bold text-clay">{formatEventTime(event.start)}</span>
+              <span className="truncate text-espresso">{event.title}</span>
             </>
           );
           return (
             <li
               key={event.id}
               className={`-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-1.5 transition-colors ${
-                openId === event.id ? 'bg-[#EBD9A3]/50' : ''
+                openId === event.id ? 'bg-gold-light/50' : ''
               }`}
             >
               {isDesktop ? (
@@ -498,7 +492,7 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
                   </PopoverTrigger>
                   <PopoverContent
                     align="start"
-                    className="w-72 gap-0 bg-[#FFFCF7] p-3 text-[#1c0d06] ring-[#d4a373]/40"
+                    className="w-72 gap-0 bg-paper p-3 text-espresso ring-caramel/40"
                   >
                     <EventDetails
                       event={event}
@@ -514,8 +508,12 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
                   {label}
                 </button>
               )}
-              <Link to={logEventPath(event)} className={LOG_LINK}>
-                Log entry
+              <Link
+                to={logEventPath(event)}
+                aria-label={`Log entry for ${event.title}`}
+                className={LOG_LINK}
+              >
+                Log
               </Link>
             </li>
           );
@@ -533,7 +531,7 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
             side="bottom"
             showCloseButton={false}
             aria-describedby={undefined}
-            className="rounded-t-3xl bg-[#FFFCF7] px-5 pb-8 pt-5 text-[#1c0d06]"
+            className="rounded-t-3xl bg-paper px-5 pb-8 pt-5 text-espresso"
           >
             {selected && (
               <EventDetails
@@ -542,7 +540,7 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
                 stacked
                 onDismiss={close}
                 heading={
-                  <SheetTitle className="text-base font-semibold text-[#1c0d06]">
+                  <SheetTitle className="text-base font-semibold text-espresso">
                     {selected.title}
                   </SheetTitle>
                 }
@@ -579,7 +577,7 @@ function itemMeta(item: UnfinishedItem): string {
 
 function Group({ heading, items, overdue = false, onMarkDone }: GroupProps) {
   if (items.length === 0) return null;
-  const accent = overdue ? 'text-[#B5432F]' : MUTED;
+  const accent = overdue ? 'text-error' : MUTED;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -598,14 +596,14 @@ function Group({ heading, items, overdue = false, onMarkDone }: GroupProps) {
               aria-checked="false"
               aria-label={`Mark ${item.label} done`}
               onClick={() => onMarkDone(item)}
-              className={`size-4 shrink-0 rounded-[3px] border-[1.5px] bg-[#FFFCF7] transition-colors hover:bg-[#EBD9A3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843] ${
-                overdue ? 'border-[#B5432F]' : 'border-[#5C4630]'
+              className={`size-4 shrink-0 rounded-[3px] border-[1.5px] bg-paper transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
+                overdue ? 'border-error' : 'border-cocoa'
               }`}
             />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#1c0d06]">
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-espresso">
               {item.label}
             </span>
-            <span className={`shrink-0 text-[11px] ${overdue ? 'text-[#B5432F]' : MUTED}`}>
+            <span className={`shrink-0 text-[11px] ${overdue ? 'text-error' : MUTED}`}>
               {itemMeta(item)}
             </span>
           </li>
@@ -639,7 +637,7 @@ function WhatsLeftWidgetBase({
       <Group heading="Due this week" items={stats.dueThisWeek} onMarkDone={onMarkDone} />
       <Group heading="No due date" items={stats.noDueDate} onMarkDone={onMarkDone} />
       {markFailed && (
-        <p role="alert" className="text-xs text-[#B5432F]">
+        <p role="alert" className="text-xs text-error">
           Couldn't mark that done. Try again.
         </p>
       )}
@@ -649,7 +647,7 @@ function WhatsLeftWidgetBase({
 
 const WhatsLeftWidget = memo(WhatsLeftWidgetBase);
 
-const COLORS = ['#D4A843', '#5B8C6B', '#8A6FA8', '#C46B5A'];
+const COLORS = ['#D4A843', '#7a9e6b', '#8c709c', '#ef8a4b'];
 const RADIUS = 38;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const MAX_LEGEND = 4;
@@ -687,7 +685,7 @@ function TimeByProjectWidgetBase({ projects }: TimeByProjectProps) {
             role="img"
             aria-label={`${shown[0].projectName} is ${topPercent}% of your time`}
           >
-            <circle cx="50" cy="50" r={RADIUS} fill="none" stroke="#E2DCD2" strokeWidth="12" />
+            <circle cx="50" cy="50" r={RADIUS} fill="none" stroke="#e8e0d8" strokeWidth="12" />
             {segments.map(({ project, length, offset }, index) => (
               <circle
                 key={project.projectId}
@@ -702,13 +700,13 @@ function TimeByProjectWidgetBase({ projects }: TimeByProjectProps) {
               />
             ))}
           </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-base font-semibold text-[#1c0d06]">
+          <span className="absolute inset-0 flex items-center justify-center text-base font-semibold text-espresso">
             {topPercent}%
           </span>
         </div>
         <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
           {shown.map((project, index) => (
-            <li key={project.projectId} className="flex items-center gap-2 text-xs text-[#1c0d06]">
+            <li key={project.projectId} className="flex items-center gap-2 text-xs text-espresso">
               <span
                 className="size-2 shrink-0 rounded-full"
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
@@ -769,7 +767,7 @@ function FrequencyWidgetBase({ stats, isLoading, isError }: FrequencyProps) {
             >
               <span className={`text-[11px] ${MUTED}`}>{week.count}</span>
               <span
-                className={`w-full max-w-7 rounded-t-[3px] ${isMax ? 'bg-[#D4A843]' : 'bg-[#7A4A2A]'}`}
+                className={`w-full max-w-7 rounded-t-[3px] ${isMax ? 'bg-gold' : 'bg-clay'}`}
                 style={{ height: `${Math.max(4, (week.count / max) * BAR_AREA_PX)}px` }}
               />
               <span className={`text-[10px] ${MUTED}`}>{formatShortDate(week.weekStart)}</span>
@@ -793,13 +791,13 @@ function Row({ title, meta, alert = false }: { title: string; meta: string; aler
   return (
     <li className="flex items-start gap-2">
       <Clock
-        className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${alert ? 'text-[#B5432F]' : MUTED}`}
+        className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${alert ? 'text-error' : MUTED}`}
         strokeWidth={1.75}
         aria-hidden
       />
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-[#1c0d06]">{title}</span>
-        <span className={`block text-[11px] ${alert ? 'text-[#B5432F]' : MUTED}`}>{meta}</span>
+        <span className="block truncate text-sm font-semibold text-espresso">{title}</span>
+        <span className={`block text-[11px] ${alert ? 'text-error' : MUTED}`}>{meta}</span>
       </span>
     </li>
   );
@@ -853,7 +851,7 @@ function WidgetThumbnail({ kind }: { kind: ThumbnailKind }) {
     <svg viewBox="0 0 80 48" className="h-12 w-20" aria-hidden>
       {kind === 'donut' && (
         <>
-          <circle cx="40" cy="24" r="14" fill="none" stroke="#E2DCD2" strokeWidth="7" />
+          <circle cx="40" cy="24" r="14" fill="none" stroke="#e8e0d8" strokeWidth="7" />
           <circle
             cx="40"
             cy="24"
@@ -868,32 +866,32 @@ function WidgetThumbnail({ kind }: { kind: ThumbnailKind }) {
       )}
       {kind === 'bars' && (
         <>
-          <rect x="16" y="24" width="8" height="16" rx="1.5" fill="#7A4A2A" />
-          <rect x="28" y="30" width="8" height="10" rx="1.5" fill="#7A4A2A" />
+          <rect x="16" y="24" width="8" height="16" rx="1.5" fill="#7a5230" />
+          <rect x="28" y="30" width="8" height="10" rx="1.5" fill="#7a5230" />
           <rect x="40" y="12" width="8" height="28" rx="1.5" fill="#D4A843" />
-          <rect x="52" y="26" width="8" height="14" rx="1.5" fill="#7A4A2A" />
+          <rect x="52" y="26" width="8" height="14" rx="1.5" fill="#7a5230" />
         </>
       )}
       {kind === 'list' && (
         <>
           <rect x="14" y="10" width="7" height="7" rx="1.5" fill="none" stroke="#7a5230" />
-          <rect x="26" y="12" width="38" height="3" rx="1.5" fill="#C9B79C" />
+          <rect x="26" y="12" width="38" height="3" rx="1.5" fill="#baa38c" />
           <rect x="14" y="22" width="7" height="7" rx="1.5" fill="none" stroke="#7a5230" />
-          <rect x="26" y="24" width="30" height="3" rx="1.5" fill="#C9B79C" />
+          <rect x="26" y="24" width="30" height="3" rx="1.5" fill="#baa38c" />
           <rect x="14" y="34" width="7" height="7" rx="1.5" fill="none" stroke="#7a5230" />
-          <rect x="26" y="36" width="34" height="3" rx="1.5" fill="#C9B79C" />
+          <rect x="26" y="36" width="34" height="3" rx="1.5" fill="#baa38c" />
         </>
       )}
       {kind === 'stat' && (
         <>
-          <rect x="14" y="12" width="22" height="3" rx="1.5" fill="#C9B79C" />
-          <rect x="14" y="20" width="52" height="16" rx="3" fill="#EBD9A3" />
+          <rect x="14" y="12" width="22" height="3" rx="1.5" fill="#baa38c" />
+          <rect x="14" y="20" width="52" height="16" rx="3" fill="#e6c687" />
         </>
       )}
       {kind === 'card' && (
         <>
           <rect x="14" y="12" width="30" height="4" rx="2" fill="#7a5230" />
-          <rect x="14" y="22" width="52" height="3" rx="1.5" fill="#C9B79C" />
+          <rect x="14" y="22" width="52" height="3" rx="1.5" fill="#baa38c" />
           <rect x="14" y="32" width="24" height="7" rx="3.5" fill="#D4A843" />
         </>
       )}
@@ -915,7 +913,7 @@ type FrameProps = {
 };
 
 const CHIP =
-  'flex size-6 items-center justify-center rounded-md border border-[#B59F82] bg-[#FFFCF7] text-[#5C4630] transition-colors hover:bg-[#F5EBE0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'flex size-6 items-center justify-center rounded-md border border-line-strong bg-paper text-cocoa transition-colors hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 function WidgetFrameBase({
   widget,
@@ -961,7 +959,7 @@ function WidgetFrameBase({
         event.preventDefault();
         onDropOn(id);
       }}
-      className={`relative rounded-xl border border-dashed border-[#B59F82] p-1.5 transition-opacity ${
+      className={`relative rounded-xl border border-dashed border-line-strong p-1.5 transition-opacity ${
         isDragging ? 'opacity-40' : ''
       }`}
     >
@@ -1098,9 +1096,9 @@ export function AddWidgetTray({ hidden, onAdd }: TrayProps) {
   return (
     <section
       aria-label="Add widget"
-      className="rounded-xl border border-dashed border-[#B59F82] p-4"
+      className="rounded-xl border border-dashed border-line-strong p-4"
     >
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#1c0d06]">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-espresso">
         <Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden />
         Add widget
       </h2>
@@ -1116,7 +1114,7 @@ export function AddWidgetTray({ hidden, onAdd }: TrayProps) {
                   type="button"
                   onClick={() => onAdd(widget.id)}
                   aria-label={`Add ${meta.title}`}
-                  className="flex w-full flex-col items-center gap-2 rounded-lg bg-[#F5EBE0] px-3 py-3 text-xs font-medium text-[#1c0d06] transition-colors hover:bg-[#EFE0CC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]"
+                  className="flex w-full flex-col items-center gap-2 rounded-lg bg-cream px-3 py-3 text-xs font-medium text-espresso transition-colors hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
                 >
                   <WidgetThumbnail kind={meta.thumbnail} />
                   {meta.title}

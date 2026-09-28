@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Clock, Search, SquareCheck, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useTags } from '@/hooks/useTags';
 import {
@@ -7,28 +7,26 @@ import {
   DEFAULT_FILTERS,
   type DateRangeKey,
   type EntryFilters,
+  type EntryStatus,
 } from '@/lib/entryFilters';
 import type { Project } from '@/types';
+import { projectColor, tagDotColor } from '@/lib/colors';
 
 const DATE_RANGE_KEYS: DateRangeKey[] = ['all', 'today', '7d', '30d', 'custom'];
-
-// Deterministic project dot colors, same palette as the tags settings dots —
-// there's no color field on Project either, this just gives rows a visual
-// anchor to scan by, matching the design's colored dots.
-const DOT_COLORS = ['#d4a843', '#3e7a52', '#4a6fa5', '#9c5a9c', '#c4664a'];
-const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
 
 export default function FiltersSheet({
   open,
   onOpenChange,
   projects,
   filters,
+  statusCounts,
   onApply,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projects: Project[];
   filters: EntryFilters;
+  statusCounts: Record<EntryStatus, number>;
   onApply: (filters: EntryFilters) => void;
 }) {
   const [draft, setDraft] = useState(filters);
@@ -67,43 +65,44 @@ export default function FiltersSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="flex max-h-[85vh] flex-col gap-0 rounded-t-2xl bg-[#fffcf7] p-0"
+        className="flex max-h-[85vh] flex-col gap-0 rounded-t-2xl bg-paper p-0"
       >
         <SheetHeader className="flex-row items-center justify-between p-0">
-          <SheetTitle className="px-4 pt-2 pb-1 text-lg font-bold text-[#1c0d05]">
+          <SheetTitle className="px-4 pt-2 pb-1 text-lg font-bold text-espresso">
             Filters
           </SheetTitle>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Close"
-            className="mr-3 flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f5ebe0] text-[#7a5230]"
+            className="mr-3 flex size-11 shrink-0 items-center justify-center rounded-full bg-cream text-clay"
           >
             <X size={16} strokeWidth={2} />
           </button>
         </SheetHeader>
 
         <div className="flex flex-col gap-5 overflow-y-auto px-4 pt-3 pb-4">
-          <input
-            type="search"
-            value={draft.search}
-            onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
-            placeholder="Search title, body, or project…"
-            aria-label="Search entries"
-            className="h-11 w-full rounded-lg border border-[#d4c4b0] bg-white px-3 text-[13px] text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
-          />
+          <label className="flex h-11 w-full items-center gap-2.5 rounded-lg border border-line bg-white px-3 focus-within:ring-2 focus-within:ring-espresso">
+            <Search className="size-4 shrink-0 text-cocoa" strokeWidth={1.75} aria-hidden />
+            <input
+              type="search"
+              value={draft.search}
+              onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
+              placeholder="Search title, body, project or field…"
+              aria-label="Search entries"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-espresso outline-none placeholder:text-taupe"
+            />
+          </label>
 
           <div className="flex flex-col gap-2.5">
-            <p className="text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">
-              Project
-            </p>
+            <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Project</p>
             <button
               type="button"
               onClick={() => setDraft((d) => ({ ...d, projectId: null }))}
               className="flex min-h-11 w-full items-center justify-between py-1 text-left"
             >
-              <span className="text-[13px] font-semibold text-[#1c0d05]">All projects</span>
-              {draft.projectId === null && <span className="text-[#d4a843]">✓</span>}
+              <span className="text-[13px] font-semibold text-espresso">All projects</span>
+              {draft.projectId === null && <span className="text-gold">✓</span>}
             </button>
             {projects.map((project) => (
               <button
@@ -115,20 +114,18 @@ export default function FiltersSheet({
                 <span className="flex items-center gap-2.5">
                   <span
                     className="size-[10px] shrink-0 rounded-full"
-                    style={{ backgroundColor: dotColorFor(project.id) }}
+                    style={{ backgroundColor: projectColor(project.id) }}
                     aria-hidden
                   />
-                  <span className="text-[13px] font-medium text-[#1c0d05]">{project.name}</span>
+                  <span className="text-[13px] font-medium text-espresso">{project.name}</span>
                 </span>
-                {draft.projectId === project.id && <span className="text-[#d4a843]">✓</span>}
+                {draft.projectId === project.id && <span className="text-gold">✓</span>}
               </button>
             ))}
           </div>
 
           <div className="flex flex-col gap-2.5">
-            <p className="text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">
-              Date range
-            </p>
+            <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Date range</p>
             <div className="flex flex-wrap gap-1.5">
               {DATE_RANGE_KEYS.map((key) => {
                 const active = draft.dateRange === key;
@@ -138,9 +135,7 @@ export default function FiltersSheet({
                     type="button"
                     onClick={() => setDraft((d) => ({ ...d, dateRange: key }))}
                     className={`min-h-11 rounded-lg px-3 text-[11px] font-semibold ${
-                      active
-                        ? 'bg-[#d4a843] text-[#1c0d05]'
-                        : 'border border-[#d4c4b0] text-[#1c0d05]'
+                      active ? 'bg-gold text-espresso' : 'border border-line text-espresso'
                     }`}
                   >
                     {DATE_RANGE_LABELS[key]}
@@ -155,15 +150,15 @@ export default function FiltersSheet({
                   value={draft.customFrom}
                   onChange={(e) => setDraft((d) => ({ ...d, customFrom: e.target.value }))}
                   aria-label="From date"
-                  className="min-h-11 flex-1 rounded-lg border border-[#d4c4b0] bg-white px-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+                  className="min-h-11 flex-1 rounded-lg border border-line bg-white px-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
                 />
-                <span className="text-sm text-[#7a5230]">to</span>
+                <span className="text-sm text-clay">to</span>
                 <input
                   type="date"
                   value={draft.customTo}
                   onChange={(e) => setDraft((d) => ({ ...d, customTo: e.target.value }))}
                   aria-label="To date"
-                  className="min-h-11 flex-1 rounded-lg border border-[#d4c4b0] bg-white px-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+                  className="min-h-11 flex-1 rounded-lg border border-line bg-white px-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
                 />
               </div>
             )}
@@ -171,7 +166,7 @@ export default function FiltersSheet({
 
           {tags.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <p className="text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">Tags</p>
+              <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Tags</p>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => {
                   const active = draft.tagIds.includes(tag.id);
@@ -181,11 +176,14 @@ export default function FiltersSheet({
                       type="button"
                       onClick={() => toggleTag(tag.id)}
                       className={`flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold ${
-                        active
-                          ? 'bg-[#d4a843] text-[#1c0d05]'
-                          : 'border border-[#d4c4b0] text-[#1c0d05]'
+                        active ? 'bg-gold text-espresso' : 'border border-line text-espresso'
                       }`}
                     >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: active ? undefined : tagDotColor(tag.name) }}
+                        aria-hidden
+                      />
                       {tag.name}
                     </button>
                   );
@@ -193,20 +191,44 @@ export default function FiltersSheet({
               </div>
             </div>
           )}
+
+          <div className="flex flex-col gap-2.5">
+            <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Status</p>
+            <div className="flex flex-wrap gap-2">
+              {(['unfinished', 'overdue'] as const).map((status) => {
+                const active = draft.status === status;
+                const Icon = status === 'unfinished' ? SquareCheck : Clock;
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setDraft((d) => ({ ...d, status: active ? null : status }))}
+                    className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-[11px] font-semibold ${
+                      active ? 'bg-gold text-espresso' : 'border border-line text-espresso'
+                    }`}
+                  >
+                    <Icon className="size-3.5" strokeWidth={1.75} aria-hidden />
+                    {status === 'unfinished' ? 'Unfinished' : 'Overdue'} · {statusCounts[status]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[#f0e7db] px-4 py-3">
+        <div className="flex items-center justify-between border-t border-sand px-4 py-3">
           <button
             type="button"
             onClick={reset}
-            className="min-h-11 px-2 text-[13px] font-semibold text-[#7a5230]"
+            className="min-h-11 px-2 text-[13px] font-semibold text-clay"
           >
             Reset
           </button>
           <button
             type="button"
             onClick={apply}
-            className="min-h-11 rounded-lg bg-[#d4a843] px-5 text-[13px] font-semibold text-[#1c0d05]"
+            className="min-h-11 rounded-lg bg-gold px-5 text-[13px] font-semibold text-espresso"
           >
             Apply filters
           </button>

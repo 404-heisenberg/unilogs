@@ -51,12 +51,12 @@ function DeleteForm({ heading, projectId, projectName, entryCount, stacked, onCl
       className="flex flex-col gap-3"
     >
       {heading}
-      <p className="text-xs leading-relaxed text-[#4a3525]">
+      <p className="text-sm leading-relaxed text-cocoa">
         This permanently deletes {projectName}, its {entryCount}{' '}
         {entryCount === 1 ? 'entry' : 'entries'} and all custom fields. Shared report links are
         revoked immediately. This cannot be undone.
       </p>
-      <label htmlFor="delete-project-confirm" className="text-xs text-[#9b2c2c]">
+      <label htmlFor="delete-project-confirm" className="text-[13px] font-medium text-danger">
         Type “{projectName}” to confirm
       </label>
       <input
@@ -66,10 +66,10 @@ function DeleteForm({ heading, projectId, projectName, entryCount, stacked, onCl
         placeholder={projectName}
         autoComplete="off"
         spellCheck={false}
-        className="min-h-11 rounded-md border border-[#d4a373]/60 bg-white px-3 py-1.5 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06] md:min-h-9"
+        className="min-h-11 rounded-lg border border-line bg-white px-3 py-1.5 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso md:min-h-10"
       />
       {deleteProject.isError && (
-        <p role="alert" className="text-xs text-[#9b2c2c]">
+        <p role="alert" className="text-[13px] font-medium text-danger">
           {deleteProject.error.message}
         </p>
       )}
@@ -78,7 +78,7 @@ function DeleteForm({ heading, projectId, projectName, entryCount, stacked, onCl
           type="button"
           variant="outline"
           size="sm"
-          className={stacked ? 'min-h-11 w-full' : 'min-h-11 md:min-h-0'}
+          className={stacked ? 'min-h-11 w-full' : 'min-h-11 md:min-h-10'}
           onClick={onClose}
           disabled={deleteProject.isPending}
         >
@@ -87,8 +87,8 @@ function DeleteForm({ heading, projectId, projectName, entryCount, stacked, onCl
         <Button
           type="submit"
           size="sm"
-          className={`bg-[#9b2c2c] text-white hover:bg-[#7f2323] ${
-            stacked ? 'min-h-11 w-full' : 'min-h-11 md:min-h-0'
+          className={`bg-danger text-white hover:bg-danger-text ${
+            stacked ? 'min-h-11 w-full' : 'min-h-11 md:min-h-10'
           }`}
           disabled={!matches || deleteProject.isPending}
         >
@@ -125,12 +125,12 @@ export default function DeleteProjectDialog({
         <DialogContent
           showCloseButton={false}
           aria-describedby={undefined}
-          className="max-w-sm bg-[#FFFCF7] text-[#1c0d06]"
+          className="bg-paper text-espresso"
         >
           <DeleteForm
             {...shared}
             stacked={false}
-            heading={<DialogTitle className="text-sm">Delete project</DialogTitle>}
+            heading={<DialogTitle>Delete project</DialogTitle>}
           />
         </DialogContent>
       </Dialog>
@@ -143,14 +143,14 @@ export default function DeleteProjectDialog({
         side="bottom"
         showCloseButton={false}
         aria-describedby={undefined}
-        className="rounded-t-3xl bg-[#FFFCF7] px-5 pb-8 pt-5 text-[#1c0d06]"
+        className="rounded-t-3xl bg-paper px-5 pb-8 pt-5 text-espresso"
       >
-        <div className="mx-auto -mt-2 h-1 w-10 rounded-full bg-[#D9CBB8]" aria-hidden />
+        <div className="mx-auto -mt-2 h-1 w-10 rounded-full bg-line" aria-hidden />
         <DeleteForm
           {...shared}
           stacked
           heading={
-            <SheetTitle className="text-sm font-semibold text-[#1c0d06]">Delete project</SheetTitle>
+            <SheetTitle className="text-lg font-bold text-espresso">Delete project</SheetTitle>
           }
         />
       </SheetContent>

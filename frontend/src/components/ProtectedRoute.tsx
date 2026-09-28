@@ -5,7 +5,7 @@ export default function ProtectedRoute() {
   const { data, isPending } = useSession();
 
   if (isPending) {
-    return <p className="p-8 text-center text-sm text-slate-500">Loading…</p>;
+    return <p className="p-8 text-center text-sm text-clay">Loading…</p>;
   }
   return data ? <Outlet /> : <Navigate to="/login" replace />;
 }

@@ -105,42 +105,42 @@ export default function ShareDialog({ open, onOpenChange, projectId }: ShareDial
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="max-w-sm bg-[#FFFCF7] text-[#1c0d06]"
+        className="bg-paper text-espresso"
       >
-        <DialogTitle className="text-sm">Share report</DialogTitle>
+        <DialogTitle>Share report</DialogTitle>
 
         {link ? (
           <>
-            <p className="flex items-center gap-1.5 text-[11px] text-[#3E7A52]">
-              <span className="size-1.5 rounded-full bg-[#3E7A52]" aria-hidden />
+            <p className="flex items-center gap-1.5 text-xs text-success">
+              <span className="size-1.5 rounded-full bg-success" aria-hidden />
               Link active — created {formatDate(link.createdAt)}
             </p>
 
-            <div className="flex items-center gap-2 rounded-md border border-[#d4a373]/60 bg-white px-3 py-2">
+            <div className="flex items-center gap-2 min-h-10 rounded-lg border border-line bg-white px-3 py-2">
               <input
                 readOnly
                 value={link.url}
                 aria-label="Share link"
                 onFocus={(e) => e.currentTarget.select()}
-                className="min-w-0 flex-1 bg-transparent text-xs outline-none"
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
               />
               <button
                 type="button"
                 aria-label="Copy link"
                 onClick={handleCopy}
-                className="shrink-0 rounded p-1 text-[#7a5230] hover:bg-[#F5EBE0]"
+                className="shrink-0 rounded p-1 text-clay hover:bg-cream"
               >
                 {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               </button>
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <label htmlFor="share-bodies" className="text-xs">
+              <label htmlFor="share-bodies" className="text-sm">
                 Include entry bodies
               </label>
               <Switch id="share-bodies" checked={link.includeBodies} disabled />
             </div>
-            <p className="-mt-2 text-[10px] text-[#9b5a2a]">
+            <p className="-mt-2 text-xs text-clay">
               {link.includeBodies
                 ? 'On — readers also see entry notes.'
                 : 'Off — readers see summary stats and properties only.'}{' '}
@@ -148,7 +148,7 @@ export default function ShareDialog({ open, onOpenChange, projectId }: ShareDial
             </p>
 
             {revokeLink.isError && (
-              <p role="alert" className="text-xs text-[#9b2c2c]">
+              <p role="alert" className="text-xs text-danger">
                 {revokeLink.error.message}
               </p>
             )}
@@ -158,14 +158,14 @@ export default function ShareDialog({ open, onOpenChange, projectId }: ShareDial
                 type="button"
                 onClick={() => revokeLink.mutate(link.token)}
                 disabled={revokeLink.isPending}
-                className="min-h-11 text-xs font-medium text-[#9b2c2c] hover:underline disabled:opacity-50 md:min-h-0"
+                className="min-h-11 text-sm font-medium text-danger hover:underline disabled:opacity-50 md:min-h-10"
               >
                 {revokeLink.isPending ? 'Revoking…' : 'Revoke link'}
               </button>
               <Button
                 type="button"
                 size="sm"
-                className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
+                className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-10"
                 onClick={handleCopy}
               >
                 {copied ? 'Copied' : 'Copy link'}
@@ -174,13 +174,13 @@ export default function ShareDialog({ open, onOpenChange, projectId }: ShareDial
           </>
         ) : (
           <>
-            <p className="text-xs leading-relaxed text-[#4a3525]">
+            <p className="text-sm leading-relaxed text-cocoa">
               Create a read-only link to a summary of this project. Anyone with the link can view it
               for 30 days, no login needed.
             </p>
 
             <div className="flex items-center justify-between gap-3">
-              <label htmlFor="share-bodies" className="text-xs">
+              <label htmlFor="share-bodies" className="text-sm">
                 Include entry bodies
               </label>
               <Switch
@@ -189,14 +189,14 @@ export default function ShareDialog({ open, onOpenChange, projectId }: ShareDial
                 onCheckedChange={setIncludeBodies}
               />
             </div>
-            <p className="-mt-2 text-[10px] text-[#9b5a2a]">
+            <p className="-mt-2 text-xs text-clay">
               {includeBodies
                 ? 'On — readers also see entry notes.'
                 : 'Off — readers see summary stats and properties only.'}
             </p>
 
             {createLink.isError && (
-              <p role="alert" className="text-xs text-[#9b2c2c]">
+              <p role="alert" className="text-xs text-danger">
                 {createLink.error.message}
               </p>
             )}
@@ -206,7 +206,7 @@ export default function ShareDialog({ open, onOpenChange, projectId }: ShareDial
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-11 md:min-h-0"
+                className="min-h-11 md:min-h-10"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
@@ -214,7 +214,7 @@ export default function ShareDialog({ open, onOpenChange, projectId }: ShareDial
               <Button
                 type="button"
                 size="sm"
-                className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
+                className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-10"
                 onClick={() => createLink.mutate()}
                 disabled={createLink.isPending}
               >
