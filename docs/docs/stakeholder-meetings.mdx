@@ -220,6 +220,40 @@ rather than leaving each step to be discovered.
 
 ---
 
+## Meeting 5 — 28 September 2026, from about 20:00
+
+**Present:** Dikeledi Mokoatle, Lethabo Sekgobela, Mosey (McAtaaji Andongndou),
+Ozuko Mabongo, Renda Mudau, Thato Chuene
+**Client:** Tutor-client
+
+![Meeting 5 — Discord voice call, 28 September](/img/client-meeting-5-28-sep.png)
+
+### Agenda
+
+A final check before the Sprint 3 deadline. The team went through the
+Milestone 3 rubric with the client one criterion at a time, showing where the
+evidence for each lives:
+
+| Criterion              | Evidence shown                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| User feedback          | [User Testing](/user-testing): 17 responses, feature ratings and free-text feedback                                                                    |
+| Automated testing      | [Testing Policy](/testing-policy): line coverage of 70.6% (frontend) and 83.1% (backend), thresholds enforced in CI, and a Playwright end-to-end suite |
+| Feature implementation | The deployed app: dashboard, project workspace, entry editor, reminders, export and share links                                                        |
+| API implementation     | The live API reference at [`/api/docs`](https://unilogs.onrender.com/api/docs#description/introduction), generated from the hand-written OpenAPI spec  |
+| Performance            | [Performance](/performance): indexes, `EXPLAIN ANALYZE` results and the N+1 audit                                                                      |
+| Improvement            | [User Testing — Changes made as a result](/user-testing#changes-made-as-a-result): each finding mapped to the pull requests that addressed it          |
+| Documentation          | This docs site: database design, tech stack, testing policy, methodology and meeting records                                                           |
+| Project methodology    | [Project Methodology](/methodology), [Git Methodology](/git-methodology) and the standup logs for all three sprints                                    |
+
+### Outcome
+
+The client was very happy with the state of the project against the rubric and
+raised no new concerns. The only open item remains his recommendation from
+Meeting 4, the first-run walkthrough, which stays in the backlog for the next
+sprint.
+
+---
+
 ## Decisions taken in the absence of client direction
 
 Waiting for requirements that had not yet been briefed would have stalled Sprint 1
@@ -239,16 +273,13 @@ of the codebase in each case.
 
 ## Next meeting
 
-Statistics priorities and the Google Calendar integration (both carried from
-Meeting 2) shipped during Sprint 2 regardless of formal sign-off, on the
-assumptions recorded above. Agenda for the next meeting, going into Sprint 3:
+Sprint 3 closed with the client's review of the working increment (Meeting 4)
+and of the rubric evidence (Meeting 5). Agenda for the next meeting:
 
-- Confirm or correct the assumptions table above, now that there is a working
-  increment to react to instead of a hypothetical
-- Sprint 3 priorities: intermediate-tier features and further external API
-  depth
-- Whether a recurring weekly slot is workable given the client's own reporting
-  load
+- Review the scope of the first-run walkthrough recommended in Meeting 4
+- Support for multiple Google calendars in suggestions, the one user testing
+  request not yet built (see [User Testing](/user-testing))
+- Confirm or correct the assumptions table above
 
 <AiDeclaration
   action="generated"
