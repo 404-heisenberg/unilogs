@@ -455,6 +455,45 @@ export default function EntryCreatePage() {
     }, 0);
   };
 
+  // When Enter is pressed inside a bullet or ordered list item, carry the
+  // marker onto the next line; an empty item drops the marker to end the list.
+  const handleBodyKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey) return;
+
+    const textarea = e.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    if (start !== end) return;
+
+    const before = body.slice(0, start);
+    const after = body.slice(end);
+    const lineStart = before.lastIndexOf('\n') + 1;
+    const lineText = before.slice(lineStart);
+
+    const bullet = lineText.match(/^\s*([-*+])\s+/);
+    const ordered = lineText.match(/^\s*(\d+)[.)]\s+/);
+    if (!bullet && !ordered) return;
+
+    const markerLength = (bullet ?? ordered)![0].length;
+
+    // Empty item: end the list by removing the bare marker.
+    if (lineText.slice(markerLength).trim() === '') {
+      e.preventDefault();
+      setBody(body.slice(0, lineStart) + after);
+      setIsDirty(true);
+      setTimeout(() => textarea.setSelectionRange(lineStart, lineStart), 0);
+      return;
+    }
+
+    // Non-empty item: continue the list with the next marker.
+    e.preventDefault();
+    const marker = bullet ? `${bullet[1]} ` : `${parseInt(ordered![1], 10) + 1}. `;
+    setBody(`${before}\n${marker}${after}`);
+    setIsDirty(true);
+    const caret = start + 1 + marker.length;
+    setTimeout(() => textarea.setSelectionRange(caret, caret), 0);
+  };
+
   useEffect(() => {
     if (!isEditing) {
       firstFieldRef.current?.focus();
@@ -880,6 +919,7 @@ export default function EntryCreatePage() {
                   setBody(e.target.value);
                   setIsDirty(true);
                 }}
+                onKeyDown={handleBodyKeyDown}
                 placeholder="What did you work on? (GitHub-flavored Markdown supported)"
                 rows={16}
                 className="w-full resize-y bg-transparent font-mono text-[13px] leading-relaxed text-espresso outline-none placeholder:text-taupe"
