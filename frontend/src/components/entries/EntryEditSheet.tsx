@@ -113,17 +113,17 @@ export default function EntryEditSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="flex max-h-[85vh] flex-col gap-0 rounded-t-2xl bg-[#fffcf7] p-0"
+        className="flex max-h-[85vh] flex-col gap-0 rounded-t-2xl bg-paper p-0"
       >
         <SheetHeader className="flex-row items-center justify-between p-0">
-          <SheetTitle className="px-4 pt-2 pb-1 text-lg font-bold text-[#1c0d05]">
+          <SheetTitle className="px-4 pt-2 pb-1 text-lg font-bold text-espresso">
             Properties
           </SheetTitle>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Close"
-            className="mr-3 flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f5ebe0] text-[#7a5230]"
+            className="mr-3 flex size-11 shrink-0 items-center justify-center rounded-full bg-cream text-clay"
           >
             <X size={16} strokeWidth={2} />
           </button>
@@ -131,7 +131,7 @@ export default function EntryEditSheet({
 
         <form onSubmit={handleSave} className="flex flex-col gap-4 overflow-y-auto px-4 pt-3 pb-4">
           <div>
-            <label htmlFor="edit-date" className="mb-1 block text-xs text-[#7a5230]">
+            <label htmlFor="edit-date" className="mb-1 block text-xs text-clay">
               Date
             </label>
             <input
@@ -139,13 +139,13 @@ export default function EntryEditSheet({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="min-h-11 w-full rounded-md border border-[#d4c4b0] bg-white px-3 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+              className="min-h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="edit-title" className="mb-1 block text-xs text-[#7a5230]">
+            <label htmlFor="edit-title" className="mb-1 block text-xs text-clay">
               Title
             </label>
             <input
@@ -153,12 +153,12 @@ export default function EntryEditSheet({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="min-h-11 w-full rounded-md border border-[#d4c4b0] bg-white px-3 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+              className="min-h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
             />
           </div>
 
           <div>
-            <label htmlFor="edit-body" className="mb-1 block text-xs text-[#7a5230]">
+            <label htmlFor="edit-body" className="mb-1 block text-xs text-clay">
               Notes
             </label>
             <textarea
@@ -166,14 +166,14 @@ export default function EntryEditSheet({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={3}
-              className="w-full rounded-md border border-[#d4c4b0] bg-white px-3 py-2 text-sm text-[#1c0d06] outline-none focus:ring-2 focus:ring-[#1c0d06]"
+              className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-espresso outline-none focus:ring-2 focus:ring-espresso"
             />
           </div>
 
           {fields.length > 0 && (
             <>
-              <div className="h-px w-full bg-[#f0e7db]" />
-              <p className="text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">
+              <div className="h-px w-full bg-sand" />
+              <p className="text-[11px] font-medium tracking-wide text-clay uppercase">
                 Custom fields
               </p>
               {fields.map((field) => (
@@ -188,29 +188,27 @@ export default function EntryEditSheet({
             </>
           )}
 
-          <div className="h-px w-full bg-[#f0e7db]" />
+          <div className="h-px w-full bg-sand" />
           <div>
-            <p className="mb-1 text-[11px] font-medium tracking-wide text-[#7a5230] uppercase">
-              Tags
-            </p>
+            <p className="mb-1 text-[11px] font-medium tracking-wide text-clay uppercase">Tags</p>
             <TagPicker selected={tagIds} onChange={setTagIds} />
           </div>
 
-          {formError && <p className="text-sm text-red-700">{formError}</p>}
+          {formError && <p className="text-sm text-error">{formError}</p>}
 
           <button
             type="submit"
             disabled={updateEntry.isPending}
-            className="min-h-11 rounded-lg bg-[#1c0d06] text-sm font-semibold text-[#f5ebe0] hover:opacity-90 disabled:opacity-60"
+            className="min-h-11 rounded-lg bg-espresso text-sm font-semibold text-cream hover:opacity-90 disabled:opacity-60"
           >
             {updateEntry.isPending ? 'Saving…' : 'Save changes'}
           </button>
 
-          <div className="h-px w-full bg-[#f0e7db]" />
+          <div className="h-px w-full bg-sand" />
 
           {confirmingDelete ? (
             <div className="flex flex-col gap-2">
-              <p className="text-sm text-[#8c2121]">
+              <p className="text-sm text-danger-text">
                 Delete this entry permanently? This can&apos;t be undone.
               </p>
               <div className="flex gap-2">
@@ -218,27 +216,27 @@ export default function EntryEditSheet({
                   type="button"
                   onClick={() => deleteEntry.mutate()}
                   disabled={deleteEntry.isPending}
-                  className="min-h-11 flex-1 rounded-lg bg-[#8c2121] text-sm font-semibold text-white disabled:opacity-60"
+                  className="min-h-11 flex-1 rounded-lg bg-danger-text text-sm font-semibold text-white disabled:opacity-60"
                 >
                   {deleteEntry.isPending ? 'Deleting…' : 'Yes, delete'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
-                  className="min-h-11 flex-1 rounded-lg border border-[#d4c4b0] text-sm font-semibold text-[#1c0d05]"
+                  className="min-h-11 flex-1 rounded-lg border border-line text-sm font-semibold text-espresso"
                 >
                   Cancel
                 </button>
               </div>
               {deleteEntry.isError && (
-                <p className="text-sm text-red-700">{deleteEntry.error.message}</p>
+                <p className="text-sm text-error">{deleteEntry.error.message}</p>
               )}
             </div>
           ) : (
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#f5e0e0] text-sm font-medium text-[#8c2121]"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-danger-soft text-sm font-medium text-danger-text"
             >
               <Trash2 size={14} strokeWidth={1.75} />
               Delete entry

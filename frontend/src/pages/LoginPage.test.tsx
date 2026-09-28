@@ -83,3 +83,11 @@ describe('LoginPage Google sign-in', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe('LoginPage navigation', () => {
+  it('links back to the home page', () => {
+    renderPage();
+
+    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
+  });
+});

@@ -231,11 +231,13 @@ const WIDGET_IDS = Object.keys(WIDGET_META) as WidgetId[];
 export const DEFAULT_LAYOUT: WidgetState[] = [
   { id: 'summary', visible: true, size: 'wide' },
   { id: 'heatmap', visible: true, size: 'wide' },
+  // Desktop fills two columns alternately, so this order gives Figma's
+  // columns: What's left / Continue / Insight left, Recent / Upcoming right.
   { id: 'whatsLeft', visible: true, size: 'standard' },
-  { id: 'continue', visible: true, size: 'standard' },
   { id: 'recent', visible: true, size: 'standard' },
-  { id: 'insight', visible: true, size: 'standard' },
+  { id: 'continue', visible: true, size: 'standard' },
   { id: 'upcoming', visible: true, size: 'standard' },
+  { id: 'insight', visible: true, size: 'standard' },
   { id: 'timeByProject', visible: false, size: 'standard' },
   { id: 'frequency', visible: false, size: 'standard' },
   { id: 'dueDormant', visible: false, size: 'standard' },
@@ -801,12 +803,12 @@ export function useDashboardData(today: string, layout: WidgetState[]) {
   );
 }
 
-export const CARD = 'rounded-xl bg-[#F5EBE0] p-4';
-export const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-[#7a5230]';
-export const MUTED = 'text-[#7a5230]';
+export const CARD = 'rounded-xl bg-cream p-4';
+export const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-clay';
+export const MUTED = 'text-clay';
 export const GOLD_BUTTON =
-  'inline-flex items-center justify-center rounded-full bg-[#D4A843] px-4 py-1.5 text-sm font-semibold text-[#1c0d06] transition-colors hover:bg-[#C99B36] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1c0d06]';
+  'inline-flex items-center justify-center rounded-full bg-gold px-4 py-1.5 text-sm font-semibold text-espresso transition-colors hover:bg-gold/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-espresso';
 export const DARK_BUTTON =
-  'inline-flex items-center justify-center gap-1.5 rounded-md bg-[#1C0D06] px-3.5 py-2 text-sm font-medium text-[#FFFCF7] transition-colors hover:bg-[#3A2214] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-espresso px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 export const TEXT_BUTTON =
-  'rounded-md px-2 py-1.5 text-sm text-[#5C4630] transition-colors hover:text-[#1C0D06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A843]';
+  'rounded-md px-2 py-1.5 text-xs font-semibold text-clay transition-colors hover:text-espresso focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';

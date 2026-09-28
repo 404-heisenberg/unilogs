@@ -1,43 +1,31 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import {
-  Search,
-  ChevronDown,
-  CheckSquare,
-  Square,
-  Clock,
-  SlidersHorizontal,
-  X,
-  Tag as TagIcon,
-  Calendar,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronDown, Clock, Plus, Search, SlidersHorizontal, SquareCheck } from 'lucide-react';
 import FiltersSheet from '@/components/entries/FiltersSheet';
 import { api } from '@/lib/api';
+import { projectColor, tagStyle } from '@/lib/colors';
+import { QUERY_KEYS, loadUnfinished } from '@/lib/dashboard';
 import {
+  DATE_RANGE_LABELS,
   DEFAULT_FILTERS,
   buildEntriesQuery,
   isFiltering,
+  statusEntryIds,
   type DateRangeKey,
   type EntryFilters,
+  type EntryStatus,
 } from '@/lib/entryFilters';
-import type { Entry, PagedEntries, Project, Tag } from '@/types';
+import { formatShortDate } from '@/lib/project-workspace';
+import type { Entry, PagedEntries, Project } from '@/types';
 
-const DATE_RANGE_LABELS: Record<DateRangeKey, string> = {
-  all: 'All time',
-  today: 'Today',
-  '7d': 'Last 7 days',
-  '30d': 'Last 30 days',
-  custom: 'Custom',
-};
+const MOBILE_RANGES: DateRangeKey[] = ['all', 'today', '7d'];
+const DESKTOP_RANGES: DateRangeKey[] = ['all', 'today', '7d', '30d', 'custom'];
 
-const QUICK_RANGES: DateRangeKey[] = ['all', 'today', '7d', '30d', 'custom'];
+// Figma's filter chips: 29px pills; the active date range is filled gold.
+const CHIP = 'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px]';
 
-const DOT_COLORS = ['#d1a153', '#5b82a6', '#4a8067', '#9c5a9c', '#c4664a'];
-const dotColorFor = (id: number) => DOT_COLORS[id % DOT_COLORS.length];
-
-function groupDateFormatted(iso: string): { primary: string; secondary: string | null } {
+function groupLabel(iso: string): string {
   const date = new Date(iso);
   const today = new Date();
   const yesterday = new Date();
@@ -48,19 +36,9 @@ function groupDateFormatted(iso: string): { primary: string; secondary: string |
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
 
-  const formattedDate = date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-
-  if (sameDay(date, today)) {
-    return { primary: 'Today', secondary: `· ${formattedDate}` };
-  }
-  if (sameDay(date, yesterday)) {
-    return { primary: 'Yesterday', secondary: `· ${formattedDate}` };
-  }
-  return { primary: formattedDate, secondary: null };
+  if (sameDay(date, today)) return 'Today';
+  if (sameDay(date, yesterday)) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function entryHeadline(entry: Entry): { headline: string; snippet: string | null } {
@@ -72,85 +50,134 @@ function entryHeadline(entry: Entry): { headline: string; snippet: string | null
 }
 
 function contentSnippet(entry: Entry): string | null {
-  if (!entry.content) return null;
   const parts = Object.entries(entry.content).map(([key, value]) => `${key}: ${String(value)}`);
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
-function getTimeSpent(entry: Entry): string | null {
-  if (entry.content && entry.content.timeSpent) {
-    return String(entry.content.timeSpent);
-  }
-  return null;
-}
+type DueInfo = { overdue: boolean; dueDate: string | null };
 
-function isEntryUnfinished(entry: Entry): boolean {
-  if (entry.isCompleted !== undefined) return !entry.isCompleted;
-  if (entry.content && typeof entry.content.completed === 'boolean') {
-    return !entry.content.completed;
-  }
-  return false;
-}
+function EntryCard({
+  entry,
+  projectName,
+  due,
+  wide,
+}: {
+  entry: Entry;
+  projectName: string;
+  due: DueInfo | undefined;
+  wide: boolean;
+}) {
+  const { headline, snippet } = entryHeadline(entry);
+  const tags = entry.tags ?? [];
+  const dueLabel = due?.dueDate ? formatShortDate(due.dueDate.slice(0, 10)) : null;
 
-function isEntryOverdue(entry: Entry): boolean {
-  if (!entry.dueDate) return false;
-  const due = new Date(entry.dueDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return due < today && isEntryUnfinished(entry);
-}
-
-function formatDueDate(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return (
+    <li
+      className={`relative flex flex-col gap-3 rounded-xl border border-cream bg-paper p-4 transition-shadow hover:shadow-md ${
+        wide ? 'md:col-span-2' : ''
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to={`/projects/${entry.projectId}`}
+          className="relative z-10 -my-3 inline-flex min-h-11 min-w-0 items-center gap-2 text-[10px] font-bold tracking-[0.04em] text-clay uppercase hover:underline md:min-h-0"
+        >
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: projectColor(entry.projectId) }}
+            aria-hidden
+          />
+          <span className="truncate">{projectName}</span>
+        </Link>
+        <p className="shrink-0 text-xs text-clay">
+          {new Date(entry.createdAt).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+          })}
+        </p>
+      </div>
+      <div className="flex flex-col gap-1">
+        {/* The title link covers the card; the project link sits above it. */}
+        <Link
+          to={`/entries/${entry.id}`}
+          className="text-base font-semibold text-espresso after:absolute after:inset-0 after:rounded-xl"
+        >
+          {headline}
+        </Link>
+        {snippet && <p className="line-clamp-2 text-sm text-cocoa">{snippet}</p>}
+      </div>
+      {(due || tags.length > 0) && (
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-caramel/30 pt-3">
+          {due?.overdue ? (
+            <span className="inline-flex items-center gap-1.5 text-xs text-error">
+              <Clock className="size-3.5" strokeWidth={1.75} aria-hidden />
+              Overdue{dueLabel ? ` · due ${dueLabel}` : ''}
+            </span>
+          ) : due ? (
+            <span className="inline-flex items-center gap-1.5 text-xs text-clay">
+              <SquareCheck className="size-3.5" strokeWidth={1.75} aria-hidden />
+              {dueLabel ? `Due ${dueLabel}` : 'Open'}
+            </span>
+          ) : null}
+          {tags.map(({ tag }) => (
+            <span
+              key={tag.id}
+              className={`rounded px-2 py-0.5 text-[10px] font-semibold ${tagStyle(tag.name)}`}
+            >
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
+    </li>
+  );
 }
 
 export default function EntriesPage() {
   const [filters, setFilters] = useState<EntryFilters>(DEFAULT_FILTERS);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'unfinished' | 'overdue' | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // The header search box applies 300ms after typing stops, so each keystroke
+  // doesn't fire a request. The sheet's search applies on 'Apply filters'.
+  const [searchText, setSearchText] = useState(filters.search);
+  useEffect(() => {
+    const timer = setTimeout(() => setFilters((f) => ({ ...f, search: searchText })), 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
+  const applyFilters = (next: EntryFilters) => {
+    setFilters(next);
+    setSearchText(next.search);
+  };
 
-  // Fetch entries
   const { data, isPending, isError } = useQuery({
-    queryKey: ['entries', filters],
+    queryKey: ['entries', { ...filters, status: null }],
     queryFn: () => api.get<PagedEntries>(`/api/entries${buildEntriesQuery(filters)}`),
   });
 
-  const rawEntries = useMemo(() => data?.entries ?? [], [data]);
+  // Same query as the dashboard's "What's left" card.
+  const unfinished = useQuery({ queryKey: QUERY_KEYS.unfinished, queryFn: loadUnfinished });
+  const statusIds = useMemo(() => statusEntryIds(unfinished.data), [unfinished.data]);
 
-  // Fetch projects
+  const dueByEntry = useMemo(() => {
+    const map = new Map<number, DueInfo>();
+    const groups = unfinished.data;
+    if (!groups) return map;
+    for (const item of [...groups.dueThisWeek, ...groups.noDueDate]) {
+      map.set(item.entryId, { overdue: false, dueDate: item.dueDate });
+    }
+    for (const item of groups.overdue)
+      map.set(item.entryId, { overdue: true, dueDate: item.dueDate });
+    return map;
+  }, [unfinished.data]);
+
+  const entries = useMemo(() => {
+    const all = data?.entries ?? [];
+    return filters.status ? all.filter((entry) => statusIds[filters.status!].has(entry.id)) : all;
+  }, [data, filters.status, statusIds]);
+
   const { data: projects } = useQuery({
     queryKey: ['projects', { archived: false }],
     queryFn: () => api.get<Project[]>('/api/projects'),
   });
-
-  // Fetch tags
-  const { data: tagsData } = useQuery({
-    queryKey: ['tags'],
-    queryFn: () => api.get<Tag[]>('/api/tags').catch(() => []),
-  });
-
-  // Unique tags fallback from entries if tag endpoint is empty
-  const availableTags = useMemo<Tag[]>(() => {
-    if (tagsData && Array.isArray(tagsData) && tagsData.length > 0) return tagsData;
-    const tagMap = new Map<number, Tag>();
-    for (const entry of rawEntries) {
-      if (entry.tags) {
-        for (const t of entry.tags) {
-          if (t.tag) {
-            tagMap.set(t.tag.id, {
-              id: t.tag.id,
-              name: t.tag.name,
-              usageCount: 'usageCount' in t.tag ? (t.tag as Tag).usageCount : 0,
-            });
-          }
-        }
-      }
-    }
-    return Array.from(tagMap.values());
-  }, [tagsData, rawEntries]);
 
   const projectNames = useMemo(() => {
     const map = new Map<number, string>();
@@ -158,425 +185,205 @@ export default function EntriesPage() {
     return map;
   }, [projects]);
 
-  // Status counts across raw dataset
-  const { unfinishedCount, overdueCount } = useMemo(() => {
-    let unfinished = 0;
-    let overdue = 0;
-    for (const entry of rawEntries) {
-      if (isEntryUnfinished(entry)) unfinished++;
-      if (isEntryOverdue(entry)) overdue++;
-    }
-    return { unfinishedCount: unfinished, overdueCount: overdue };
-  }, [rawEntries]);
-
-  // Memoized client-side filtering pass
-  const filteredEntries = useMemo(() => {
-    return rawEntries.filter((entry) => {
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const { headline, snippet } = entryHeadline(entry);
-        const matchesTitle = headline.toLowerCase().includes(query);
-        const matchesSnippet = snippet ? snippet.toLowerCase().includes(query) : false;
-        if (!matchesTitle && !matchesSnippet) return false;
-      }
-
-      if (statusFilter === 'unfinished' && !isEntryUnfinished(entry)) return false;
-      if (statusFilter === 'overdue' && !isEntryOverdue(entry)) return false;
-
-      if (selectedTagIds.length > 0) {
-        const entryTagIds = entry.tags?.map((t) => t.tag.id) ?? [];
-        const hasAllTags = selectedTagIds.every((id) => entryTagIds.includes(id));
-        if (!hasAllTags) return false;
-      }
-
-      return true;
-    });
-  }, [rawEntries, searchQuery, statusFilter, selectedTagIds]);
-
-  // Memoized date grouping using local calendar day
   const groups = useMemo(() => {
     const map = new Map<string, Entry[]>();
-    for (const entry of filteredEntries) {
-      const d = new Date(entry.date);
-      const localDateKey = isNaN(d.getTime())
-        ? entry.date.slice(0, 10)
-        : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-      const bucket = map.get(localDateKey);
+    for (const entry of entries) {
+      const label = groupLabel(entry.date);
+      const bucket = map.get(label);
       if (bucket) bucket.push(entry);
-      else map.set(localDateKey, [entry]);
+      else map.set(label, [entry]);
     }
-    return Array.from(map.entries()).map(([, entriesList]) => ({
-      rawDate: entriesList[0].date,
-      entries: entriesList,
-    }));
-  }, [filteredEntries]);
+    return Array.from(map.entries());
+  }, [entries]);
 
-  const activeFilterCount =
-    (isFiltering(filters) ? 1 : 0) +
-    (searchQuery ? 1 : 0) +
-    selectedTagIds.length +
-    (statusFilter ? 1 : 0);
-
-  const handleClearAllFilters = () => {
-    setFilters(DEFAULT_FILTERS);
-    setSearchQuery('');
-    setSelectedTagIds([]);
-    setStatusFilter(null);
+  const filtering = isFiltering(filters);
+  const hasAnyEntries = entries.length > 0 || filtering;
+  const statusCounts: Record<EntryStatus, number> = {
+    unfinished: statusIds.unfinished.size,
+    overdue: statusIds.overdue.size,
   };
 
-  const toggleTag = (tagId: number) => {
-    setSelectedTagIds((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
-    );
-  };
-
-  const scrollToDateGroup = (rawDate: string) => {
-    const el = document.getElementById(`group-${rawDate}`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const setStatus = (status: EntryStatus) =>
+    setFilters((f) => ({ ...f, status: f.status === status ? null : status }));
+  const setRange = (key: DateRangeKey) => {
+    if (key === 'custom') setSheetOpen(true);
+    else setFilters((f) => ({ ...f, dateRange: key }));
   };
 
   return (
-    <div className="min-h-screen bg-[#faf7f2] p-6 text-[#1c0d06] md:p-10">
-      <div className="mx-auto max-w-7xl">
-        {/* Top Header & Search Input */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-[#1c0d06]">Entries</h1>
-
-          {/* Search bar top right */}
-          <div className="relative w-full sm:w-72">
+    <div className="flex flex-col gap-4 md:gap-8">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="sr-only text-[28px] font-bold text-espresso md:not-sr-only">Entries</h1>
+        <div className="hidden items-center gap-3 md:flex">
+          <label className="flex h-10 w-60 items-center gap-2 rounded-lg border border-line bg-white px-3 focus-within:ring-2 focus-within:ring-espresso">
             <input
-              type="text"
-              placeholder="Search entries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-full border border-[#e6ded6] bg-[#fcfaf7] py-2 pl-4 pr-10 text-sm text-[#1c0d06] placeholder-[#a39588] shadow-sm transition-all focus:border-[#d1a153] focus:bg-white focus:outline-none"
+              type="search"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search entries…"
+              aria-label="Search entries"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-espresso outline-none placeholder:text-taupe"
             />
-            {searchQuery ? (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8c7b6e] hover:text-[#1c0d06]"
-              >
-                <X size={14} />
-              </button>
-            ) : (
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-[#a39588]" />
-            )}
-          </div>
+            <Search className="size-4 shrink-0 text-cocoa" strokeWidth={1.75} aria-hidden />
+          </label>
+          <Link
+            to="/entries/new"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-espresso px-4 text-sm font-semibold text-cream transition-opacity hover:opacity-90"
+          >
+            <Plus className="size-3.5" strokeWidth={2} aria-hidden />
+            Log entry
+          </Link>
         </div>
+      </div>
 
-        {/* Shared Filter Bar */}
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          {/* Project Select Dropdown Pill */}
-          <div className="relative inline-block">
+      {hasAnyEntries && (
+        <div className="-mb-1 flex items-center gap-1.5 overflow-x-auto pb-1 md:gap-2">
+          {/* Desktop: the full Figma chip row. */}
+          <label
+            className={`${CHIP} relative hidden h-[29px] border-line text-clay md:inline-flex`}
+          >
+            <span>
+              {filters.projectId === null
+                ? 'All projects'
+                : (projectNames.get(filters.projectId) ?? 'Project')}
+            </span>
+            <ChevronDown className="size-3" strokeWidth={2} aria-hidden />
             <select
               value={filters.projectId ?? ''}
               onChange={(e) =>
                 setFilters((f) => ({
                   ...f,
-                  projectId: e.target.value ? Number(e.target.value) : null,
+                  projectId: e.target.value === '' ? null : Number(e.target.value),
                 }))
               }
-              className="appearance-none rounded-full border border-[#e6ded6] bg-[#fcfaf7] py-1.5 pl-4 pr-8 text-xs font-medium text-[#5c4a3e] shadow-sm hover:border-[#d1a153] focus:outline-none"
+              aria-label="Project"
+              className="absolute inset-0 cursor-pointer opacity-0"
             >
               <option value="">All projects</option>
-              {projects?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
+              {(projects ?? []).map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
                 </option>
               ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#8c7b6e]" />
-          </div>
-
-          {/* Date Range Quick Pills */}
-          {QUICK_RANGES.map((key) => {
+          </label>
+          {DESKTOP_RANGES.map((key) => {
             const active = filters.dateRange === key;
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => setFilters((f) => ({ ...f, dateRange: key }))}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-medium shadow-sm transition-all ${
+                onClick={() => setRange(key)}
+                aria-pressed={active}
+                className={`${CHIP} h-11 md:h-[29px] ${MOBILE_RANGES.includes(key) ? '' : 'hidden md:inline-flex'} ${
                   active
-                    ? 'bg-[#d1a153] text-[#1c1109]'
-                    : 'border border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-[#d1a153]'
+                    ? 'border-gold bg-gold font-semibold text-rail'
+                    : 'border-line text-clay hover:border-gold'
                 }`}
               >
                 {DATE_RANGE_LABELS[key]}
               </button>
             );
           })}
-
-          {/* Unfinished Status Chip */}
-          <button
-            type="button"
-            onClick={() => setStatusFilter((prev) => (prev === 'unfinished' ? null : 'unfinished'))}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-sm transition-all ${
-              statusFilter === 'unfinished'
-                ? 'border-[#1c0d06] bg-[#1c0d06] text-[#f5ebe0]'
-                : 'border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-[#d1a153]'
-            }`}
-          >
-            <CheckSquare size={13} className="text-[#8c7b6e]" />
-            <span>Unfinished</span>
-            <span className="text-[#8c7b6e]">· {unfinishedCount}</span>
-          </button>
-
-          {/* Overdue Status Chip */}
-          <button
-            type="button"
-            onClick={() => setStatusFilter((prev) => (prev === 'overdue' ? null : 'overdue'))}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-sm transition-all ${
-              statusFilter === 'overdue'
-                ? 'border-red-600 bg-red-600 text-white'
-                : 'border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-red-400'
-            }`}
-          >
-            <Clock size={13} className="text-[#8c7b6e]" />
-            <span>Overdue</span>
-            <span className="text-[#8c7b6e]">· {overdueCount}</span>
-          </button>
-
-          {/* Shared Tag Chips */}
-          {availableTags.map((t) => {
-            const active = selectedTagIds.includes(t.id);
+          {(['unfinished', 'overdue'] as const).map((status) => {
+            const active = filters.status === status;
+            const Icon = status === 'unfinished' ? SquareCheck : Clock;
             return (
               <button
-                key={t.id}
+                key={status}
                 type="button"
-                onClick={() => toggleTag(t.id)}
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm transition-all ${
+                onClick={() => setStatus(status)}
+                aria-pressed={active}
+                className={`${CHIP} hidden h-[31px] pl-2.5 md:inline-flex ${
                   active
-                    ? 'border-[#8c7b6e] bg-[#8c7b6e] text-white'
-                    : 'border-[#e6ded6] bg-[#fcfaf7] text-[#5c4a3e] hover:border-[#d1a153]'
+                    ? 'border-gold bg-gold/15 font-semibold text-espresso'
+                    : 'border-line text-clay'
                 }`}
               >
-                <TagIcon size={11} />
-                <span>#{t.name}</span>
+                <Icon className="size-3.5" strokeWidth={1.75} aria-hidden />
+                {status === 'unfinished' ? 'Unfinished' : 'Overdue'} · {statusCounts[status]}
               </button>
             );
           })}
-
-          {/* Mobile Filters Sheet Trigger */}
           <button
             type="button"
             onClick={() => setSheetOpen(true)}
-            aria-label="Open filter sheet"
-            className="ml-auto flex size-8 items-center justify-center rounded-full border border-[#e6ded6] bg-white text-[#5c4a3e] md:hidden"
+            aria-label="Filters"
+            className={`flex size-11 shrink-0 items-center justify-center rounded-full border md:size-[31px] ${
+              filtering ? 'border-gold text-gold' : 'border-line text-clay'
+            }`}
           >
-            <SlidersHorizontal size={14} />
+            <SlidersHorizontal className="size-4 md:size-3.5" strokeWidth={2} />
           </button>
         </div>
+      )}
 
-        {/* Loading / Error States */}
-        {isPending && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 animate-pulse rounded-2xl bg-[#ebe3d8]" />
-            ))}
-          </div>
-        )}
-
-        {isError && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            Failed to load entries. Please refresh to try again.
-          </div>
-        )}
-
-        {!isPending && !isError && rawEntries.length === 0 && !activeFilterCount && (
-          <div className="rounded-2xl border border-dashed border-[#e6ded6] bg-white/60 p-12 text-center">
-            <p className="text-sm font-medium text-[#7a6b5d]">No entries recorded yet.</p>
-            <Link to="/entries/new">
-              <Button className="mt-4 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90">
-                Create First Entry
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {!isPending && !isError && filteredEntries.length === 0 && activeFilterCount > 0 && (
-          <div className="rounded-2xl border border-dashed border-[#e6ded6] bg-white/60 p-12 text-center">
-            <p className="text-sm font-medium text-[#7a6b5d]">
-              No entries match the selected filters.
-            </p>
-            <Button
-              onClick={handleClearAllFilters}
-              className="mt-4 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90"
-            >
-              Clear filters
-            </Button>
-          </div>
-        )}
-
-        {/* Desktop Layout Grid: Main Content + Recency Explorer Outline Sidebar */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Main Date Group Timeline Column */}
-          <div className="space-y-8 lg:col-span-3">
-            {groups.map((group) => {
-              const { primary, secondary } = groupDateFormatted(group.rawDate);
-
-              return (
-                <section
-                  key={group.rawDate}
-                  id={`group-${group.rawDate}`}
-                  className="scroll-mt-6 space-y-3"
-                >
-                  {/* Date Group Header */}
-                  <div className="flex items-baseline gap-1.5 text-sm">
-                    <span className="font-bold text-[#1c0d06]">{primary}</span>
-                    {secondary && <span className="text-[#8c7b6e]">{secondary}</span>}
-                  </div>
-
-                  {/* Cards Grid */}
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {group.entries.map((entry) => {
-                      const { headline, snippet } = entryHeadline(entry);
-                      const unfinished = isEntryUnfinished(entry);
-                      const overdue = isEntryOverdue(entry);
-                      const timeSpent = getTimeSpent(entry);
-
-                      return (
-                        <div
-                          key={entry.id}
-                          className="group flex flex-col justify-between rounded-2xl border border-[#ebdcd0] bg-white p-5 shadow-xs transition-all hover:shadow-md"
-                        >
-                          <div>
-                            {/* Top Row: Project Tag & Property Summary Header */}
-                            <div className="mb-2 flex items-center justify-between text-[11px] font-semibold tracking-wider text-[#8c7b6e] uppercase">
-                              <Link
-                                to={`/projects/${entry.projectId}`}
-                                className="flex items-center gap-1.5 hover:underline"
-                              >
-                                <span
-                                  className="size-2 rounded-full"
-                                  style={{ backgroundColor: dotColorFor(entry.projectId) }}
-                                />
-                                <span>{projectNames.get(entry.projectId) ?? 'PROJECT'}</span>
-                              </Link>
-
-                              {/* Right-aligned property summary */}
-                              <div className="flex items-center gap-2 text-xs font-normal tracking-normal text-[#8c7b6e]/80">
-                                {timeSpent && (
-                                  <span className="flex items-center gap-1 font-medium text-[#1c0d06]">
-                                    <Clock size={12} />
-                                    {timeSpent}
-                                  </span>
-                                )}
-                                <span>
-                                  {new Date(entry.date).toLocaleTimeString([], {
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                  })}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Title (Muted Red if Overdue) & Open Checkbox State */}
-                            <Link to={`/entries/${entry.id}`} className="block">
-                              <h3
-                                className={`flex items-start gap-2 text-base font-semibold leading-snug ${
-                                  overdue ? 'text-[#c44536]' : 'text-[#1c0d06]'
-                                }`}
-                              >
-                                {unfinished && (
-                                  <Square
-                                    size={16}
-                                    className="mt-1 shrink-0 text-[#8c7b6e] group-hover:text-[#1c0d06]"
-                                  />
-                                )}
-                                <span>{headline}</span>
-                              </h3>
-
-                              {/* Snippet */}
-                              {snippet && (
-                                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[#5c4a3e]">
-                                  {snippet}
-                                </p>
-                              )}
-                            </Link>
-
-                            {/* Tag Chips on Entry Card */}
-                            {entry.tags && entry.tags.length > 0 && (
-                              <div className="mt-3 flex flex-wrap gap-1">
-                                {entry.tags.map(({ tag }) => (
-                                  <span
-                                    key={tag.id}
-                                    className="inline-flex items-center gap-0.5 rounded-md bg-[#f4eee6] px-2 py-0.5 text-[10px] font-medium text-[#6e5d50]"
-                                  >
-                                    #{tag.name}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Footer Badges (Overdue notice or time spent fallback) */}
-                          {(timeSpent || overdue) && (
-                            <div className="mt-4 flex items-center gap-1.5 text-xs text-[#8c7b6e]">
-                              {timeSpent && !overdue && (
-                                <span className="flex items-center gap-1">
-                                  <Clock size={13} />
-                                  {timeSpent}
-                                </span>
-                              )}
-                              {overdue && (
-                                <span className="flex items-center gap-1 font-medium text-[#c44536]">
-                                  <Clock size={13} className="text-[#c44536]" />
-                                  Overdue · due {formatDueDate(entry.dueDate!)}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-
-          {/* Recency Explorer Outline Sidebar (Desktop) */}
-          {groups.length > 0 && (
-            <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-6 rounded-2xl border border-[#ebdcd0] bg-white/70 p-4 backdrop-blur-xs">
-                <div className="mb-3 flex items-center gap-2 border-b border-[#e6ded6] pb-2 text-xs font-bold tracking-wider text-[#8c7b6e] uppercase">
-                  <Calendar size={13} />
-                  <span>Recency Outline</span>
-                </div>
-                <nav className="space-y-1">
-                  {groups.map((group) => {
-                    const { primary } = groupDateFormatted(group.rawDate);
-                    return (
-                      <button
-                        key={group.rawDate}
-                        type="button"
-                        onClick={() => scrollToDateGroup(group.rawDate)}
-                        className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs text-[#5c4a3e] transition-colors hover:bg-[#f4eee6] hover:text-[#1c0d06]"
-                      >
-                        <span className="truncate font-medium">{primary}</span>
-                        <span className="ml-2 rounded-full bg-[#f0e8de] px-1.5 py-0.5 text-[10px] text-[#8c7b6e]">
-                          {group.entries.length}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-            </aside>
-          )}
+      {isPending && (
+        <div className="grid gap-3 md:grid-cols-2 md:gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-36 animate-pulse rounded-xl bg-cream" />
+          ))}
         </div>
+      )}
+
+      {isError && (
+        <div className="rounded-xl border border-danger-soft bg-danger-soft p-4 text-sm text-error">
+          Failed to load entries. Try refreshing the page.
+        </div>
+      )}
+
+      {!isPending && !isError && entries.length === 0 && !filtering && (
+        <div className="rounded-xl border border-dashed border-line-strong bg-paper p-10 text-center">
+          <p className="text-sm text-cocoa">No entries yet.</p>
+          <Link
+            to="/entries/new"
+            className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-espresso px-5 text-sm font-semibold text-cream hover:opacity-90 md:min-h-10"
+          >
+            Log your first entry
+          </Link>
+        </div>
+      )}
+
+      {!isPending && !isError && entries.length === 0 && filtering && (
+        <div className="rounded-xl border border-dashed border-line-strong bg-paper p-10 text-center">
+          <p className="text-sm text-cocoa">No entries match your filters.</p>
+          <button
+            type="button"
+            onClick={() => applyFilters(DEFAULT_FILTERS)}
+            className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-espresso px-5 text-sm font-semibold text-cream hover:opacity-90 md:min-h-10"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-6">
+        {groups.map(([label, groupEntries]) => (
+          <section key={label} className="flex flex-col gap-3">
+            <h2 className="text-sm font-bold text-espresso">{label}</h2>
+            <ul className="grid gap-3 md:grid-cols-2 md:gap-4">
+              {groupEntries.map((entry, index) => (
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  projectName={projectNames.get(entry.projectId) ?? 'Unknown project'}
+                  due={dueByEntry.get(entry.id)}
+                  // A day's odd last card spans both columns, as in Figma.
+                  wide={index === groupEntries.length - 1 && groupEntries.length % 2 === 1}
+                />
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
 
-      {/* Mobile Filter Bottom Sheet */}
       <FiltersSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         projects={projects ?? []}
         filters={filters}
-        onApply={setFilters}
+        statusCounts={statusCounts}
+        onApply={applyFilters}
       />
     </div>
   );

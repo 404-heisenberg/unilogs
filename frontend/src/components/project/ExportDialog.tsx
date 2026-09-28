@@ -20,7 +20,7 @@ function Segmented<T extends string>({ label, value, options, onChange }: Segmen
     <div
       role="radiogroup"
       aria-label={label}
-      className="flex overflow-hidden rounded-md border border-[#d4a373]/50 bg-white"
+      className="flex overflow-hidden rounded-lg border border-line bg-white"
     >
       {options.map((option) => {
         const selected = option.value === value;
@@ -31,8 +31,8 @@ function Segmented<T extends string>({ label, value, options, onChange }: Segmen
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option.value)}
-            className={`min-h-9 flex-1 px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#D4A843] ${
-              selected ? 'bg-[#1c0d06] text-[#f5ebe0]' : 'text-[#1c0d06] hover:bg-[#f5ebe0]'
+            className={`min-h-9 flex-1 px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold ${
+              selected ? 'bg-espresso text-cream' : 'text-espresso hover:bg-cream'
             }`}
           >
             {option.label}
@@ -91,12 +91,12 @@ export default function ExportDialog({ open, onOpenChange, projectId }: ExportDi
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="max-w-sm bg-[#FFFCF7] text-[#1c0d06]"
+        className="bg-paper text-espresso"
       >
-        <DialogTitle className="text-sm">Export entries</DialogTitle>
+        <DialogTitle>Export entries</DialogTitle>
 
         <div className="flex flex-col gap-1.5">
-          <p className="text-[11px] text-[#4a3525]">Format</p>
+          <p className="text-[13px] font-medium text-espresso">Format</p>
           <Segmented
             label="Format"
             value={format}
@@ -109,7 +109,7 @@ export default function ExportDialog({ open, onOpenChange, projectId }: ExportDi
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <p className="text-[11px] text-[#4a3525]">Range</p>
+          <p className="text-[13px] font-medium text-espresso">Range</p>
           <Segmented
             label="Range"
             value={range}
@@ -128,20 +128,20 @@ export default function ExportDialog({ open, onOpenChange, projectId }: ExportDi
                 value={from}
                 max={to || undefined}
                 onChange={(e) => setFrom(e.target.value)}
-                className="min-h-9 min-w-0 flex-1 rounded-md border border-[#d4a373]/60 bg-white px-2 text-xs outline-none focus:ring-2 focus:ring-[#1c0d06]"
+                className="min-h-10 min-w-0 flex-1 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-espresso"
               />
-              <span className="text-xs text-[#7a5230]">to</span>
+              <span className="text-xs text-clay">to</span>
               <input
                 type="date"
                 aria-label="To date"
                 value={to}
                 min={from || undefined}
                 onChange={(e) => setTo(e.target.value)}
-                className="min-h-9 min-w-0 flex-1 rounded-md border border-[#d4a373]/60 bg-white px-2 text-xs outline-none focus:ring-2 focus:ring-[#1c0d06]"
+                className="min-h-10 min-w-0 flex-1 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-espresso"
               />
             </div>
           )}
-          <p className="text-[10px] text-[#7a5230]">Includes all custom fields and notes.</p>
+          <p className="text-xs text-clay">Includes all custom fields and notes.</p>
         </div>
 
         <div className="mt-1 flex justify-end gap-2">
@@ -149,7 +149,7 @@ export default function ExportDialog({ open, onOpenChange, projectId }: ExportDi
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-11 md:min-h-0"
+            className="min-h-11 md:min-h-10"
             onClick={() => onOpenChange(false)}
           >
             Cancel
@@ -157,7 +157,7 @@ export default function ExportDialog({ open, onOpenChange, projectId }: ExportDi
           <Button
             type="button"
             size="sm"
-            className="min-h-11 bg-[#1c0d06] text-[#f5ebe0] hover:opacity-90 md:min-h-0"
+            className="min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-10"
             onClick={handleExport}
             disabled={customInvalid}
           >

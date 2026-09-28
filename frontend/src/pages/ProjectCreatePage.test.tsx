@@ -99,7 +99,7 @@ describe('ProjectCreatePage', () => {
     expect(postMock).toHaveBeenCalledWith('/api/projects', {
       name: 'Thesis',
       description: 'Final year research',
-      color: '#3e6b48',
+      color: '#7a9e6b',
       reminder: 'weekly',
     });
     expect(postMock).toHaveBeenCalledWith('/api/field-definitions', {
@@ -143,7 +143,7 @@ describe('ProjectCreatePage', () => {
     expect(postMock).toHaveBeenCalledWith('/api/projects', {
       name: 'Journal',
       description: undefined,
-      color: '#3e6b48',
+      color: '#7a9e6b',
       reminder: 'weekly',
     });
     expect(postMock).toHaveBeenCalledWith('/api/field-definitions', {
@@ -152,6 +152,42 @@ describe('ProjectCreatePage', () => {
       fieldType: 'text',
     });
     expect(await screen.findByText('Project detail')).toBeInTheDocument();
+  }, 10000);
+
+  it('offers every field type by its display name, including Toggle', async () => {
+    const user = userEvent.setup();
+    postMock.mockImplementation((path: string) => {
+      if (path === '/api/projects') {
+        return Promise.resolve({ id: 3, name: 'Gym', archived: false, userId: 'u1' });
+      }
+      if (path === '/api/field-definitions') {
+        return Promise.resolve({ id: 2, projectId: 3, name: 'Warmed up', fieldType: 'boolean' });
+      }
+      return Promise.reject(new Error(`unexpected POST ${path}`));
+    });
+
+    renderPage();
+    await user.type(screen.getByPlaceholderText('e.g. Data Structures Revision'), 'Gym');
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(await screen.findByRole('button', { name: 'Add field' }));
+
+    const typeSelect = screen.getByDisplayValue('Text');
+    expect(
+      Array.from(typeSelect.querySelectorAll('option')).map((option) => option.textContent),
+    ).toEqual(['Text', 'Number', 'Date', 'Duration', 'Toggle']);
+
+    // A Toggle field is still saved as the backend's 'boolean' type.
+    await user.type(screen.getByPlaceholderText('Field name'), 'Warmed up');
+    await user.selectOptions(typeSelect, 'Toggle');
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(await screen.findByRole('button', { name: 'Save' }));
+
+    expect(postMock).toHaveBeenCalledWith('/api/field-definitions', {
+      projectId: 3,
+      name: 'Warmed up',
+      fieldType: 'boolean',
+    });
   }, 10000);
 
   it('shows an error message when creation fails', async () => {
