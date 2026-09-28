@@ -36,6 +36,20 @@ export default function AuthLayout({
               : 'right-0 w-[18px] bg-linear-to-r from-transparent to-black/20'
           }`}
         />
+        {back && (
+          // Figma's Button/Secondary shape (outline, 12px radius, 48px,
+          // DM Sans Medium 13) in the cover's gold, pinned to the cover's
+          // top-left corner. On mobile it sits above the inscription.
+          <Link
+            to={back.to}
+            className={`relative z-10 mt-4 inline-flex h-12 items-center gap-2 rounded-xl border border-gold/50 px-4 font-sans text-[13px] font-medium text-gold transition-colors hover:border-gold hover:bg-gold/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:absolute md:top-6 md:left-6 md:m-0 ${
+              signUp ? 'ml-5' : 'ml-6'
+            }`}
+          >
+            <ArrowLeft size={16} strokeWidth={2} aria-hidden />
+            {back.label}
+          </Link>
+        )}
         {signUp ? <SignUpCover /> : <SignInCover />}
       </header>
       <section className="paper-ruled relative flex flex-1 flex-col md:items-center md:justify-center">
@@ -52,24 +66,9 @@ export default function AuthLayout({
             className="pointer-events-none absolute inset-y-0 left-[18px] w-px bg-clay/15 md:left-[94px]"
           />
         )}
-        {back && (
-          // Figma design system "Button/Secondary" (caramel outline, 12px
-          // radius, 48px; hover: cream fill at 90%), pinned to the paper's
-          // top-left corner. Paper fill so the margin line doesn't show
-          // through it.
-          <Link
-            to={back.to}
-            className={`relative z-10 mt-4 inline-flex h-12 items-center gap-2 self-start rounded-xl border border-caramel bg-paper px-4 text-[13px] font-medium text-cocoa transition-[background-color,opacity] hover:bg-cream hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:absolute md:top-6 md:left-6 md:m-0 ${
-              signUp ? 'ml-4' : 'ml-6'
-            }`}
-          >
-            <ArrowLeft size={16} strokeWidth={2} aria-hidden />
-            {back.label}
-          </Link>
-        )}
         <div
           className={`relative flex w-full flex-col items-stretch md:items-center md:p-12 ${
-            signUp ? (back ? 'px-4 pt-4 pb-8' : 'px-4 pt-3.5 pb-8') : 'px-6 pt-6 pb-8'
+            signUp ? 'px-4 pt-3.5 pb-8' : 'px-6 pt-6 pb-8'
           }`}
         >
           {children}
