@@ -17,6 +17,7 @@ import {
   type EntryStatus,
 } from '@/lib/entryFilters';
 import { formatShortDate } from '@/lib/project-workspace';
+import { stripMarkdownLine } from '@/lib/sharedReport';
 import type { Entry, PagedEntries, Project } from '@/types';
 
 const MOBILE_RANGES: DateRangeKey[] = ['all', 'today', '7d'];
@@ -41,12 +42,21 @@ function groupLabel(iso: string): string {
   return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function markdownSnippet(body: string | null | undefined): string | null {
+  if (!body) return null;
+  const firstLine = body
+    .split('\n')
+    .map(stripMarkdownLine)
+    .find((line) => line !== '');
+  return firstLine ?? null;
+}
+
 function entryHeadline(entry: Entry): { headline: string; snippet: string | null } {
   if (entry.title) {
-    return { headline: entry.title, snippet: entry.body ?? contentSnippet(entry) };
+    return { headline: entry.title, snippet: markdownSnippet(entry.body) ?? contentSnippet(entry) };
   }
   const fromContent = contentSnippet(entry);
-  return { headline: fromContent ?? 'Untitled entry', snippet: entry.body ?? null };
+  return { headline: fromContent ?? 'Untitled entry', snippet: markdownSnippet(entry.body) };
 }
 
 function contentSnippet(entry: Entry): string | null {
