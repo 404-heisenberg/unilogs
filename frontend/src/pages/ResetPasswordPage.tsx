@@ -211,7 +211,7 @@ export const ResetPasswordPage: React.FC = () => {
   const token = searchParams.get('token');
 
   return (
-    <AuthLayout>
+    <AuthLayout backToHome>
       <article className="w-full max-w-sm">
         {token ? <SetNewPasswordForm token={token} /> : <RequestResetForm />}
       </article>

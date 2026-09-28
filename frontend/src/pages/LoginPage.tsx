@@ -40,7 +40,7 @@ export const LoginPage: React.FC = () => {
   });
 
   return (
-    <AuthLayout>
+    <AuthLayout backToHome>
       <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
         <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
           Sign in
