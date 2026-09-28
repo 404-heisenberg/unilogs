@@ -177,7 +177,7 @@ export function entryMeta(entry: ReportEntry, fields: ReportField[]): string {
 // removed: line prefixes (headings, quotes, list/task markers), link and image
 // wrappers, and paired emphasis/code markers, so hyphens and brackets inside
 // ordinary text ("related-work", "(chapter 2)") survive.
-function stripMarkdownLine(line: string): string {
+export function stripMarkdownLine(line: string): string {
   return line
     .replace(/^\s*(?:#{1,6}\s+|>\s*)+/, '')
     .replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '')
