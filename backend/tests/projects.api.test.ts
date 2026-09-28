@@ -238,10 +238,20 @@ describe('project routes', () => {
       fieldType: 'duration',
     });
 
-    const olderDate = new Date();
-    olderDate.setUTCDate(olderDate.getUTCDate() - 2);
-    const newerDate = new Date();
-    newerDate.setUTCDate(newerDate.getUTCDate() - 1);
+    // Anchor both entries to the Monday of the current week — the same
+    // boundary project-summary-service uses for `entriesThisWeek`. Using
+    // "now minus N days" made this test fail on Mondays, when those dates
+    // fall into the previous week (#276).
+    const startOfWeek = new Date();
+    const dayOfWeek = startOfWeek.getUTCDay();
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    startOfWeek.setUTCDate(startOfWeek.getUTCDate() - daysSinceMonday);
+    startOfWeek.setUTCHours(0, 0, 0, 0);
+
+    const olderDate = new Date(startOfWeek);
+    olderDate.setUTCDate(olderDate.getUTCDate() + 1);
+    const newerDate = new Date(startOfWeek);
+    newerDate.setUTCDate(newerDate.getUTCDate() + 2);
 
     const olderDateString = olderDate.toISOString().slice(0, 10);
     const newerDateString = newerDate.toISOString().slice(0, 10);
