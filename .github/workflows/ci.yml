@@ -42,6 +42,14 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+          if-no-files-found: warn
+
   backend:
     name: Backend
     runs-on: ubuntu-latest
