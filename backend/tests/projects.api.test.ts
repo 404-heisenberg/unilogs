@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createAuthenticatedUser,
   createProject,
@@ -12,7 +12,11 @@ import {
 import { createShareToken, verifyShareToken } from '../src/services/share-services.js';
 import { prisma } from '../src/auth.js';
 
-afterEach(deleteTestUsers);
+afterEach(async () => {
+  // Restore the real clock even if a test that faked Date failed midway.
+  vi.useRealTimers();
+  await deleteTestUsers();
+});
 afterAll(disconnectTestDatabase);
 
 describe('project routes', () => {
@@ -230,6 +234,14 @@ describe('project routes', () => {
   });
 
   it('sums duration and uses the latest entry date for multiple entries', async () => {
+    // entriesThisWeek counts from Monday (UTC), and the entries below are
+    // dated 1 and 2 days back — so on a real Monday or Tuesday one or both
+    // fall in the previous week and the count comes out 0 or 1. Pin "now" to
+    // a Wednesday so the test doesn't depend on the day CI runs. Only Date is
+    // faked; timers used by supertest and Prisma keep working.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-23T12:00:00.000Z'));
+
     const { agent } = await createAuthenticatedUser();
     const project = await createProject(agent);
 
