@@ -1,21 +1,22 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import type { BackLink } from '@/lib/authFlow';
 
 // Figma's auth screens: a dark journal "inside cover" and a ruled notebook
 // page holding the form. The Sign in frames (also used for reset / verify)
 // are Cormorant Garamond with a horizontal gold rule; the Sign up frames are
-// Lora with a vertical gold rule and a cream wordmark. ackToHome adds a
-// link back to the landing page (not in Figma; the pages otherwise have no
-// way back).
+// Lora with a vertical gold rule and a cream wordmark. `back` adds a back
+// link at the top of the page (not in Figma); each page picks where it goes
+// from how the user arrived, see lib/authFlow.
 export default function AuthLayout({
   children,
   variant = 'cormorant',
-  backToHome = false,
+  back,
 }: {
   children: ReactNode;
   variant?: 'cormorant' | 'lora';
-  backToHome?: boolean;
+  back?: BackLink;
 }) {
   const signUp = variant === 'lora';
 
@@ -51,18 +52,24 @@ export default function AuthLayout({
             className="pointer-events-none absolute inset-y-0 left-[18px] w-px bg-clay/15 md:left-[94px]"
           />
         )}
-        {backToHome && (
+        {back && (
           <Link
-            to="/"
-            className="relative inline-flex min-h-11 items-center gap-1.5 self-start px-6 pt-2 text-[13px] font-medium text-clay transition-colors hover:text-espresso md:absolute md:top-6 md:left-[118px] md:px-0 md:pt-0"
+            to={back.to}
+            className={`relative inline-flex min-h-11 items-center gap-1.5 self-start pt-2 ${signUp ? 'px-4' : 'px-6'} text-[13px] font-medium text-clay transition-colors hover:text-espresso md:absolute md:top-6 md:left-[118px] md:px-0 md:pt-0`}
           >
             <ArrowLeft size={14} strokeWidth={2} aria-hidden />
-            Back to home
+            {back.label}
           </Link>
         )}
         <div
           className={`relative flex w-full flex-col items-stretch md:items-center md:p-12 ${
-            signUp ? 'px-4 pt-3.5 pb-8' : backToHome ? 'px-6 pt-2 pb-8' : 'px-6 pt-6 pb-8'
+            signUp
+              ? back
+                ? 'px-4 pt-1 pb-8'
+                : 'px-4 pt-3.5 pb-8'
+              : back
+                ? 'px-6 pt-2 pb-8'
+                : 'px-6 pt-6 pb-8'
           }`}
         >
           {children}

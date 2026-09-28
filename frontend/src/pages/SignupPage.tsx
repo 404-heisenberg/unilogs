@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
 import { getEmailError } from '@/lib/validation';
 import AuthLayout from '@/components/AuthLayout';
+import { BACK_TO_HOME, BACK_TO_SIGN_IN, useCameFrom } from '@/lib/authFlow';
 
 export const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,12 +21,15 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const oauthErrorMessage = getGoogleOAuthErrorMessage(searchParams.get('error'));
+  const cameFrom = useCameFrom();
 
   const signUp = useMutation({
     mutationFn: (input: { name: string; email: string; password: string }) =>
       api.post('/api/auth/signup', input),
     onSuccess: (_result, variables) => {
-      navigate(`/verify-email?email=${encodeURIComponent(variables.email)}`);
+      navigate(`/verify-email?email=${encodeURIComponent(variables.email)}`, {
+        state: { from: 'signup' },
+      });
     },
   });
 
@@ -77,7 +81,7 @@ export const SignupPage: React.FC = () => {
   const shouldShowRequirements = isPasswordFocused || showValidationError;
 
   return (
-    <AuthLayout variant="lora">
+    <AuthLayout variant="lora" back={cameFrom === 'login' ? BACK_TO_SIGN_IN : BACK_TO_HOME}>
       <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
         {/* Scaled-Up Header */}
         <h2 className="font-lora text-3xl font-semibold md:text-[34px]">Create an account</h2>
@@ -93,7 +97,7 @@ export const SignupPage: React.FC = () => {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
+          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
         />
 
         <label htmlFor="email" className="text-sm font-semibold">
@@ -272,12 +276,13 @@ export const SignupPage: React.FC = () => {
         {/* Account Login Link */}
         <p className="mt-2 text-center text-sm text-cocoa">
           Already have an account?{' '}
-          <a
-            href="/login"
+          <Link
+            to="/login"
+            state={{ from: 'signup' }}
             className="inline-block -my-3 py-3 font-semibold text-clay hover:underline"
           >
             Sign In
-          </a>
+          </Link>
         </p>
 
         {/* OAuth Separator */}
@@ -291,7 +296,7 @@ export const SignupPage: React.FC = () => {
             type="button"
             onClick={() => googleSignUp.mutate()}
             disabled={googleSignUp.isPending}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border-[1.5px] border-clay bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border-[1.5px] border-clay bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path

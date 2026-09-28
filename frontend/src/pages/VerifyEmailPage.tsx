@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import AuthLayout from '@/components/AuthLayout';
+import { BACK_TO_SIGN_IN, BACK_TO_SIGN_UP, useCameFrom } from '@/lib/authFlow';
 
 export const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get('email') ?? '');
   const [otp, setOtp] = useState('');
   const navigate = useNavigate();
+  const cameFrom = useCameFrom();
   const queryClient = useQueryClient();
 
   const verify = useMutation({
@@ -38,7 +40,7 @@ export const VerifyEmailPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout back={cameFrom === 'signup' ? BACK_TO_SIGN_UP : BACK_TO_SIGN_IN}>
       <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
         <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
           Verify your email
@@ -57,7 +59,7 @@ export const VerifyEmailPage: React.FC = () => {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@example.com"
           required
-          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
+          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
         />
 
         <label htmlFor="otp" className="text-sm font-semibold">
@@ -99,12 +101,12 @@ export const VerifyEmailPage: React.FC = () => {
 
         <p className="mt-2 text-center text-sm text-cocoa">
           Return back to sign in{' '}
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-clay underline hover:text-espresso"
           >
             Sign In
-          </a>
+          </Link>
         </p>
       </form>
     </AuthLayout>

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getEmailError } from '@/lib/validation';
 import AuthLayout from '@/components/AuthLayout';
+import { BACK_TO_SIGN_IN } from '@/lib/authFlow';
 
 const RequestResetForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -47,12 +48,12 @@ const RequestResetForm: React.FC = () => {
             </a>
           </p>
         )}
-        <a
-          href="/login"
-          className="mt-4 block w-full rounded-md bg-espresso p-3 text-center font-semibold text-cream transition-opacity hover:opacity-90"
+        <Link
+          to="/login"
+          className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-espresso px-4 text-[13px] font-medium text-cream shadow-[0_2px_6px_rgb(28_13_6/0.08)] transition-opacity hover:opacity-90"
         >
           Return to Sign In
-        </a>
+        </Link>
       </section>
     );
   }
@@ -101,12 +102,12 @@ const RequestResetForm: React.FC = () => {
 
       <p className="mt-2 text-center text-sm text-cocoa">
         Return back to sign in{' '}
-        <a
-          href="/login"
+        <Link
+          to="/login"
           className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-clay underline hover:text-espresso"
         >
           Sign In
-        </a>
+        </Link>
       </p>
     </form>
   );
@@ -141,12 +142,12 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
         <p className="text-sm text-clay">
           Your password has been reset. You can now sign in with your new password.
         </p>
-        <a
-          href="/login"
-          className="mt-4 block w-full rounded-md bg-espresso p-3 text-center font-semibold text-cream transition-opacity hover:opacity-90"
+        <Link
+          to="/login"
+          className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-espresso px-4 text-[13px] font-medium text-cream shadow-[0_2px_6px_rgb(28_13_6/0.08)] transition-opacity hover:opacity-90"
         >
           Return to Sign In
-        </a>
+        </Link>
       </section>
     );
   }
@@ -171,7 +172,7 @@ const SetNewPasswordForm: React.FC<{ token: string }> = ({ token }) => {
           setNewPassword(e.target.value);
           setMismatchError(null);
         }}
-        className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
+        className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
       />
 
       <label htmlFor="confirm-new-password" className="text-sm font-semibold">
@@ -211,7 +212,7 @@ export const ResetPasswordPage: React.FC = () => {
   const token = searchParams.get('token');
 
   return (
-    <AuthLayout backToHome>
+    <AuthLayout back={BACK_TO_SIGN_IN}>
       <article className="w-full max-w-sm">
         {token ? <SetNewPasswordForm token={token} /> : <RequestResetForm />}
       </article>

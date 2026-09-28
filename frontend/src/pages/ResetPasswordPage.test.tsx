@@ -81,9 +81,9 @@ describe('ResetPasswordPage with a token', () => {
 });
 
 describe('ResetPasswordPage navigation', () => {
-  it('links back to the home page', () => {
+  it('links back to sign in', () => {
     renderPage();
 
-    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/login');
   });
 });

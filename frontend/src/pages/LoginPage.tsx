@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
 import { getEmailError } from '@/lib/validation';
 import AuthLayout from '@/components/AuthLayout';
+import { BACK_TO_HOME, BACK_TO_SIGN_UP, useCameFrom } from '@/lib/authFlow';
 
 export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,6 +16,7 @@ export const LoginPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const oauthErrorMessage = getGoogleOAuthErrorMessage(searchParams.get('error'));
+  const cameFrom = useCameFrom();
 
   const signIn = useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post('/api/auth/signin', input),
@@ -40,7 +42,7 @@ export const LoginPage: React.FC = () => {
   });
 
   return (
-    <AuthLayout backToHome>
+    <AuthLayout back={cameFrom === 'signup' ? BACK_TO_SIGN_UP : BACK_TO_HOME}>
       <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
         <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
           Sign in
@@ -122,12 +124,12 @@ export const LoginPage: React.FC = () => {
         </article>
         <p className="mt-2 text-center text-sm text-cocoa">
           Forgot password?{' '}
-          <a
-            href="/reset-password"
+          <Link
+            to="/reset-password"
             className="inline-block -my-3 -mx-2 px-2 py-3 font-semibold text-clay underline hover:text-espresso"
           >
             Reset
-          </a>
+          </Link>
         </p>
         {signIn.isError &&
           (signIn.error.message === 'Email not verified' ? (
@@ -135,6 +137,7 @@ export const LoginPage: React.FC = () => {
               Your email isn&apos;t verified yet.{' '}
               <Link
                 to={`/verify-email?email=${encodeURIComponent(email)}`}
+                state={{ from: 'login' }}
                 className="inline-block -my-3 py-3 font-semibold underline"
               >
                 Verify it now
@@ -152,12 +155,13 @@ export const LoginPage: React.FC = () => {
         </button>
         <p className="mt-2 text-center text-sm text-cocoa">
           Don't have an account?{' '}
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
+            state={{ from: 'login' }}
             className="inline-block -my-3 py-3 font-semibold text-clay underline hover:text-espresso"
           >
             Sign up
-          </a>
+          </Link>
         </p>
         <section className="relative my-4 flex items-center justify-center border-t border-line-strong/60">
           <span className="absolute bg-cream px-3 text-xs font-semibold tracking-[0.05em] text-cocoa">
@@ -169,7 +173,7 @@ export const LoginPage: React.FC = () => {
             type="button"
             onClick={() => googleSignIn.mutate()}
             disabled={googleSignIn.isPending}
-            className="flex min-h-11 flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border border-line-strong bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border border-line-strong bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
