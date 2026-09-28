@@ -179,7 +179,7 @@
 }
 
 /* Figma's notebook paper (landing and auth pages): faint ruled lines every
-   32px. Add paper-margin for the double red-brown margin rule on the left. */
+   32px. */
 @utility paper-ruled {
   background-color: var(--color-cream);
   background-image: repeating-linear-gradient(
@@ -187,18 +187,4 @@
     transparent 0 31px,
     rgb(183 169 156 / 0.45) 31px 32px
   );
-}
-
-@utility paper-margin {
-  background-color: var(--color-cream);
-  background-image:
-    linear-gradient(
-      to right,
-      transparent 91px,
-      rgb(122 82 48 / 0.35) 91px 92px,
-      transparent 92px 95px,
-      rgb(122 82 48 / 0.35) 95px 96px,
-      transparent 96px
-    ),
-    repeating-linear-gradient(to bottom, transparent 0 31px, rgb(183 169 156 / 0.45) 31px 32px);
 }

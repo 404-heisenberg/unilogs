@@ -44,10 +44,21 @@ export default function LandingPage() {
   const today = todayLabel();
 
   return (
-    <main className="paper-ruled min-h-screen text-espresso md:paper-margin">
-      <div className="mx-auto flex min-h-screen max-w-[1296px] flex-col px-4 md:px-0">
+    <main className="paper-ruled min-h-screen text-espresso">
+      {/* One 1440px frame, as in Figma: 72px sides, the wordmark sits in the
+          margin with the double rule (x 91 / 95) running behind it, and the
+          content starts at x 137. */}
+      <div className="relative mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 md:px-[72px]">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-[91px] hidden w-px bg-clay/35 md:block"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-[95px] hidden w-px bg-clay/35 md:block"
+        />
         {/* Masthead */}
-        <header className="flex flex-col gap-3 pt-5 md:mx-[72px] md:flex-row md:items-center md:justify-between md:pt-[22px]">
+        <header className="relative flex flex-col gap-3 pt-5 md:flex-row md:items-center md:justify-between md:pt-[22px]">
           <div className="flex items-baseline justify-between gap-2.5 md:justify-start">
             <span className="font-lora text-[26px] font-bold tracking-[-0.03em] md:text-[30px]">
               UniLogs
@@ -79,8 +90,8 @@ export default function LandingPage() {
         </header>
 
         {/* Hero entry */}
-        <section className="relative pt-6 md:mx-[72px] md:pt-[43px] md:pr-20 md:pl-[65px]">
-          <div className="absolute top-[43px] right-0 hidden text-right md:block">
+        <section className="relative pt-6 md:pt-[43px] md:pr-20 md:pl-[65px]">
+          <div className="absolute top-[43px] right-20 hidden text-right md:block">
             <p className="text-[11px] font-semibold tracking-[0.13em] text-clay uppercase">
               Entry 001
             </p>
@@ -91,10 +102,10 @@ export default function LandingPage() {
             <p className="font-script text-xl text-clay md:text-[23px]">
               Every hour has a story. Start telling yours.
             </p>
-            <h1 className="font-lora text-[38px] leading-[1.05] font-semibold tracking-[-0.03em] md:text-[54px] md:leading-[54px]">
+            <h1 className="font-lora text-[38px] leading-[1.05] font-semibold tracking-[-0.03em] md:max-w-[620px] md:text-[54px] md:leading-[54px]">
               The logbook that <span className="text-gold">finally follows you everywhere</span>
             </h1>
-            <p className="max-w-[560px] text-[15px] leading-[1.55] text-cocoa md:text-[17px]">
+            <p className="max-w-[700px] text-[15px] leading-[1.55] text-cocoa md:text-[17px]">
               Paper forgets you the moment you close it. UniLogs is on your phone and your laptop,
               wherever the work actually happens.
             </p>
@@ -112,7 +123,7 @@ export default function LandingPage() {
         {/* Journal entries */}
         <section
           aria-label="Why UniLogs"
-          className="mt-10 grid gap-6 md:mx-[72px] md:mt-[80px] md:grid-cols-3 md:gap-[26px] md:pr-2 md:pl-16"
+          className="relative mt-10 grid gap-6 md:mt-[80px] md:grid-cols-3 md:gap-[26px] md:pr-2 md:pl-16"
         >
           {ENTRIES.map((entry, index) => (
             <article
@@ -129,7 +140,7 @@ export default function LandingPage() {
         </section>
 
         {/* Closing note */}
-        <section className="mt-12 flex flex-col gap-4 md:mx-[72px] md:mt-[104px] md:flex-row md:items-start md:justify-between md:pr-2 md:pl-16">
+        <section className="relative mt-12 flex flex-col gap-4 md:mt-[104px] md:flex-row md:items-start md:justify-between md:pr-2 md:pl-16">
           <div className="flex flex-col gap-0.5">
             <p className="font-script text-xl leading-[1.2] text-clay md:text-[27px]">
               The paper book failed because it wasn&apos;t there.
@@ -143,7 +154,7 @@ export default function LandingPage() {
           </Link>
         </section>
 
-        <footer className="mt-auto pt-16 pb-8 text-[11px] tracking-[0.02em] text-clay md:mx-[72px] md:pl-16">
+        <footer className="mt-auto pt-16 pb-8 text-[11px] tracking-[0.02em] text-clay md:pl-16">
           © 2026 UniLogs, built by Code of Duty
         </footer>
       </div>
