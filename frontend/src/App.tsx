@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -66,40 +66,47 @@ function AppToaster() {
   );
 }
 
+const router = createBrowserRouter([
+  { path: '/', element: <LandingPage /> },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/signup', element: <SignupPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/verify-email', element: <VerifyEmailPage /> },
+  {
+    path: '/r/:token',
+    element: (
+      <Suspense fallback={null}>
+        <SharedReportPage />
+      </Suspense>
+    ),
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <AppShell />,
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/projects', element: <ProjectsPage /> },
+          { path: '/projects/new', element: <ProjectCreatePage /> },
+          { path: '/projects/:projectId', element: <ProjectDetailPage /> },
+          { path: '/entries', element: <EntriesPage /> },
+          { path: '/entries/new', element: <EntryCreatePage /> },
+          { path: '/entries/:entryId', element: <EntryDetailPage /> },
+          { path: '/entries/:id/edit', element: <EntryCreatePage /> },
+          { path: '/suggestions', element: <SuggestionsPage /> },
+          { path: '/settings', element: <SettingsPage /> },
+        ],
+      },
+    ],
+  },
+]);
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <>
       <AppToaster />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route
-          path="/r/:token"
-          element={
-            <Suspense fallback={null}>
-              <SharedReportPage />
-            </Suspense>
-          }
-        />
-
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppShell />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/new" element={<ProjectCreatePage />} />
-            <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
-            <Route path="/entries" element={<EntriesPage />} />
-            <Route path="/entries/new" element={<EntryCreatePage />} />
-            <Route path="/entries/:entryId" element={<EntryDetailPage />} />
-            <Route path="/entries/:id/edit" element={<EntryCreatePage />} />
-            <Route path="/suggestions" element={<SuggestionsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+      <RouterProvider router={router} />
+    </>
   );
 }
