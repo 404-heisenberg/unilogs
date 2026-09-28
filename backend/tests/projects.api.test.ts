@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import {
   createAuthenticatedUser,
   createProject,
@@ -12,11 +12,7 @@ import {
 import { createShareToken, verifyShareToken } from '../src/services/share-services.js';
 import { prisma } from '../src/auth.js';
 
-afterEach(async () => {
-  // Restore the real clock even if a test that faked Date failed midway.
-  vi.useRealTimers();
-  await deleteTestUsers();
-});
+afterEach(deleteTestUsers);
 afterAll(disconnectTestDatabase);
 
 describe('project routes', () => {
@@ -234,14 +230,6 @@ describe('project routes', () => {
   });
 
   it('sums duration and uses the latest entry date for multiple entries', async () => {
-    // entriesThisWeek counts from Monday (UTC), and the entries below are
-    // dated 1 and 2 days back — so on a real Monday or Tuesday one or both
-    // fall in the previous week and the count comes out 0 or 1. Pin "now" to
-    // a Wednesday so the test doesn't depend on the day CI runs. Only Date is
-    // faked; timers used by supertest and Prisma keep working.
-    vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date('2026-09-23T12:00:00.000Z'));
-
     const { agent } = await createAuthenticatedUser();
     const project = await createProject(agent);
 
@@ -250,10 +238,20 @@ describe('project routes', () => {
       fieldType: 'duration',
     });
 
-    const olderDate = new Date();
-    olderDate.setUTCDate(olderDate.getUTCDate() - 2);
-    const newerDate = new Date();
-    newerDate.setUTCDate(newerDate.getUTCDate() - 1);
+    // Anchor both entries to the Monday of the current week — the same
+    // boundary project-summary-service uses for `entriesThisWeek`. Using
+    // "now minus N days" made this test fail on Mondays, when those dates
+    // fall into the previous week (#276).
+    const startOfWeek = new Date();
+    const dayOfWeek = startOfWeek.getUTCDay();
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    startOfWeek.setUTCDate(startOfWeek.getUTCDate() - daysSinceMonday);
+    startOfWeek.setUTCHours(0, 0, 0, 0);
+
+    const olderDate = new Date(startOfWeek);
+    olderDate.setUTCDate(olderDate.getUTCDate() + 1);
+    const newerDate = new Date(startOfWeek);
+    newerDate.setUTCDate(newerDate.getUTCDate() + 2);
 
     const olderDateString = olderDate.toISOString().slice(0, 10);
     const newerDateString = newerDate.toISOString().slice(0, 10);

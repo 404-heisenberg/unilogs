@@ -173,11 +173,29 @@ export function entryMeta(entry: ReportEntry, fields: ReportField[]): string {
   return parts.join(' · ');
 }
 
+// Strips Markdown syntax from one line, leaving its text. Only syntax is
+// removed: line prefixes (headings, quotes, list/task markers), link and image
+// wrappers, and paired emphasis/code markers, so hyphens and brackets inside
+// ordinary text ("related-work", "(chapter 2)") survive.
+function stripMarkdownLine(line: string): string {
+  return line
+    .replace(/^\s*(?:#{1,6}\s+|>\s*)+/, '')
+    .replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '')
+    .replace(/^\[[ xX]\]\s+/, '')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/(\*\*|__|~~)(.+?)\1/g, '$2')
+    .replace(/(?<![\w*])\*(?!\s)([^*]+?)\*(?![\w*])/g, '$1')
+    .replace(/(?<![\w_])_(?!\s)([^_]+?)_(?![\w_])/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .trim();
+}
+
 export function entryPreview(entry: ReportEntry): string {
   if (!entry.body) return '';
   const firstLine = entry.body
     .split('\n')
-    .map((line) => line.replace(/[#*_`>[\]()-]/g, '').trim())
+    .filter((line) => !/^\s*(?:```|~~~|([-*_])(?:\s*\1){2,}\s*$)/.test(line))
+    .map(stripMarkdownLine)
     .find((line) => line !== '');
   return firstLine ?? '';
 }
