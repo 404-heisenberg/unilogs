@@ -160,9 +160,7 @@ function AcceptForm({
         />
       </div>
 
-      {projectId && fieldsQuery.isPending && (
-        <p className="text-sm text-slate-500">Loading fields…</p>
-      )}
+      {projectId && fieldsQuery.isPending && <p className="text-sm text-clay">Loading fields…</p>}
       {projectId && !fieldsQuery.isPending && fields.length === 0 && (
         <p className="text-sm text-clay">This project has no fields — no extra values needed.</p>
       )}
