@@ -19,11 +19,11 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 const SESSION = { session: {}, user: { id: 'u1', name: 'Ada', email: 'ada@example.test' } };
 
-function renderPage() {
+function renderPage(initialEntry = '/settings') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Toaster />
         <SettingsPage />
       </MemoryRouter>
@@ -53,6 +53,64 @@ function mockCalendarStatus(connected: boolean) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe('Settings sections', () => {
+  it('shows the two sections, with App selected by default', () => {
+    mockCalendarStatus(false);
+    renderPage();
+
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Account', 'App']);
+    expect(screen.getByRole('tab', { name: 'App' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Account' })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('opens on the section named in the URL', () => {
+    mockCalendarStatus(false);
+    renderPage('/settings?tab=account');
+
+    expect(screen.getByRole('tab', { name: 'Account' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('falls back to App for an unknown section in the URL', () => {
+    mockCalendarStatus(false);
+    renderPage('/settings?tab=nonsense');
+
+    expect(screen.getByRole('tab', { name: 'App' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('keeps the account details and delete action on the Account section', async () => {
+    mockCalendarStatus(false);
+    renderPage('/settings?tab=account');
+
+    expect(await screen.findByText('ada@example.test')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^sign out$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete account/i })).toBeInTheDocument();
+  });
+
+  it('keeps reminders, calendar and tags on the App section', async () => {
+    mockCalendarStatus(false);
+    renderPage('/settings?tab=app');
+
+    expect(await screen.findByText('Not connected')).toBeInTheDocument();
+    expect(screen.getByText('Notifications')).toBeInTheDocument();
+    expect(screen.getByText('Tags')).toBeInTheDocument();
+    // The destructive action is deliberately not on this section.
+    expect(screen.queryByRole('button', { name: /delete account/i })).not.toBeInTheDocument();
+  });
+
+  it('switches sections when a tab is clicked', async () => {
+    mockCalendarStatus(false);
+    renderPage();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Account' }));
+
+    expect(await screen.findByText('ada@example.test')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Account' })).toHaveAttribute('aria-selected', 'true');
+
+    await userEvent.click(screen.getByRole('tab', { name: 'App' }));
+    expect(await screen.findByText('Notifications')).toBeInTheDocument();
+  });
 });
 
 describe('Google Calendar settings', () => {
