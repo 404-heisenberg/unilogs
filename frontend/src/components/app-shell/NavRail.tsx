@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { PanelLeft, Settings } from 'lucide-react';
 import { primaryNavItems, isNavActive, type NavItem } from './nav-items';
 import NotificationBell from './NotificationBell';
+import { useSession } from '@/hooks/useSession';
+import { initialsFromName } from '@/lib/initials';
 
 const RailLink = memo(function RailLink({ to, label, icon: Icon }: NavItem) {
   const { pathname } = useLocation();
@@ -32,6 +34,10 @@ export default function NavRail({
   explorerCollapsed: boolean;
   onToggleExplorer: () => void;
 }) {
+  const { data } = useSession();
+  const name = data?.user.name;
+  const initials = initialsFromName(name);
+
   return (
     <aside className="hidden w-16 shrink-0 flex-col items-center justify-between bg-rail py-6 md:flex">
       <div className="flex w-full flex-col items-center gap-6">
@@ -45,15 +51,6 @@ export default function NavRail({
           <PanelLeft size={20} strokeWidth={1.75} />
         </button>
 
-        <Link
-          to="/settings?tab=account"
-          aria-label="Your account"
-          title="Your account"
-          className="flex size-9 items-center justify-center rounded-lg bg-gold"
-        >
-          <span className="text-base font-extrabold text-rail">UL</span>
-        </Link>
-
         <nav className="flex w-full flex-col items-center gap-4">
           {primaryNavItems.map((item) => (
             <RailLink key={item.to} {...item} />
@@ -63,6 +60,21 @@ export default function NavRail({
 
       <div className="flex w-full flex-col items-center gap-2">
         <NotificationBell />
+
+        {/* An avatar badge beside the settings wheel, rather than a product
+            monogram in the navbar. User testing round 2: a `UL` monogram read
+            as inert to one participant and clickable to another, and neither
+            inferred what it was for. Initials are a convention people already
+            understand. */}
+        <Link
+          to="/settings?tab=account"
+          aria-label="Your account"
+          title={name ? `Your account (${name})` : 'Your account'}
+          className="flex size-10 items-center justify-center rounded-full bg-gold"
+        >
+          <span className="text-sm font-extrabold text-rail">{initials || '?'}</span>
+        </Link>
+
         <RailLink {...settingsItem} />
       </div>
     </aside>
