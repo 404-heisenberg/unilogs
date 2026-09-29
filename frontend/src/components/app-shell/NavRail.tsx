@@ -46,9 +46,9 @@ export default function NavRail({
         </button>
 
         <Link
-          to="/dashboard"
-          aria-label="UniLogs home"
-          title="UniLogs home"
+          to="/settings?tab=account"
+          aria-label="Your account settings"
+          title="Your account settings"
           className="flex size-9 items-center justify-center rounded-lg bg-gold"
         >
           <span className="text-base font-extrabold text-rail">UL</span>
