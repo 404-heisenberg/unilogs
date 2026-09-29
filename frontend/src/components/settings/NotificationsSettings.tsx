@@ -34,6 +34,42 @@ function ComingSoonRow({ title, description }: { title: string; description: str
   );
 }
 
+// Reminders are already live, so this row reports the current state instead of
+// showing a "Coming soon" badge or a second switch. The master switch above and
+// the per-project frequency below are the only controls — repeating them here
+// implied a setting that doesn't exist.
+function ActiveRow({
+  title,
+  description,
+  enabled,
+  isPending,
+}: {
+  title: string;
+  description: string;
+  enabled: boolean;
+  isPending: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-5 py-4">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-espresso">{title}</p>
+        <p className="mt-0.5 text-xs text-clay">{description}</p>
+      </div>
+      {isPending ? (
+        <Skeleton rows={1} barClassName="h-5 w-14 rounded-full bg-sand" />
+      ) : (
+        <span
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase ${
+            enabled ? 'bg-gold-light text-espresso' : 'bg-sand text-clay'
+          }`}
+        >
+          {enabled ? 'On' : 'Off'}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function ProjectFrequencyRow({ project }: { project: Project }) {
   const queryClient = useQueryClient();
 
@@ -112,9 +148,11 @@ export default function NotificationsSettings() {
           )}
         </div>
         <div className="h-px w-full bg-sand" />
-        <ComingSoonRow
+        <ActiveRow
           title="Reminders & streak alerts"
-          description="Daily and weekly reminders, plus streak-at-risk alerts"
+          description="Nudges you when a project goes quiet, and warns when a streak is about to break"
+          enabled={remindersEnabled ?? false}
+          isPending={settingsQuery.isPending || updateSettings.isPending}
         />
         <div className="h-px w-full bg-sand" />
         <ComingSoonRow
