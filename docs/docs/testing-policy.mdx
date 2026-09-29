@@ -68,7 +68,9 @@ notice. Each CI run uploads the full HTML report as a `frontend-coverage` or
 | Functions  | 50%               | 94.1%            | 58%                | 63.2%             |
 | Lines      | 50%               | 83.1%            | 65%                | 70.6%             |
 
-Measured figures are from 28 September 2026 (#285).
+Measured figures are from 28 September 2026 (#285). When quoting a single
+number, we use line coverage: **frontend 70.6%, backend 83.1%**. The other
+three metrics are there so a drop in any one of them still fails CI.
 
 - **Backend** (`backend/vitest.config.ts`) is scoped to `src/routes/**`,
   `src/lib/**` and `src/middleware/**` — the code that actually handles a

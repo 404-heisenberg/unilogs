@@ -96,23 +96,28 @@ that to a first-time user. Worth fixing in the UI, not the data model.
 
 ## Changes made as a result
 
-Honestly: **feedback collection happened, but nothing has been built off it
-yet** — this round ran on 14–15 September, inside the same 48 hours as the
-Sprint 2 deadline, which left no real runway to implement anything from it
-before submission without rushing something risky in. Recorded here rather
-than skipped or backdated to look otherwise.
+This round ran on 14–15 September, inside the same 48 hours as the Sprint 2
+deadline, so nothing from it was built before that submission. The findings
+became the starting backlog for Sprint 3 instead. Each row below links the
+feedback to the pull requests that answered it.
 
-Prioritised for Sprint 3, in the order the ratings support:
+| Feedback                                                                                                                  | What we built in Sprint 3                                                                                                                                                                                                                                                              | Pull requests          |
+| ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| "Entries currently don't allow me to actually write down my thoughts or notes"                                            | Every entry now has a title and a free-text body, so notes no longer depend on a user knowing to add a custom `text` field. The body is written in a Markdown editor with a live preview, list continuation, and a warning before leaving with unsaved changes.                        | #221, #244, #290–#293  |
+| "I also want stats for each project individually" (dashboard/stats rated 4–5 by 64.7%)                                    | A per-project summary endpoint (entries, tracked time, last logged, entries this week) and per-field insights for each project, shown in the new project workspace.                                                                                                                    | #241, #242, #250       |
+| Reminders or notifications "so I don't forget to log things" (three separate respondents)                                 | We chose in-app plus email over push. Each project gets a reminder frequency (set during guided project creation), a scheduler flags projects that have gone quiet, a notification bell shows the feed, and an email digest summarises it. Users can switch reminders off in Settings. | #225, #226, #229, #248 |
+| "Improve the filtering options so I can easily sort entries by subject, date and type" (search/filter rated 4–5 by 88.2%) | Entries can be searched and filtered by project, tag and date range, and the entries timeline was redesigned to group entries by day.                                                                                                                                                  | #218, #224, #251       |
+| "The export and sharing features would be especially useful"                                                              | CSV and Markdown export per project, plus read-only share links to a public report page that a supervisor can open without an account.                                                                                                                                                 | #233, #245, #247, #249 |
+| "Being able to edit previous entries and quickly find old logs"                                                           | Entries open in the same editor they were written in, and search matches titles, bodies and project names.                                                                                                                                                                             | #224, #244             |
+| "The google suggestions should work for multiple calendars"                                                               | **Not done.** The backend still reads only the user's primary Google calendar (`backend/src/routes/calendar.ts`). We prioritised the requests above because more testers asked for them. This remains the first follow-up for the calendar integration.                                | —                      |
 
-| Finding                                                         | Planned change                                                                                                                             |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Free-text notes on an entry aren't discoverable                 | Surface a default "Notes" field (or a prompt to add one) when a project has none, rather than requiring a user to know custom fields exist |
-| Per-project stats, not just global totals                       | Extend the stats endpoint to accept a `projectId` filter                                                                                   |
-| Notifications/reminders requested by three separate respondents | Scope as a Sprint 3 candidate — needs a decision on push vs. email first                                                                   |
-| Google Calendar suggestions should support multiple calendars   | Backend already lists one calendar per connected account; extend to iterate all calendars the OAuth grant can see                          |
+Two of the lowest-rated features in the survey, export (41.2%) and share
+links (47.1%), still shipped this sprint. The free-text answers asked for them
+directly, so we weighed those comments alongside the ratings rather than
+reading the ratings on their own.
 
 <AiDeclaration
   action="generated"
-  tools="Claude-Code[Claude Sonnet 5]"
-  purpose="writing up round 1 user testing findings from the Google Form export (17 responses) and the team's chart screenshots, and identifying follow-up changes for Sprint 3"
+  tools="Claude-Code[Claude Sonnet 5], Claude-Code[Claude Opus 5.5]"
+  purpose="writing up round 1 user testing findings from the Google Form export (17 responses) and the team's chart screenshots, and mapping each finding to the Sprint 3 pull requests that addressed it"
 />

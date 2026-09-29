@@ -19,6 +19,8 @@ const config: Config = {
 
   onBrokenLinks: 'throw',
   markdown: {
+    // Renders ```mermaid code blocks as diagrams (used for the database ERD).
+    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'throw',
     },
@@ -46,6 +48,22 @@ const config: Config = {
     ],
   ],
 
+  themes: [
+    '@docusaurus/theme-mermaid',
+    [
+      // Offline full-text search, indexed at build time. No external service
+      // or API key, so it works the same locally and on Vercel.
+      '@easyops-cn/docusaurus-search-local',
+      {
+        hashed: true,
+        docsRouteBasePath: '/',
+        indexBlog: false,
+        highlightSearchTermsOnTargetPage: true,
+        searchResultContextMaxLength: 60,
+      },
+    ],
+  ],
+
   themeConfig: {
     colorMode: {
       respectPrefersColorScheme: true,
@@ -59,6 +77,18 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
+        { to: '/features', label: 'Features', position: 'left' },
+        { to: '/#rubric-evidence', label: 'Rubric evidence', position: 'left' },
+        {
+          href: 'https://unilogs.vercel.app',
+          label: 'Live app',
+          position: 'right',
+        },
+        {
+          href: 'https://unilogs.onrender.com/api/docs#description/introduction',
+          label: 'API reference',
+          position: 'right',
+        },
         {
           href: 'https://github.com/404-heisenberg/unilogs',
           label: 'GitHub',
@@ -71,7 +101,22 @@ const config: Config = {
       links: [
         {
           title: 'Documentation',
-          items: [{ label: 'Introduction', to: '/' }],
+          items: [
+            { label: 'Introduction', to: '/' },
+            { label: 'Features', to: '/features' },
+            { label: 'API overview', to: '/api' },
+            { label: 'Testing policy', to: '/testing-policy' },
+          ],
+        },
+        {
+          title: 'Live',
+          items: [
+            { label: 'UniLogs app', href: 'https://unilogs.vercel.app' },
+            {
+              label: 'API reference',
+              href: 'https://unilogs.onrender.com/api/docs#description/introduction',
+            },
+          ],
         },
         {
           title: 'Project',

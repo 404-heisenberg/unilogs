@@ -173,6 +173,87 @@ of this page, in addition to what is logged here.
 
 ---
 
+## Meeting 4 — 27 September 2026, from about 20:00
+
+**Present:** Dikeledi Mokoatle, Lethabo Sekgobela, Mosey (McAtaaji Andongndou),
+Ozuko Mabongo, Renda Mudau, Thato Chuene
+**Client:** Tutor-client
+
+![Meeting 4 — Discord voice call, 27 September](/img/client-meeting-4-27-sep.png)
+
+### Agenda
+
+A Sprint 3 review of the deployed application, following the Sprint Review
+ceremony in [Project Methodology](/methodology). The team walked the client
+through the increment built since Meeting 3: the redesigned dashboard, the
+project workspace, the Markdown entry editor, reminders and notifications,
+and export and share links.
+
+### Outcome
+
+The client raised no objections to the Sprint 3 increment and made one
+recommendation, about onboarding.
+
+**Guided first-run experience.** The app currently opens on an empty dashboard
+and leaves a new user to work out where to start. The client recommended a
+short walkthrough on first sign-in that guides the user through the core loop:
+
+1. Create their first project, choosing a template or custom fields
+2. Log their first entry against it
+3. Find that entry again on the dashboard and in the entries timeline
+
+The aim is to get a new user to a logged entry in their first session, which
+is when a logbook habit is most likely to form.
+
+This fits the brief's central problem, students not logging consistently, and
+two things already in the app. Guided project creation (#248) covers step 1,
+and the dashboard's empty state (#275) already points new users towards
+creating a project. A walkthrough would join these into one guided flow
+rather than leaving each step to be discovered.
+
+### Actions
+
+| Action                                                                                | Owner | Status                             |
+| ------------------------------------------------------------------------------------- | ----- | ---------------------------------- |
+| Scope a first-run walkthrough: which steps, skippable, shown once per account         | Team  | Open, carried into the next sprint |
+| Build the walkthrough on top of guided project creation and the dashboard empty state | Team  | Open, carried into the next sprint |
+
+---
+
+## Meeting 5 — 28 September 2026, from about 20:00
+
+**Present:** Dikeledi Mokoatle, Lethabo Sekgobela, Mosey (McAtaaji Andongndou),
+Ozuko Mabongo, Renda Mudau, Thato Chuene
+**Client:** Tutor-client
+
+![Meeting 5 — Discord voice call, 28 September](/img/client-meeting-5-28-sep.png)
+
+### Agenda
+
+A final check before the Sprint 3 deadline. The team went through the
+Milestone 3 rubric with the client one criterion at a time, showing where the
+evidence for each lives:
+
+| Criterion              | Evidence shown                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| User feedback          | [User Testing](/user-testing): 17 responses, feature ratings and free-text feedback                                                                    |
+| Automated testing      | [Testing Policy](/testing-policy): line coverage of 70.6% (frontend) and 83.1% (backend), thresholds enforced in CI, and a Playwright end-to-end suite |
+| Feature implementation | The deployed app: dashboard, project workspace, entry editor, reminders, export and share links                                                        |
+| API implementation     | The live API reference at [`/api/docs`](https://unilogs.onrender.com/api/docs#description/introduction), generated from the hand-written OpenAPI spec  |
+| Performance            | [Performance](/performance): indexes, `EXPLAIN ANALYZE` results and the N+1 audit                                                                      |
+| Improvement            | [User Testing — Changes made as a result](/user-testing#changes-made-as-a-result): each finding mapped to the pull requests that addressed it          |
+| Documentation          | This docs site: database design, tech stack, testing policy, methodology and meeting records                                                           |
+| Project methodology    | [Project Methodology](/methodology), [Git Methodology](/git-methodology) and the standup logs for all three sprints                                    |
+
+### Outcome
+
+The client was very happy with the state of the project against the rubric and
+raised no new concerns. The only open item remains his recommendation from
+Meeting 4, the first-run walkthrough, which stays in the backlog for the next
+sprint.
+
+---
+
 ## Decisions taken in the absence of client direction
 
 Waiting for requirements that had not yet been briefed would have stalled Sprint 1
@@ -192,19 +273,16 @@ of the codebase in each case.
 
 ## Next meeting
 
-Statistics priorities and the Google Calendar integration (both carried from
-Meeting 2) shipped during Sprint 2 regardless of formal sign-off, on the
-assumptions recorded above. Agenda for the next meeting, going into Sprint 3:
+Sprint 3 closed with the client's review of the working increment (Meeting 4)
+and of the rubric evidence (Meeting 5). Agenda for the next meeting:
 
-- Confirm or correct the assumptions table above, now that there is a working
-  increment to react to instead of a hypothetical
-- Sprint 3 priorities: intermediate-tier features and further external API
-  depth
-- Whether a recurring weekly slot is workable given the client's own reporting
-  load
+- Review the scope of the first-run walkthrough recommended in Meeting 4
+- Support for multiple Google calendars in suggestions, the one user testing
+  request not yet built (see [User Testing](/user-testing))
+- Confirm or correct the assumptions table above
 
 <AiDeclaration
   action="generated"
-  tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Sonnet 5]"
-  purpose="structuring meeting minutes from the team's prepared question list and meeting records, and adding the Sprint 2 client meeting from a screenshot and the team's recollection"
+  tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Sonnet 5], Claude-Code[Claude Opus 5.5]"
+  purpose="structuring meeting minutes from the team's prepared question list and meeting records, and adding the Sprint 2 and Sprint 3 client meetings from screenshots and the team's recollection"
 />
