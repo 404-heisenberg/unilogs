@@ -225,9 +225,10 @@ also what `npm run build` and CI actually run.
 ESLint and Prettier. Never edit these files by hand — the generator overwrites
 them. Add components with `npx shadcn@latest add <component>`.
 
-**State ownership on the frontend.** Data from the API belongs in TanStack Query.
-Zustand is for state that never touches the server, such as UI preferences. Do not
-store API responses in Zustand.
+**State ownership on the frontend.** Data from the API belongs in TanStack Query
+and nowhere else. Client-only state stays local: component state for forms and
+dialogs, `localStorage` for persisted preferences such as the dashboard layout.
+There is no global store; don't add one to hold API responses.
 
 **Never commit `.env`.** When adding a new environment variable, add it to the
 matching `.env.example` with the value left blank.
