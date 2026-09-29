@@ -1,18 +1,181 @@
 ---
-sidebar_position: 14
-title: Backend Performance
+title: Performance
+description: How fast UniLogs loads, how the API behaves under load, and the measurements behind each claim.
 ---
 
 import AiDeclaration from '@site/src/components/AiDeclaration';
 
-# Backend Performance
+# Performance
 
-E-02 (issue #213). This pass adds the indexes behind the hot query paths, removes
-one full scan from the streak calculation, and records before/after response
-times so the numbers can be reproduced. Everything here is in the backend; the
-frontend performance work lives in the D-issues.
+What the rubric asks, and where the answer is on this page:
 
-## Dataset and method
+| Question                                       | Answer                                                                                 | Section                                                       |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| How long does the app take to load?            | Under a second on desktop, and the landing page no longer shifts while it loads        | [App load time](#app-load-time)                               |
+| How responsive is it to input?                 | Cached data, debounced search, loading skeletons and code-split pages                  | [Responsiveness](#responsiveness)                             |
+| How well does the API handle significant load? | 50 concurrent connections against 25,000 entries, **zero errors**                      | [Load test](#load-test)                                       |
+| How often does it crash?                       | No errors or crashes in any load test run. The health check is pinged every 10 minutes | [Uptime and the first request](#uptime-and-the-first-request) |
+| How long does the first request take?          | About a second. A scheduled ping stops the free-tier host from going to sleep          | [Uptime and the first request](#uptime-and-the-first-request) |
+
+## App load time
+
+### What we changed
+
+- **Code splitting.** The whole app used to ship as one 845.6 KB JavaScript
+  file (247.3 KB compressed), so the landing page downloaded the editor,
+  dashboard and Markdown renderer before showing anything. Every page and the
+  signed-in app shell are now their own chunks, loaded on first visit
+  (`frontend/src/App.tsx`). The first download is now **343.6 KB (108.5 KB
+  compressed), 56% smaller**. What's left is React, React Router and the
+  landing page.
+- **Font preloading.** The landing page's headline font arrived after first
+  paint, so the text reflowed and pushed the page down when it swapped in. The
+  two fonts that render the first screen are now preloaded in
+  `frontend/index.html`, so they arrive before first paint and nothing moves.
+
+### Measurements
+
+Lighthouse 12, performance category. "Mobile" is Lighthouse's default
+simulation of a mid-range phone on a slow 4G connection, the harshest setting.
+
+**Live site before the changes** (`unilogs.vercel.app`, 29 September 2026):
+
+| Page    | Device  | Score | First paint | Largest paint | Blocking time | Layout shift |
+| ------- | ------- | ----: | ----------: | ------------: | ------------: | -----------: |
+| Landing | Desktop |    97 |       0.9 s |         0.9 s |         50 ms |        0.002 |
+| Landing | Mobile  |    61 |       2.7 s |         2.7 s |        750 ms |    **0.234** |
+| Sign in | Desktop |    91 |       0.8 s |         0.8 s |        180 ms |        0.001 |
+| Sign in | Mobile  |    80 |       2.5 s |         2.5 s |        500 ms |            0 |
+
+**Before and after, same machine and settings** (local production build,
+mobile simulation). Local numbers are slower than the live site, which serves
+compressed files from a CDN, but both columns were measured the same way:
+
+| Page    | Score before | Score after | Layout shift before | Layout shift after |
+| ------- | -----------: | ----------: | ------------------: | -----------------: |
+| Landing |           50 |       68–74 |               0.231 |    **0.004–0.011** |
+| Sign in |           71 |       73–75 |                   0 |                  0 |
+
+A layout shift above 0.1 counts as "poor" in Google's Core Web Vitals. The
+landing page went from 0.234 to about 0.01, well inside "good". Desktop was
+already fast and stays under a second.
+
+## Responsiveness
+
+- **Cached data.** TanStack Query caches every API response, so moving between
+  pages shows cached data immediately and refreshes it in the background.
+- **Debounced search.** The entries search waits until you stop typing before
+  sending a request, so typing never waits on the network.
+- **Loading skeletons** (#296). Every loading state shows the shape of the
+  content instead of a blank page or spinner.
+- **No blank screens between pages.** Page chunks load inside the app shell,
+  so navigation stays on screen while the next page downloads.
+- **Paginated lists.** `GET /api/entries` returns pages (20 by default), so
+  long logbooks never load all at once.
+
+## Load test
+
+`npm run load-test` in `backend/` (`backend/scripts/load-test.ts`) starts the
+real API against the disposable test database, signs up a user through the
+real email-verification flow, and seeds **50 projects × 500 entries = 25,000
+entries** for that one account. That is far more than a student would log in a
+year. It then drives each endpoint with concurrent connections using
+[autocannon](https://github.com/mcollina/autocannon), and deletes the user at
+the end.
+
+The laptop running it is the limiting factor: it manages about 240 requests a
+second even on the health check, which does almost nothing. The production
+host is faster. The runs are still a fair comparison of the code before and
+after each change, because every run used the same machine.
+
+### Results
+
+**50 concurrent connections, 20 seconds per endpoint** (29 September 2026):
+
+| Endpoint                           | Requests | Req/s |    p50 |  p97.5 |    p99 | Errors | Non-2xx |
+| ---------------------------------- | -------: | ----: | -----: | -----: | -----: | -----: | ------: |
+| `GET /api/health`                  |    6,948 |   366 | 113 ms | 509 ms | 768 ms |      0 |       0 |
+| `GET /api/projects`                |    2,643 |   139 | 362 ms | 550 ms | 779 ms |      0 |       0 |
+| `GET /api/entries` (page of 20)    |      958 |    48 | 925 ms |  2.2 s |  2.2 s |      0 |       0 |
+| `GET /api/entries` (search + date) |      501 |    25 |  1.9 s |  2.7 s |  2.8 s |      0 |       0 |
+| `GET /api/projects/:id/summary`    |    1,137 |    60 | 800 ms |  2.1 s |  2.4 s |      0 |       0 |
+| `GET /api/stats`                   |      244 |    12 |  3.8 s |  4.5 s |  4.8 s |      0 |       0 |
+| `GET /api/stats/frequency`         |      405 |    20 |  2.0 s |  5.9 s |  6.1 s |      0 |       0 |
+| `GET /api/stats/streak`            |      508 |    25 |  1.8 s |  3.6 s |  4.0 s |      0 |       0 |
+| `GET /api/stats/fields/:projectId` |    1,234 |    62 | 772 ms |  2.0 s |  2.0 s |      0 |       0 |
+
+**16,578 requests, no errors, no timeouts and no crashes.** Every request got a
+correct `200` response.
+
+This is a deliberately extreme case: 50 simultaneous requests, all for the
+same 25,000-entry account, on a laptop. Requests queue behind each other, so
+latency under this load is mostly waiting time. What a single user actually
+experiences is the next table.
+
+**One connection, 10 seconds per endpoint.** This is the time one user waits
+for each request, with the same 25,000 entries:
+
+| Endpoint                           |   p50 |  p97.5 | Errors |
+| ---------------------------------- | ----: | -----: | -----: |
+| `GET /api/health`                  |  3 ms |   9 ms |      0 |
+| `GET /api/projects`                | 10 ms |  22 ms |      0 |
+| `GET /api/entries` (page of 20)    | 21 ms |  34 ms |      0 |
+| `GET /api/entries` (search + date) | 55 ms | 436 ms |      0 |
+| `GET /api/projects/:id/summary`    | 20 ms | 120 ms |      0 |
+| `GET /api/stats`                   | 95 ms | 180 ms |      0 |
+| `GET /api/stats/frequency`         | 66 ms | 118 ms |      0 |
+| `GET /api/stats/streak`            | 60 ms |  82 ms |      0 |
+| `GET /api/stats/fields/:projectId` | 16 ms |  33 ms |      0 |
+
+Every endpoint answers a single user in under 100 ms at the median, and in
+under half a second 97.5% of the time.
+
+### What the load test found and fixed
+
+The first run found two endpoints that couldn't cope with concurrent requests
+for a large account:
+
+- **`GET /api/stats` loaded every entry into the API** (25,000 rows per
+  request) just to add up hours. With 20 concurrent requests it completed
+  **none** in five seconds, and the backlog slowed every other endpoint. It now
+  sums the duration fields in Postgres and returns one row per project.
+- **`GET /api/stats/frequency` did the same** to count entries per week. It now
+  counts per day in Postgres.
+- **Nine separate database connection pools.** Each route file created its
+  own database client with its own pool of up to 10 connections. Under load
+  that risks exhausting the database's connection limit. There is now one
+  shared client (`backend/src/lib/prisma.ts`).
+
+Same machine, same settings (20 connections, 5 seconds per endpoint):
+
+| Endpoint                   | Before                   | After               |
+| -------------------------- | ------------------------ | ------------------- |
+| `GET /api/stats`           | **0 requests completed** | 12 req/s, p50 1.5 s |
+| `GET /api/stats/frequency` | 3 req/s, p50 5.3 s       | 16 req/s, p50 0.9 s |
+| `GET /api/stats/streak`    | 3 req/s, p50 6.2 s       | 23 req/s, p50 0.8 s |
+
+The streak query itself barely changed. It was slow in the first run mostly
+because unfinished stats requests were still running and hogging the API.
+
+## Uptime and the first request
+
+Render's free tier puts the API to sleep after 15 minutes without traffic, and
+the next request then waits 30–60 seconds for it to wake. A scheduled GitHub
+Actions workflow (`.github/workflows/keep-warm.yml`) calls `GET /api/health`
+every 10 minutes, so the API stays awake and the first request is answered in
+about a second (0.7–1.2 s measured from South Africa on 29 September 2026).
+
+The health endpoint also runs a database query, so a failed ping means either
+the API or the database is down. Failed runs show up in the repository's
+Actions tab.
+
+## Database queries
+
+The Sprint 3 backend performance pass (#213) added indexes for the most common
+queries and removed a full scan from the streak calculation. The response
+times below are single requests, measured before the load test above.
+
+### Dataset and method
 
 Seeded one user with **50 projects**, each with a `duration` field and **500
 entries** (25,000 entries total), dates spread across the previous year. The
@@ -23,7 +186,7 @@ Endpoints were timed end-to-end through Express with a real session, ten runs
 each, and the **median** is reported (min/max are noisy on a shared laptop). The
 `EXPLAIN ANALYZE` plans below are the same queries the endpoints issue.
 
-## Results
+### Single-request timings
 
 | Endpoint                           | Baseline | + indexes | + indexes & streak fix |
 | ---------------------------------- | -------- | --------- | ---------------------- |
@@ -39,7 +202,7 @@ few milliseconds between runs but stay an order of magnitude under budget.
 `GET /api/stats` is the sum of two parts. After the fix: streak **43.6 ms**
 (down from ~129.8 ms) and the projects-with-entries query **103.7 ms**.
 
-## Indexes
+### Indexes
 
 Added in migration `20260920085933_add_performance_indexes`:
 
@@ -51,7 +214,7 @@ Added in migration `20260920085933_add_performance_indexes`:
 | `field_definitions(projectId)` | fields-by-project lookups                               |
 | `projects(userId)`             | owned-project lookups on every stats/entries query      |
 
-## EXPLAIN ANALYZE
+### EXPLAIN ANALYZE
 
 Before the migration — full sequential scans:
 
@@ -91,7 +254,7 @@ Bitmap Heap Scan on projects  (cost=4.17..11.28 rows=1 width=4) (actual time=0.0
 Execution Time: 0.121 ms
 ```
 
-## Streak full scan
+### Streak full scan
 
 `computeCurrentStreak` used to pull **every** entry date for the user and
 de-duplicate in JavaScript — 25,000 rows to find at most 365 distinct days. It
@@ -101,38 +264,36 @@ and is what brings `GET /api/stats` under the 200 ms target. `date` is
 `TIMESTAMP(3)`, so `to_char` returns the same calendar day the old
 `toISOString().split('T')[0]` did.
 
-## N+1 audit
+### N+1 audit
 
 Hot paths issue a constant number of queries; nothing fans out per row:
 
-| Endpoint                   | Queries | Notes                                                        |
-| -------------------------- | ------- | ------------------------------------------------------------ |
-| `GET /api/stats`           | 4       | projects + fields + entries (batched) + distinct streak days |
-| `GET /api/entries`         | 4       | entries + entry_tags + tags (batched) + count                |
-| `GET /api/stats/frequency` | 2       | earliest date + in-range entries                             |
-| `GET /api/stats/streak`    | 1       | distinct days                                                |
+| Endpoint                   | Queries | Notes                                                              |
+| -------------------------- | ------- | ------------------------------------------------------------------ |
+| `GET /api/stats`           | 2       | per-project duration totals (summed in SQL) + distinct streak days |
+| `GET /api/entries`         | 4       | entries + entry_tags + tags (batched) + count                      |
+| `GET /api/stats/frequency` | 2       | earliest date + per-day counts (grouped in SQL)                    |
+| `GET /api/stats/streak`    | 1       | distinct days                                                      |
 
-Prisma batches to-many `include`s with `IN (…)`, so the `perProject.map` in
-`stats.ts` runs in memory and never issues a query per project.
+Nothing issues a query per project or per entry. The stats totals are a single
+grouped query, so the work stays in Postgres however many projects a user has.
 
-## Frontend call-outs
+## Remaining limits
 
-Two list-heavy pages are the frontend pair's follow-up (E-03): the **entries
-timeline (#08)** and the **project workspace (#06)**. Both should window or
-paginate long lists; the backend pagination is already in place on
-`GET /api/entries`.
+Recorded so nothing here is overstated:
 
-## Follow-ups
-
-- `GET /api/stats/fields/:projectId` (C-01) is not benchmarked here — it has not
-  landed yet. Re-measure when it does.
-- `GET /api/stats/frequency` still scans every in-range entry and buckets in
-  memory; a grouped `date_trunc('week', date)` query is the obvious next win.
-- `scheduler.runSweep` issues a handful of queries per project. It is an hourly
-  background job, not an HTTP path, but it can be batched (groupBy latest entry,
-  `createMany`, `updateMany`) in a later pass.
+- **Search can't use an index.** It matches any part of a title, body or
+  project name (`ILIKE '%term%'`), which a normal index can't serve, so each
+  search reads every entry in the date range. It's fast for one user (55 ms at
+  the median) but is the slowest query under heavy concurrency. A trigram
+  index (`pg_trgm`) is the fix if logbooks grow much larger.
+- **Stats under heavy concurrency.** With 50 simultaneous dashboard loads for
+  one very large account, `/api/stats` takes about 4 seconds, down from never
+  finishing. For a single user it takes 95 ms.
+- **The reminder sweep** runs a few queries per project. It is an hourly
+  background job, not something a user waits for.
 
 <AiDeclaration
-  tools="opencode[deepseek-v4.1-flash]"
-  purpose="drafting this page from the backend benchmark results, the index migration and the EXPLAIN ANALYZE plans"
+  tools="opencode[deepseek-v4.1-flash], Claude-Code[Claude Opus 5.5]"
+  purpose="drafting the database benchmark section from the backend benchmark results, the index migration and the EXPLAIN ANALYZE plans, then adding the load test, the Lighthouse measurements, the code-splitting, font preloading, SQL aggregation and shared connection pool changes, and the keep-warm workflow"
 />
