@@ -18,15 +18,50 @@ lab sessions, reading. UniLogs lets them define what a log entry looks like rath
 than forcing a fixed template, group entries into projects, tag them, and see
 where their time actually goes.
 
+## Quick links
+
+| I want to…                     | Go to                                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| Use the app                    | [unilogs.vercel.app](https://unilogs.vercel.app)                                            |
+| See what it does               | [Features](/features)                                                                       |
+| Try the API                    | [Interactive API reference](https://unilogs.onrender.com/api/docs#description/introduction) |
+| See every endpoint on one page | [API Overview](/api)                                                                        |
+| Understand the data model      | [Database Design](/database-design)                                                         |
+| Read the code                  | [GitHub repository](https://github.com/404-heisenberg/unilogs)                              |
+| Follow the work                | [Issue board](https://github.com/orgs/404-heisenberg/projects)                              |
+
+Use the **search box** at the top of every page to find anything else.
+
+## Rubric evidence
+
+Where to find the evidence for each Milestone 3 criterion. The team walked the
+client through this same list in [Meeting 5](/stakeholder-meetings).
+
+| Criterion              | Evidence                                                                                                                                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User feedback          | [User Testing](/user-testing) (17 responses) and five [client meetings](/stakeholder-meetings)                                                                                                                   |
+| Automated testing      | [Testing Policy](/testing-policy): line coverage of 70.6% (frontend) and 83.1% (backend), thresholds enforced in CI, plus Playwright end-to-end tests                                                            |
+| Feature implementation | [Features](/features) and the [live app](https://unilogs.vercel.app)                                                                                                                                             |
+| API implementation     | [API Overview](/api) and the [interactive reference](https://unilogs.onrender.com/api/docs#description/introduction), backed by a Supertest suite for every route group                                          |
+| Performance            | [Performance](/performance): indexes, `EXPLAIN ANALYZE` and the N+1 audit                                                                                                                                        |
+| Improvement            | [User Testing → Changes made as a result](/user-testing#changes-made-as-a-result) and the client's recommendations in [Stakeholder Meetings](/stakeholder-meetings)                                              |
+| Documentation          | This site: [features](/features), [API](/api), [database](/database-design), [testing](/testing-policy) and [tech stack](/tech-stack), including [third-party code and external APIs](/tech-stack#external-apis) |
+| Project methodology    | [Methodology](/methodology), [Git Methodology](/git-methodology), and standups for [Sprint 1](/sprint-1-standups), [Sprint 2](/sprint-2-standups) and [Sprint 3](/sprint-3-standups)                             |
+
 ## The stack
 
-| Layer    | Technology                                   |
-| -------- | -------------------------------------------- |
-| Frontend | React, TypeScript, Vite, Tailwind, shadcn/ui |
-| Backend  | Express, TypeScript, Prisma                  |
-| Database | PostgreSQL on Neon                           |
-| Auth     | Better Auth                                  |
-| Docs     | Docusaurus                                   |
+| Layer         | Technology                                                       |
+| ------------- | ---------------------------------------------------------------- |
+| Frontend      | React, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query |
+| Backend       | Express, TypeScript, Prisma                                      |
+| Database      | PostgreSQL on Neon                                               |
+| Auth          | Better Auth (email/password and Google)                          |
+| External APIs | Google Calendar, Google OAuth, SendGrid                          |
+| Hosting       | Vercel (frontend and docs), Render (API)                         |
+| Testing       | Vitest, React Testing Library, Supertest, Playwright             |
+| Docs          | Docusaurus                                                       |
+
+Full reasoning for each choice is on the [Tech Stack](/tech-stack) page.
 
 ## Getting started
 
@@ -45,6 +80,6 @@ cd ../docs && npm install
 Copy each `.env.example` to `.env` and fill in the values before running anything.
 
 <AiDeclaration
-  tools="Claude-Web[Claude Opus 5]"
-  purpose="drafting and structuring the introduction page"
+  tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Opus 5.5]"
+  purpose="drafting and structuring the introduction page, and adding the quick links and rubric evidence tables"
 />
