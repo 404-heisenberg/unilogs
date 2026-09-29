@@ -1,0 +1,150 @@
+---
+title: Features
+description: What UniLogs does, feature by feature, and where to find each one in the app.
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Features
+
+UniLogs is a digital logbook for university students. You decide what an
+entry records, log your work in seconds, and see where your time goes. Every
+feature below is live at **[unilogs.vercel.app](https://unilogs.vercel.app)**.
+
+## At a glance
+
+| Feature                                                     | Where in the app                   |
+| ----------------------------------------------------------- | ---------------------------------- |
+| [Accounts and sign-in](#accounts-and-sign-in)               | Landing page, Sign up, Sign in     |
+| [Projects with custom fields](#projects-with-custom-fields) | Projects → New project             |
+| [Logging entries](#logging-entries)                         | Log entry (from any page)          |
+| [Search and filters](#search-and-filters)                   | Entries                            |
+| [Dashboard and statistics](#dashboard-and-statistics)       | Dashboard, project workspace       |
+| [Google Calendar suggestions](#google-calendar-suggestions) | Suggestions, dashboard             |
+| [Reminders and notifications](#reminders-and-notifications) | Notification bell, Settings        |
+| [Export and share links](#export-and-share-links)           | Project workspace → Export / Share |
+| [Tags](#tags)                                               | Entry editor, Settings             |
+| [Mobile and install](#mobile-and-install)                   | Any page on a phone                |
+
+## Accounts and sign-in
+
+- Sign up with email and password, and confirm the address with a one-time
+  code sent by email.
+- Or sign in with Google.
+- Reset a forgotten password from a link sent by email.
+- Delete your account and all of its data from **Settings**. This asks for your
+  password first and cannot be undone.
+
+## Projects with custom fields
+
+A project is a subject, module or activity you want to keep a log of. Each one
+defines its own fields, so a lab project and a reading log can record
+different things.
+
+- **Guided creation** in three steps: name and description, then fields, then
+  a reminder frequency.
+- **Start from a template** (Study log, Workout), reuse the fields of one of
+  your existing projects, or start blank.
+- **Field types:** text, number, duration (in hours), toggle (yes/no) and date.
+- **Project workspace:** each project has its own page with its entries,
+  summary stats and actions.
+- **Archive** projects you've finished without losing them, or **delete**
+  them along with every entry.
+
+## Logging entries
+
+- Every entry has a date, a title and a free-text body, plus the project's own
+  fields.
+- The body is written in **Markdown** with a live preview. Lists continue
+  automatically when you press Enter.
+- UniLogs remembers your last project and defaults the date to today, so a
+  quick entry is a title and one field.
+- Unsaved changes are protected: the editor warns you before you navigate
+  away.
+- Every edit is recorded in an **audit log**, so the logbook remains a
+  trustworthy record of what you did and when.
+
+## Search and filters
+
+- Search across entry titles, bodies and project names.
+- Filter by project, tag and date range.
+- Entries are grouped by day on a timeline, with the time logged shown on each
+  card.
+
+## Dashboard and statistics
+
+The dashboard is made of widgets you can show, hide, resize and reorder. The
+layout is saved per user.
+
+- **Summary:** total entries, tracked time and your current logging streak.
+- **Activity:** a 12-week heatmap of the days you logged.
+- **What's left:** open to-do fields, grouped into overdue, due this week and
+  no due date, with one-click completion.
+- **Recent entries** and **Continue logging** to jump back in.
+- **Upcoming:** your next calendar events, each with a **Log** button.
+- **Time by project**, **Logging frequency** and **Due & dormant** (projects
+  that have gone quiet), available from the widget tray.
+
+Each project also has its own statistics: entry count, tracked time, last
+logged, entries this week, and per-field insights such as totals, averages and
+trends.
+
+## Google Calendar suggestions
+
+This is the app's external API integration. Connect your Google Calendar in
+**Settings**, and UniLogs offers your events as entry suggestions:
+
+- **Accept** a suggestion to log it: pick the project, fill in its fields, save.
+- **Reject** suggestions you don't want to log.
+- Upcoming events appear on the dashboard with a one-click **Log** action.
+
+UniLogs reads your **primary** calendar only. See
+[Tech Stack → External APIs](/tech-stack#external-apis).
+
+## Reminders and notifications
+
+- Each project has a reminder frequency (for example, weekly), chosen during
+  project creation.
+- When a project goes quiet for longer than that, UniLogs adds a notification
+  to the **bell** in the app and includes it in an email digest.
+- Turn reminders off at any time in **Settings**.
+
+## Export and share links
+
+- **Export** a project's entries as **CSV** (for spreadsheets) or
+  **Markdown** (for notes and reports).
+- **Share** a read-only link to a project report, for example with a
+  supervisor. The report shows the summary, field insights and entries, and
+  can be downloaded as CSV or Markdown. Viewers don't need an account.
+- Share links can be **revoked** at any time.
+
+## Tags
+
+- Add tags to entries to group work across projects, such as "exam prep" or
+  "group work".
+- Rename and delete tags in **Settings**.
+
+## Mobile and install
+
+- Every page adapts to phone screens, with a bottom navigation bar and a
+  full-screen menu.
+- UniLogs can be **installed** as an app (PWA) from supported browsers.
+- Errors and confirmations appear as toast notifications instead of silently
+  failing.
+
+## Not yet built
+
+Recorded honestly so there are no surprises:
+
+- **Multiple Google calendars.** Only the primary calendar is read. This was
+  requested in [user testing](/user-testing).
+- **First-run walkthrough.** A guided tour for new users, recommended by the
+  client in [Meeting 4](/stakeholder-meetings).
+- **Calendar grid view** and **entry history as at a date**. Both wait on
+  backend endpoints.
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Opus 5.5]"
+  purpose="writing a user-facing feature overview from the application's routes, pages and API, cross-checked against the Sprint 1–3 pull requests"
+/>

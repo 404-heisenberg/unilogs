@@ -1,0 +1,28 @@
+name: Keep API warm
+
+# Render's free tier puts the API to sleep after 15 minutes without traffic,
+# and the next request then waits 30-60 seconds for it to wake. Pinging the
+# health endpoint every 10 minutes keeps it awake, so the first request a
+# user makes is answered in about a second. The health endpoint also checks
+# the database connection, so a failed run doubles as an outage alert.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: Ping /api/health
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping
+        run: |
+          curl --fail --silent --show-error \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            --max-time 90 \
+            --write-out 'HTTP %{http_code} in %{time_total}s\n' \
+            --output /dev/null \
+            https://unilogs.onrender.com/api/health

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from '../lib/prisma.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { FIELD_TYPES } from '../types/field-types.js';
 import { z } from 'zod';
@@ -9,11 +8,6 @@ const fieldTypeSchema = z.enum(FIELD_TYPES);
 const aggregationOverrideSchema = z.enum(['sum', 'average', 'max', 'min']).nullable();
 
 const router = Router();
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-const prisma = new PrismaClient({ adapter });
 
 async function getOwnedProject(projectId: number, userId: string) {
   return prisma.project.findFirst({

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import SkeletonPrimitive from '@/components/Skeleton';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -65,11 +66,7 @@ const INSIGHT_ICONS: Record<FieldType, typeof Clock> = {
 
 function Skeleton({ rows = 2 }: { rows?: number }) {
   return (
-    <div className="flex flex-col gap-3" aria-hidden>
-      {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="h-14 animate-pulse rounded-xl bg-cream/60" />
-      ))}
-    </div>
+    <SkeletonPrimitive rows={rows} barClassName="h-14 rounded-xl bg-cream/60" className="gap-3" />
   );
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { CalendarDays, Check, Clock, Download, Hash, Type, type LucideIcon } from 'lucide-react';
+import Skeleton from '@/components/Skeleton';
 import {
   dayKey,
   entriesLabel,
@@ -241,7 +242,19 @@ export default function SharedReportPage() {
   }, [state]);
 
   if (state.status === 'loading') {
-    return <div className="min-h-screen bg-paper" aria-busy="true" />;
+    return (
+      <div className="min-h-screen bg-paper" aria-busy="true">
+        <div className="mx-auto max-w-[960px] px-4 py-8">
+          <Skeleton rows={1} barClassName="h-6 w-48" className="mb-6" />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} rows={1} barClassName="h-20 rounded-xl" />
+            ))}
+          </div>
+          <Skeleton rows={4} barClassName="h-16 rounded-lg" className="mt-5" />
+        </div>
+      </div>
+    );
   }
   if (state.status === 'gone') {
     return (

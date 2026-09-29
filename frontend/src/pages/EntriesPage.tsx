@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Clock, Plus, Search, SlidersHorizontal, SquareCheck } from 'lucide-react';
 import FiltersSheet from '@/components/entries/FiltersSheet';
+import Skeleton from '@/components/Skeleton';
 import { api } from '@/lib/api';
 import { projectColor, tagStyle } from '@/lib/colors';
 import { QUERY_KEYS, loadUnfinished } from '@/lib/dashboard';
@@ -331,7 +332,7 @@ export default function EntriesPage() {
       {isPending && (
         <div className="grid gap-3 md:grid-cols-2 md:gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-36 animate-pulse rounded-xl bg-cream" />
+            <Skeleton key={i} rows={1} barClassName="h-36 rounded-xl" />
           ))}
         </div>
       )}

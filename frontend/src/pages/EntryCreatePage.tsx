@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -25,6 +25,7 @@ import { toast } from '@/lib/toast';
 import type { Entry, FieldDefinition, Project } from '@/types';
 import { tagStyle } from '@/lib/colors';
 import PaneLayout, { PANE_LABEL } from '@/components/PaneLayout';
+import Skeleton from '@/components/Skeleton';
 import { Switch } from '@/components/ui/switch';
 
 const LAST_PROJECT_KEY = 'unilogs:last-project-id';
@@ -199,6 +200,7 @@ export default function EntryCreatePage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [isDirty, setIsDirty] = useState(false);
+  const allowNavigationRef = useRef(false);
   const hasInitialized = useRef(false);
   const hasFieldDefaultsInitializedRef = useRef<string | null>(null);
 
@@ -257,6 +259,23 @@ export default function EntryCreatePage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
+  // Block in-app navigation while there are unsaved changes. `allowNavigationRef`
+  // is flipped around the post-save navigation so a just-saved entry can leave.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      !allowNavigationRef.current && isDirty && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      if (window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
+
   useEffect(() => {
     if (isEditing && entry && !hasInitialized.current) {
       setProjectId(String(entry.projectId));
@@ -301,6 +320,8 @@ export default function EntryCreatePage() {
 
       setIsDirty(false);
 
+      // Let the post-save navigation through the unsaved-changes blocker.
+      allowNavigationRef.current = true;
       if (variables.isKeyboardSave) {
         if (!isEditing && data?.id) {
           navigate(`/entries/${data.id}`, { replace: true });
@@ -310,6 +331,7 @@ export default function EntryCreatePage() {
       } else {
         navigate('/entries');
       }
+      allowNavigationRef.current = false;
     },
     onError: (error) => {
       const body = error instanceof ApiError ? (error.body as { errors?: string[] } | null) : null;
@@ -529,7 +551,11 @@ export default function EntryCreatePage() {
 
   if (isEditing && isLoadingEntry) {
     return (
-      <div className="flex h-[50vh] items-center justify-center text-clay">Loading entry...</div>
+      <div className="mx-auto max-w-3xl py-8">
+        <Skeleton rows={1} barClassName="h-8 w-64" />
+        <Skeleton rows={1} barClassName="h-4 w-40" className="mt-3" />
+        <Skeleton rows={6} className="mt-8" />
+      </div>
     );
   }
 

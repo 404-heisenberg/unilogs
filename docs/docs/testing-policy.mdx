@@ -54,31 +54,45 @@ would be destructive, not just wrong.
 
 ## Coverage threshold
 
-Backend only, enforced by `backend/vitest.config.ts` and checked on every
-`npm test` run (including in CI — see the `backend` job in
-`.github/workflows/ci.yml`):
+Both codebases measure coverage on every `npm test` run, including in CI (the
+`frontend` and `backend` jobs in `.github/workflows/ci.yml`). Vitest fails the
+run, and therefore CI, if coverage drops below any threshold, so the bar cannot
+silently rot: a pull request that drops coverage fails before a human has to
+notice. Each CI run uploads the full HTML report as a `frontend-coverage` or
+`backend-coverage` artifact.
 
-| Metric     | Threshold |
-| ---------- | --------- |
-| Statements | 50%       |
-| Branches   | 40%       |
-| Functions  | 50%       |
-| Lines      | 50%       |
+| Metric     | Backend threshold | Backend measured | Frontend threshold | Frontend measured |
+| ---------- | ----------------- | ---------------- | ------------------ | ----------------- |
+| Statements | 50%               | 82.6%            | 65%                | 69.5%             |
+| Branches   | 40%               | 77.7%            | 57%                | 61.7%             |
+| Functions  | 50%               | 94.1%            | 58%                | 63.2%             |
+| Lines      | 50%               | 83.1%            | 65%                | 70.6%             |
 
-Scoped to `src/routes/**`, `src/lib/**` and `src/middleware/**` — the code that
-actually handles a request, not generated Prisma output or type-only files.
-Vitest fails the run (and therefore CI) if coverage drops below any of these
-numbers, so the threshold cannot silently rot; a pull request that drops
-coverage below the bar fails before a human has to notice.
+Measured figures are from 28 September 2026 (#285). When quoting a single
+number, we use line coverage: **frontend 70.6%, backend 83.1%**. The other
+three metrics are there so a drop in any one of them still fails CI.
+
+- **Backend** (`backend/vitest.config.ts`) is scoped to `src/routes/**`,
+  `src/lib/**` and `src/middleware/**` — the code that actually handles a
+  request, not generated Prisma output or type-only files.
+- **Frontend** (`frontend/vite.config.ts`) measures every file under `src/`,
+  including ones no test imports, so an untested page shows up as 0% instead of
+  quietly disappearing from the report. Excluded: test files, `src/test/**`,
+  the generated shadcn wrappers in `src/components/ui/**`, `main.tsx` and the
+  dev-only shared-report demo fixture. The thresholds sit a few points under the
+  measured figures so a real drop fails CI without failing on noise.
+
+Run `npm test` in either folder to see the summary, or open
+`coverage/index.html` for the line-by-line report. Use `npm run test:watch`
+when you want fast reruns without coverage.
 
 ## What is deliberately not covered, and why
 
-- **Frontend has no enforced coverage threshold.** Every page has a test file,
-  but nothing gates a percentage in CI the way the backend does. Component
-  tests here are about catching real regressions in specific behaviour, not
-  hitting a number — a threshold on JSX-heavy UI code tends to reward testing
-  trivial render paths just to move the percentage, which is worse than no
-  threshold at all.
+- **The frontend threshold is a floor, not a target.** Component tests here
+  are about catching real regressions in specific behaviour. A high threshold
+  on JSX-heavy UI code tends to reward testing trivial render paths just to
+  move the percentage, so the frontend bar is set to stop coverage sliding,
+  not to push it upward for its own sake.
 - **End-to-end runs Chromium only**, not Firefox or Safari. Playwright
   supports all three, but running the full suite across browsers roughly
   triples CI time for a codebase with no browser-specific rendering code (no

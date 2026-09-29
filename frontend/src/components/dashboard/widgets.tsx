@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Link } from 'react-router-dom';
+import Skeleton from '@/components/Skeleton';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -93,11 +94,7 @@ function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className={CARD} aria-hidden>
       <div className="mb-3 h-3 w-24 animate-pulse rounded bg-cream" />
-      <div className="flex flex-col gap-2">
-        {Array.from({ length: rows }, (_, index) => (
-          <div key={index} className="h-4 animate-pulse rounded bg-cream" />
-        ))}
-      </div>
+      <Skeleton rows={rows} />
     </div>
   );
 }

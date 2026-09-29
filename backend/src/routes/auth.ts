@@ -1,18 +1,12 @@
 import { Router } from 'express';
 import { auth } from '../auth.js';
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from '../lib/prisma.js';
 import crypto from 'crypto';
 import { hashPassword } from 'better-auth/crypto';
 import { resetPasswordEmail, sendEmail } from '../services/email-service.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = Router();
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-const prisma = new PrismaClient({ adapter });
 
 const FRONTEND_URL = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
 

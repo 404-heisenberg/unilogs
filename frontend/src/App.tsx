@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -8,25 +8,39 @@ import {
   Loader2Icon,
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
-import AppShell from './components/AppShell';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import VerifyEmailPage from './pages/VerifyEmailPage';
-import ProjectsPage from './pages/ProjectsPage';
-import ProjectCreatePage from './pages/ProjectCreatePage';
-import ProjectDetailPage from './pages/ProjectDetailPage';
-import EntriesPage from './pages/EntriesPage';
-import EntryCreatePage from './pages/EntryCreatePage';
-import EntryDetailPage from './pages/EntryDetailPage';
-import DashboardPage from './pages/DashboardPage';
-import SuggestionsPage from './pages/SuggestionsPage';
-import SettingsPage from './pages/SettingsPage';
 
-// Public share page: lazy-loaded so no app/auth code ships with it.
+// The landing page is the only route bundled up front: it's where most
+// visitors arrive. Every other page, and the signed-in app shell, is split
+// into its own chunk and downloaded when it's first visited, so a visitor
+// never pays for the editor, dashboard or Markdown renderer before signing in.
+const AppShell = lazy(() => import('./components/AppShell'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SignupPage = lazy(() => import('./pages/SignupPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
+const ProjectCreatePage = lazy(() => import('./pages/ProjectCreatePage'));
+const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
+const EntriesPage = lazy(() => import('./pages/EntriesPage'));
+const EntryCreatePage = lazy(() => import('./pages/EntryCreatePage'));
+const EntryDetailPage = lazy(() => import('./pages/EntryDetailPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const SuggestionsPage = lazy(() => import('./pages/SuggestionsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+// Public share page: no app/auth code ships with it.
 const SharedReportPage = lazy(() => import('./pages/SharedReportPage'));
+
+// Full-page placeholder while a route's chunk downloads. Matches the page
+// background so the swap to real content doesn't flash.
+function RouteFallback() {
+  return <div className="min-h-screen bg-canvas" aria-busy="true" />;
+}
+
+function page(element: ReactNode) {
+  return <Suspense fallback={<RouteFallback />}>{element}</Suspense>;
+}
 
 // This app has no theme switching (always the warm cream/gold palette), so
 // the shared Toaster is styled directly here with the same hex tokens used
@@ -66,40 +80,40 @@ function AppToaster() {
   );
 }
 
+const router = createBrowserRouter([
+  { path: '/', element: <LandingPage /> },
+  { path: '/login', element: page(<LoginPage />) },
+  { path: '/signup', element: page(<SignupPage />) },
+  { path: '/reset-password', element: page(<ResetPasswordPage />) },
+  { path: '/verify-email', element: page(<VerifyEmailPage />) },
+  { path: '/r/:token', element: page(<SharedReportPage />) },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: page(<AppShell />),
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/projects', element: <ProjectsPage /> },
+          { path: '/projects/new', element: <ProjectCreatePage /> },
+          { path: '/projects/:projectId', element: <ProjectDetailPage /> },
+          { path: '/entries', element: <EntriesPage /> },
+          { path: '/entries/new', element: <EntryCreatePage /> },
+          { path: '/entries/:entryId', element: <EntryDetailPage /> },
+          { path: '/entries/:id/edit', element: <EntryCreatePage /> },
+          { path: '/suggestions', element: <SuggestionsPage /> },
+          { path: '/settings', element: <SettingsPage /> },
+        ],
+      },
+    ],
+  },
+]);
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <>
       <AppToaster />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route
-          path="/r/:token"
-          element={
-            <Suspense fallback={null}>
-              <SharedReportPage />
-            </Suspense>
-          }
-        />
-
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppShell />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/new" element={<ProjectCreatePage />} />
-            <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
-            <Route path="/entries" element={<EntriesPage />} />
-            <Route path="/entries/new" element={<EntryCreatePage />} />
-            <Route path="/entries/:entryId" element={<EntryDetailPage />} />
-            <Route path="/entries/:id/edit" element={<EntryCreatePage />} />
-            <Route path="/suggestions" element={<SuggestionsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+      <RouterProvider router={router} />
+    </>
   );
 }

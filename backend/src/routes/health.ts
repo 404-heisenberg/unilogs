@@ -1,14 +1,7 @@
 import { Router } from 'express';
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from '../lib/prisma.js';
 
 export const healthRouter = Router();
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-  }),
-});
 
 healthRouter.get('/', async (_req, res) => {
   try {

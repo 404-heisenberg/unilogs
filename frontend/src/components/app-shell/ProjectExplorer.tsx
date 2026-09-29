@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { api } from '@/lib/api';
+import Skeleton from '@/components/Skeleton';
 import type { Entry, PagedEntries, Project } from '@/types';
 import { isNavActive } from './nav-items';
 
@@ -126,13 +127,7 @@ export default function ProjectExplorer() {
         </Link>
       </div>
 
-      {isPending && (
-        <div className="flex flex-col gap-1.5" aria-hidden>
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-7 animate-pulse rounded-md bg-sand" />
-          ))}
-        </div>
-      )}
+      {isPending && <Skeleton rows={3} barClassName="h-7 rounded-md bg-sand" className="gap-1.5" />}
 
       {isError && <p className="text-xs text-error">Failed to load projects.</p>}
 
