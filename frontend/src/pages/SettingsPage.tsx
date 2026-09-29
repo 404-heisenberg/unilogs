@@ -8,6 +8,7 @@ import TagsSettings from '@/components/settings/TagsSettings';
 import { useCalendarConnection } from '@/hooks/useCalendarConnection';
 import { useSession } from '@/hooks/useSession';
 import { api } from '@/lib/api';
+import { initialsFromName } from '@/lib/initials';
 import { toast } from '@/lib/toast';
 
 function GoogleCalendarSection() {
@@ -145,12 +146,7 @@ export default function SettingsPage() {
     navigate('/login');
   };
 
-  const initials = (data?.user.name ?? '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
+  const initials = initialsFromName(data?.user.name);
 
   const deleteAccount = useMutation({
     mutationFn: (input: { password: string }) =>
