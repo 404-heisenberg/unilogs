@@ -1,14 +1,8 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from '../lib/prisma.js';
 import { authenticate } from '../middleware/authenticate.js';
 const router = Router();
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-const prisma = new PrismaClient({ adapter });
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
   try {

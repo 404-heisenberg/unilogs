@@ -1,15 +1,11 @@
 import { betterAuth } from 'better-auth';
 import { emailOTP } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { PrismaClient } from './generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from './lib/prisma.js';
 import { resetPasswordEmail, sendEmail, verifyEmailTemplate } from './services/email-service.js';
 
-export const prisma = new PrismaClient({
-  adapter: new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-  }),
-});
+// Re-exported so existing imports of `prisma` from here keep working.
+export { prisma };
 
 const isProduction = process.env.NODE_ENV === 'production';
 

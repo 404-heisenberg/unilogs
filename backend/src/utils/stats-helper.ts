@@ -1,11 +1,5 @@
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from '../lib/prisma.js';
 import { TERMS } from '../config/terms.js';
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-const prisma = new PrismaClient({ adapter });
 
 export async function getUserDateRange(userId: string): Promise<{ start: Date; end: Date }> {
   const firstEntry = await prisma.entry.findFirst({
@@ -33,21 +27,23 @@ export async function getWeeklyEntryCounts(
   const { start, end } = await getUserDateRange(userId);
   const weeks: { weekStart: string; count: number }[] = [];
 
-  const entries = await prisma.entry.findMany({
-    where: {
-      project: { userId, archived: false },
-      date: {
-        gte: start,
-        lte: end,
-      },
-    },
-    select: { date: true },
-  });
+  // Count entries per day in Postgres: at most a few hundred rows come back
+  // instead of every entry in range. `date` is TIMESTAMP(3) (UTC), so to_char
+  // gives the same calendar day that `toISOString().split('T')[0]` did.
+  const dailyCounts = await prisma.$queryRaw<{ day: string; count: number }[]>`
+    SELECT to_char(e.date, 'YYYY-MM-DD') AS day, COUNT(*)::int AS count
+    FROM entries e
+    JOIN projects p ON p.id = e."projectId"
+    WHERE p."userId" = ${userId}
+      AND p.archived = false
+      AND e.date >= ${start}
+      AND e.date <= ${end}
+    GROUP BY 1
+  `;
 
   const dateCountMap = new Map<string, number>();
-  for (const entry of entries) {
-    const dateStr = entry.date.toISOString().split('T')[0];
-    dateCountMap.set(dateStr, (dateCountMap.get(dateStr) || 0) + 1);
+  for (const { day, count } of dailyCounts) {
+    dateCountMap.set(day, count);
   }
 
   const current = new Date(start);

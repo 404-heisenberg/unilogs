@@ -208,8 +208,9 @@ database rather than a mock.
 | Database | Neon   | Managed, free tier, no local installation.                                                                          |
 
 Render's free tier spins a service down after inactivity, which adds a cold-start
-delay to the first request. Our `/api/health` endpoint exists partly for this
-reason — an uptime monitor pings it on a schedule to keep the service warm.
+delay to the first request. A scheduled GitHub Actions workflow
+(`.github/workflows/keep-warm.yml`) pings `/api/health` every 10 minutes to keep
+the service warm. See [Performance](/performance#uptime-and-the-first-request).
 
 ## External APIs
 

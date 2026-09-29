@@ -1,5 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import Skeleton from '@/components/Skeleton';
 import NavRail from './app-shell/NavRail';
 import ExplorerPane from './app-shell/ExplorerPane';
 import AppHeader from './app-shell/AppHeader';
@@ -39,7 +40,12 @@ export default function AppShell() {
         <AppHeader />
         <InstallPrompt />
         <main className="min-h-0 flex-1 overflow-y-auto p-4 text-espresso md:p-12">
-          <Outlet />
+          {/* Pages are lazy-loaded (see App.tsx). Keeping the boundary inside
+              the shell means navigation stays on screen while a page's chunk
+              downloads, instead of the whole shell blanking out. */}
+          <Suspense fallback={<Skeleton rows={4} className="max-w-xl" />}>
+            <Outlet />
+          </Suspense>
         </main>
         <MobileBottomNav moreOpen={moreOpen} onMoreClick={() => setMoreOpen(true)} />
       </div>

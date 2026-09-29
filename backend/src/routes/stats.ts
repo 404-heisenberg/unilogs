@@ -1,17 +1,11 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from '../lib/prisma.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { getWeeklyEntryCounts, getTermTotals } from '../utils/stats-helper.js';
 import { computeCurrentStreak, buildFieldInsights } from '../services/stats-services.js';
 
 const router = Router();
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-const prisma = new PrismaClient({ adapter });
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
   try {
@@ -20,44 +14,31 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const projects = await prisma.project.findMany({
-      where: { userId, archived: false },
-      include: {
-        fields: {
-          where: { fieldType: 'duration' },
-        },
-        entries: {
-          select: {
-            content: true,
-          },
-        },
-      },
-    });
-
-    const perProject = projects.map((project) => {
-      const durationFieldNames = project.fields.map((f) => f.name);
-
-      let totalHours = 0;
-      for (const entry of project.entries) {
-        const content = entry.content as Record<string, unknown>;
-        for (const fieldName of durationFieldNames) {
-          const value = content[fieldName];
-          if (typeof value === 'number') {
-            totalHours += value;
-          }
-        }
-      }
-
-      return {
-        projectId: project.id,
-        projectName: project.name,
-        totalHours,
-      };
-    });
+    // Sum every duration field of every entry in Postgres rather than loading
+    // all of the user's entries into Node to add them up. Each entry is paired
+    // with each of its project's duration fields, and only JSON numbers count,
+    // matching the old in-memory `typeof value === 'number'` check. Projects
+    // with no duration fields or no entries still appear, with 0 hours.
+    const [perProject, streak] = await Promise.all([
+      prisma.$queryRaw<{ projectId: number; projectName: string; totalHours: number }[]>`
+        SELECT p.id AS "projectId",
+               p.name AS "projectName",
+               COALESCE(
+                 SUM((e.content ->> f.name)::float8)
+                   FILTER (WHERE jsonb_typeof(e.content -> f.name) = 'number'),
+                 0
+               ) AS "totalHours"
+        FROM projects p
+        LEFT JOIN field_definitions f ON f."projectId" = p.id AND f."fieldType" = 'duration'
+        LEFT JOIN entries e ON e."projectId" = p.id
+        WHERE p."userId" = ${userId} AND p.archived = false
+        GROUP BY p.id, p.name
+        ORDER BY p.id
+      `,
+      computeCurrentStreak(userId),
+    ]);
 
     const totalHours = perProject.reduce((sum, p) => sum + p.totalHours, 0);
-
-    const streak = await computeCurrentStreak(userId);
 
     return res.status(200).json({
       perProject,

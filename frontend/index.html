@@ -16,6 +16,26 @@
       content="UniLogs — a customisable digital logbook for university students."
     />
     <title>UniLogs</title>
+    <!--
+      Preload the two fonts that render the first screen. Without this they are
+      only discovered once the CSS has been parsed, arrive after first paint,
+      and the text reflows when they swap in (the landing page's layout shift).
+      Vite rewrites these paths to the same hashed files the CSS uses.
+    -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/node_modules/@fontsource-variable/lora/files/lora-latin-wght-normal.woff2"
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2"
+    />
   </head>
   <body>
     <div id="root"></div>

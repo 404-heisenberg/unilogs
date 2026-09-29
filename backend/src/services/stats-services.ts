@@ -1,10 +1,4 @@
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-const prisma = new PrismaClient({ adapter });
+import { prisma } from '../lib/prisma.js';
 
 async function getDistinctEntryDates(userId: string): Promise<string[]> {
   // Only the distinct days matter for the streak, so let Postgres collapse the
@@ -22,9 +16,10 @@ async function getDistinctEntryDates(userId: string): Promise<string[]> {
 }
 
 export async function computeCurrentStreak(userId: string): Promise<number> {
-  const dateSet = await getDistinctEntryDates(userId);
+  // A Set, so each day lookup in the walk below is constant time.
+  const dateSet = new Set(await getDistinctEntryDates(userId));
 
-  if (dateSet.length === 0) {
+  if (dateSet.size === 0) {
     return 0;
   }
 
@@ -36,9 +31,9 @@ export async function computeCurrentStreak(userId: string): Promise<number> {
   const yesterdayStr = yesterday.toISOString().split('T')[0];
 
   let endDateStr: string;
-  if (dateSet.includes(todayStr)) {
+  if (dateSet.has(todayStr)) {
     endDateStr = todayStr;
-  } else if (dateSet.includes(yesterdayStr)) {
+  } else if (dateSet.has(yesterdayStr)) {
     endDateStr = yesterdayStr;
   } else {
     return 0;
@@ -49,7 +44,7 @@ export async function computeCurrentStreak(userId: string): Promise<number> {
 
   while (true) {
     const dateStr = currentDate.toISOString().split('T')[0];
-    if (dateSet.includes(dateStr)) {
+    if (dateSet.has(dateStr)) {
       streak++;
       currentDate.setUTCDate(currentDate.getUTCDate() - 1);
     } else {
