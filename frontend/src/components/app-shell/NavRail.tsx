@@ -12,6 +12,7 @@ const RailLink = memo(function RailLink({ to, label, icon: Icon }: NavItem) {
     <Link
       to={to}
       aria-label={label}
+      title={label}
       aria-current={active ? 'page' : undefined}
       className={`flex size-10 items-center justify-center rounded-lg transition-colors ${
         active ? 'border border-gold bg-rail-active text-gold' : 'text-cream hover:bg-white/5'
@@ -44,9 +45,14 @@ export default function NavRail({
           <PanelLeft size={20} strokeWidth={1.75} />
         </button>
 
-        <div className="flex size-9 items-center justify-center rounded-lg bg-gold">
+        <Link
+          to="/dashboard"
+          aria-label="UniLogs home"
+          title="UniLogs home"
+          className="flex size-9 items-center justify-center rounded-lg bg-gold"
+        >
           <span className="text-base font-extrabold text-rail">UL</span>
-        </div>
+        </Link>
 
         <nav className="flex w-full flex-col items-center gap-4">
           {primaryNavItems.map((item) => (

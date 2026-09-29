@@ -21,6 +21,16 @@ export const AGGREGATIONS: { kind: AggregationKind; label: string }[] = [
   { kind: 'min', label: 'Min' },
 ];
 
+// Plain-language definition of each option, shown as a tooltip on the field's
+// aggregation dropdown. The bare labels ("Sum", "Min") don't say what is being
+// combined, which is exactly what testers found unclear.
+export const AGGREGATION_HINT: Record<AggregationKind, string> = {
+  sum: 'Add every entry’s value together',
+  average: 'Average the values across all entries',
+  max: 'Show the highest value recorded',
+  min: 'Show the lowest value recorded',
+};
+
 export { FIELD_TYPE_LABELS } from '@/lib/field-types';
 
 export function isFieldType(value: string): value is FieldType {

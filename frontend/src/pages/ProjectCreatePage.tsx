@@ -53,8 +53,8 @@ const DEFAULT_TEMPLATES: TemplateOption[] = [
     ],
   },
   {
-    name: 'Blank',
-    description: 'No fields — add your own',
+    name: 'Custom',
+    description: 'Start with no fields, then add your own',
     fields: [],
   },
 ];
@@ -125,12 +125,12 @@ export default function ProjectCreatePage() {
     },
   });
 
-  // Display at most 5 user project templates + "Blank" option (or default templates)
+  // Display at most 5 user project templates + the "Custom" option (or default templates)
   const displayedTemplates: TemplateOption[] =
     userProjectTemplates.length > 0
       ? [
           ...userProjectTemplates.slice(0, 5),
-          { name: 'Blank', description: 'No fields — add your own', fields: [] },
+          { name: 'Custom', description: 'Start with no fields, then add your own', fields: [] },
         ]
       : DEFAULT_TEMPLATES;
 
