@@ -27,18 +27,20 @@ Run all of `tsc --noEmit`, `lint` and `build` before opening a pull request.
 
 ## Stack
 
-| Concern      | Library           |
-| ------------ | ----------------- |
-| Routing      | React Router      |
-| Client state | Zustand           |
-| Server state | TanStack Query    |
-| Styling      | Tailwind CSS v4   |
-| Components   | shadcn/ui (Radix) |
-| Charts       | Recharts          |
+| Concern      | Library                                  |
+| ------------ | ---------------------------------------- |
+| Routing      | React Router                             |
+| Server state | TanStack Query                           |
+| Styling      | Tailwind CSS v4                          |
+| Components   | shadcn/ui (Radix)                        |
+| Charts       | Hand-built SVG (`components/dashboard/`) |
+| Markdown     | react-markdown + remark-gfm              |
+| Toasts       | sonner, via `lib/toast.ts`               |
 
 TanStack Query handles anything that comes from the API — caching, loading and
-error states. Zustand is for state that never touches the server, such as UI
-preferences. Do not store API responses in Zustand.
+error states. Client-only state stays local: component state for forms and
+dialogs, `localStorage` for persisted preferences such as the dashboard layout.
+Do not copy API responses into other state.
 
 ## Conventions
 
