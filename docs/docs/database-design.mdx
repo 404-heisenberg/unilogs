@@ -1,6 +1,6 @@
 ---
-sidebar_position: 6
 title: Database Design
+description: Every table in the UniLogs database, how they relate, and why they are shaped this way.
 ---
 
 import AiDeclaration from '@site/src/components/AiDeclaration';
@@ -9,35 +9,141 @@ import AiDeclaration from '@site/src/components/AiDeclaration';
 
 ## Overview
 
-The UniLogs database is designed to support users, projects, custom field definitions, entries, tags and entry history. The design allows users to create different entry formats for different projects while preserving existing entries when the format changes.
+The UniLogs database supports users, projects, custom field definitions,
+entries, tags, entry history, calendar suggestions, share links and
+notifications. Users can give each project its own entry format, and existing
+entries are kept when that format changes.
+
+It has **thirteen tables**. Four are required by Better Auth (`user`,
+`session`, `account` and `verification`). The other nine belong to UniLogs:
+`projects`, `field_definitions`, `entries`, `tags`, `entry_tags`,
+`audit_logs`, `calendar_suggestions`, `share_tokens` and `notifications`.
+
+Column names below are the real names in the database. Prisma keeps the
+camelCase field names from `backend/prisma/schema.prisma`, and `@@map` only
+renames the tables.
 
 ## Entity Relationship Diagram
 
-The database consists of eleven tables: `user`, `session`, `account`, and `verification` (required by Better Auth), plus `projects`, `field_definitions`, `entries`, `tags`, `entry_tags`, `audit_logs`, and `calendar_suggestions` (the UniLogs domain tables).
+Drawn from `backend/prisma/schema.prisma`. The Better Auth tables `session`,
+`account` and `verification` are left out for readability; each of the first
+two belongs to one `user`.
 
-The relationships between these tables are shown in the entity diagram below.
+```mermaid
+erDiagram
+    user ||--o{ projects : owns
+    user ||--o{ tags : owns
+    user ||--o{ notifications : receives
+    user ||--o{ calendar_suggestions : decides
+    projects ||--o{ field_definitions : defines
+    projects ||--o{ entries : contains
+    projects ||--o{ share_tokens : "shared via"
+    projects |o--o{ notifications : about
+    entries ||--o{ entry_tags : has
+    tags ||--o{ entry_tags : labels
+    entries ||--o{ audit_logs : "history of"
 
-![UniLogs Entity Relationship Diagram](/img/database-erd.png)
+    user {
+        text id PK
+        text email UK
+        boolean remindersEnabled
+    }
+    projects {
+        int id PK
+        text userId FK
+        text name
+        boolean archived
+        ReminderFrequency reminderFrequency
+    }
+    field_definitions {
+        int id PK
+        int projectId FK
+        text name
+        text fieldType
+        text aggregationOverride
+    }
+    entries {
+        int id PK
+        int projectId FK
+        timestamp date
+        text title
+        text body
+        jsonb content
+    }
+    tags {
+        int id PK
+        text userId FK
+        text name
+    }
+    entry_tags {
+        int entryId PK,FK
+        int tagId PK,FK
+    }
+    audit_logs {
+        int id PK
+        int entryId FK
+        AuditAction action
+        jsonb oldData
+        jsonb newData
+    }
+    calendar_suggestions {
+        int id PK
+        text userId FK
+        text eventId
+        text status
+    }
+    share_tokens {
+        text token PK
+        int projectId FK
+        timestamp expiresAt
+        timestamp revokedAt
+    }
+    notifications {
+        int id PK
+        text userId FK
+        int projectId FK
+        NotificationType type
+        timestamp readAt
+    }
+```
+
+<details>
+<summary>Original Sprint 1 diagram</summary>
+
+The diagram from the Sprint 1 design, kept for reference. It predates tags
+belonging to users, entry titles and bodies, share links, reminders and
+notifications.
+
+![Sprint 1 Entity Relationship Diagram](/img/database-erd.png)
+
+</details>
 
 ## Tables
 
 ### User
 
-The `user` table stores the information required for user accounts. Its structure follows the schema required by Better Auth.
+The `user` table stores user accounts. Its structure follows the schema
+Better Auth requires, plus one UniLogs column.
 
-| Column          | Type      | Constraints |
-| --------------- | --------- | ----------- |
-| `id`            | varchar   | Primary key |
-| `name`          | varchar   |             |
-| `email`         | varchar   |             |
-| `emailVerified` | boolean   |             |
-| `image`         | varchar   |             |
-| `createdAt`     | timestamp |             |
-| `updatedAt`     | timestamp |             |
+| Column             | Type      | Constraints              |
+| ------------------ | --------- | ------------------------ |
+| `id`               | text      | Primary key              |
+| `name`             | text      | Not null                 |
+| `email`            | text      | Not null, unique         |
+| `emailVerified`    | boolean   | Not null, default false  |
+| `image`            | text      |                          |
+| `createdAt`        | timestamp | Not null                 |
+| `updatedAt`        | timestamp | Not null                 |
+| `remindersEnabled` | boolean   | Not null, default `true` |
+
+`remindersEnabled` is the account-wide switch in **Settings**. When it is off,
+the reminder scheduler skips all of the user's projects.
 
 ### Session
 
-The `session` table stores active login sessions issued by Better Auth. Each session belongs to one user and carries the token read from the session cookie on every request.
+The `session` table stores active login sessions issued by Better Auth. Each
+session belongs to one user and carries the token read from the session cookie
+on every request.
 
 | Column      | Type      | Constraints                        |
 | ----------- | --------- | ---------------------------------- |
@@ -52,7 +158,11 @@ The `session` table stores active login sessions issued by Better Auth. Each ses
 
 ### Account
 
-The `account` table stores the credentials and provider tokens Better Auth uses to authenticate a user — a password hash for email/password sign-in, or OAuth tokens for a provider like Google. A user can have more than one linked account.
+The `account` table stores the credentials and provider tokens Better Auth uses
+to authenticate a user: a password hash for email/password sign-in, or OAuth
+tokens for Google. A user can have more than one linked account. `scope`
+records which Google permissions were granted, which is how the API knows
+whether Google Calendar has been connected.
 
 | Column                  | Type      | Constraints                        |
 | ----------------------- | --------- | ---------------------------------- |
@@ -60,7 +170,6 @@ The `account` table stores the credentials and provider tokens Better Auth uses 
 | `accountId`             | text      | Not null                           |
 | `providerId`            | text      | Not null                           |
 | `userId`                | text      | Not null, foreign key to `user.id` |
-| `issuer`                | text      | Not null                           |
 | `accessToken`           | text      |                                    |
 | `refreshToken`          | text      |                                    |
 | `idToken`               | text      |                                    |
@@ -73,7 +182,8 @@ The `account` table stores the credentials and provider tokens Better Auth uses 
 
 ### Verification
 
-The `verification` table stores short-lived tokens used for flows like email verification and password reset.
+The `verification` table stores short-lived tokens used for email verification
+and password reset.
 
 | Column       | Type      | Constraints |
 | ------------ | --------- | ----------- |
@@ -86,146 +196,259 @@ The `verification` table stores short-lived tokens used for flows like email ver
 
 ### Projects
 
-The `projects` table stores the projects created by users. Each project belongs to one user and acts as a container for its entries and field definitions.
+The `projects` table stores the projects users create. Each project belongs to
+one user and holds its field definitions and entries.
 
-| Column        | Type    | Constraints                        |
-| ------------- | ------- | ---------------------------------- |
-| `id`          | integer | Primary key                        |
-| `name`        | varchar |                                    |
-| `description` | varchar | Nullable                           |
-| `archived`    | boolean | Not null, default `false`          |
-| `user_id`     | varchar | Not null, foreign key to `user.id` |
+| Column              | Type                | Constraints                        |
+| ------------------- | ------------------- | ---------------------------------- |
+| `id`                | integer             | Primary key                        |
+| `name`              | text                | Not null                           |
+| `description`       | text                |                                    |
+| `archived`          | boolean             | Not null, default `false`          |
+| `reminderFrequency` | `ReminderFrequency` | Not null, default `WEEKLY`         |
+| `lastDigestSentAt`  | timestamp           |                                    |
+| `userId`            | text                | Not null, foreign key to `user.id` |
 
-`archived` lets a user retire a project without losing its entries — archived
-projects are hidden from the default project list but remain fully intact and
-can be unarchived. `description` is optional free text shown alongside the
-project name.
+`archived` lets a user retire a project without losing its entries. Archived
+projects are hidden from the default project list but stay intact and can be
+unarchived. `reminderFrequency` is chosen during project creation.
+`lastDigestSentAt` stops the hourly reminder sweep from emailing about the same
+quiet project more than once per period.
 
 ### Field definitions
 
-The `field_definitions` table stores the custom fields that define the format of entries within a project. Each field definition belongs to one project.
+The `field_definitions` table stores the custom fields that define the format
+of entries in a project.
 
-| Column       | Type    | Constraints                            |
-| ------------ | ------- | -------------------------------------- |
-| `id`         | integer | Primary key                            |
-| `project_id` | integer | Not null, foreign key to `projects.id` |
-| `name`       | varchar |                                        |
-| `field_type` | varchar |                                        |
+| Column                | Type    | Constraints                            |
+| --------------------- | ------- | -------------------------------------- |
+| `id`                  | integer | Primary key                            |
+| `projectId`           | integer | Not null, foreign key to `projects.id` |
+| `name`                | text    | Not null                               |
+| `fieldType`           | text    | Not null                               |
+| `aggregationOverride` | text    | `sum`, `average`, `max`, `min` or null |
+
+`fieldType` is one of `text`, `number`, `duration`, `boolean` (shown as
+"Toggle" in the app) or `date`. `aggregationOverride` lets a user choose how a
+numeric field is summarised in the project's statistics. When it is null,
+UniLogs picks a sensible default for the field type.
 
 ### Entries
 
-The `entries` table stores the actual logbook entries created by users. Each entry belongs to a project and stores its user-defined field values as JSON.
+The `entries` table stores the logbook entries themselves. Each entry belongs
+to a project and stores its custom field values as JSON.
 
-| Column       | Type      | Constraints                            |
-| ------------ | --------- | -------------------------------------- |
-| `id`         | integer   | Primary key                            |
-| `project_id` | integer   | Not null, foreign key to `projects.id` |
-| `date`       | date      | Not null                               |
-| `created_at` | timestamp |                                        |
-| `content`    | jsonb     |                                        |
+| Column      | Type      | Constraints                            |
+| ----------- | --------- | -------------------------------------- |
+| `id`        | integer   | Primary key                            |
+| `projectId` | integer   | Not null, foreign key to `projects.id` |
+| `date`      | timestamp | Not null                               |
+| `createdAt` | timestamp | Not null, default now                  |
+| `content`   | jsonb     | Not null                               |
+| `title`     | text      |                                        |
+| `body`      | text      | Markdown                               |
+
+An entry must have at least one of a title, a body or a field value. The API
+rejects wholly empty entries.
 
 ### Tags
 
-The `tags` table stores labels that can be attached to entries. A tag can be associated with multiple entries.
+The `tags` table stores labels that can be attached to entries. Tags belong to
+a user, so two users can each have a tag called "exam prep" without sharing it.
 
-| Column | Type    | Constraints |
-| ------ | ------- | ----------- |
-| `id`   | integer | Primary key |
-| `name` | varchar |             |
+| Column   | Type    | Constraints                        |
+| -------- | ------- | ---------------------------------- |
+| `id`     | integer | Primary key                        |
+| `name`   | text    | Not null                           |
+| `userId` | text    | Not null, foreign key to `user.id` |
+
+The combination of `userId` and `name` is unique, so a user can't create the
+same tag twice.
 
 ### Entry_tags
 
-The `entry_tags` table is a junction table that connects entries and tags. This supports a many-to-many relationship, where an entry can have multiple tags and a tag can be attached to multiple entries.
+The `entry_tags` table is a junction table that connects entries and tags,
+giving a many-to-many relationship.
 
-| Column     | Type    | Constraints                           |
-| ---------- | ------- | ------------------------------------- |
-| `entry_id` | integer | Not null, foreign key to `entries.id` |
-| `tag_id`   | integer | Not null, foreign key to `tags.id`    |
+| Column    | Type    | Constraints                           |
+| --------- | ------- | ------------------------------------- |
+| `entryId` | integer | Not null, foreign key to `entries.id` |
+| `tagId`   | integer | Not null, foreign key to `tags.id`    |
 
-The combination of `entry_id` and `tag_id` forms the composite primary key, preventing the same tag from being attached to the same entry more than once.
+`entryId` and `tagId` together form the primary key, so the same tag can't be
+attached to the same entry twice.
 
 ### Audit_logs
 
-The `audit_logs` table stores the history of changes made to entries. Each modification creates an audit record containing the action performed and the data before and after the change.
+The `audit_logs` table stores the history of changes to entries. Each change
+creates a record of the action and the data before and after it.
 
-| Column        | Type           | Constraints                           |
-| ------------- | -------------- | ------------------------------------- |
-| `id`          | integer        | Primary key                           |
-| `entry_id`    | integer        | Not null, foreign key to `entries.id` |
-| `action`      | `audit_action` |                                       |
-| `old_data`    | jsonb          |                                       |
-| `new_data`    | jsonb          |                                       |
-| `modified_at` | timestamp      |                                       |
+| Column       | Type          | Constraints                           |
+| ------------ | ------------- | ------------------------------------- |
+| `id`         | integer       | Primary key                           |
+| `entryId`    | integer       | Not null, foreign key to `entries.id` |
+| `action`     | `AuditAction` | Not null                              |
+| `oldData`    | jsonb         |                                       |
+| `newData`    | jsonb         |                                       |
+| `modifiedAt` | timestamp     | Not null, default now                 |
 
 ### Calendar_suggestions
 
 The `calendar_suggestions` table records what a user has already decided about
-a Google Calendar event surfaced as a possible log entry, so the same event
-isn't suggested again after being accepted or dismissed. Each row belongs to
-one user.
+a Google Calendar event offered as a possible entry, so the same event isn't
+suggested again after being accepted or dismissed.
 
-| Column       | Type      | Constraints                         |
-| ------------ | --------- | ----------------------------------- |
-| `id`         | integer   | Primary key                         |
-| `user_id`    | varchar   | Not null, foreign key to `user.id`  |
-| `event_id`   | varchar   | Not null                            |
-| `status`     | varchar   | Not null (`ACCEPTED` or `REJECTED`) |
-| `created_at` | timestamp | Not null, default now               |
+| Column      | Type      | Constraints                         |
+| ----------- | --------- | ----------------------------------- |
+| `id`        | integer   | Primary key                         |
+| `userId`    | text      | Not null, foreign key to `user.id`  |
+| `eventId`   | text      | Not null                            |
+| `status`    | text      | Not null (`ACCEPTED` or `REJECTED`) |
+| `createdAt` | timestamp | Not null, default now               |
 
-The combination of `user_id` and `event_id` is unique, so accepting or
-rejecting the same calendar event twice for the same user is rejected at the
-database level rather than relying on application code to catch it.
+The combination of `userId` and `eventId` is unique, so deciding on the same
+event twice is rejected by the database rather than relying on application
+code to catch it.
 
-## Audit Action
+### Share_tokens
 
-The `audit_action` enum defines the types of changes that can be recorded in the audit log.
+The `share_tokens` table stores the read-only report links a user creates for
+a project. The token itself is the primary key and appears in the link
+(`/r/{token}` in the app, `/share/{token}` in the API).
 
-| Value    | Description                    |
-| -------- | ------------------------------ |
-| `CREATE` | A new entry was created        |
-| `UPDATE` | An existing entry was modified |
-| `DELETE` | An entry was deleted           |
+| Column             | Type      | Constraints                            |
+| ------------------ | --------- | -------------------------------------- |
+| `token`            | text      | Primary key                            |
+| `projectId`        | integer   | Not null, foreign key to `projects.id` |
+| `expiresAt`        | timestamp | Not null                               |
+| `revokedAt`        | timestamp |                                        |
+| `includeBodies`    | boolean   | Not null, default `false`              |
+| `defaultRangeDays` | integer   | Not null, default `30`                 |
+| `createdAt`        | timestamp | Not null, default now                  |
+
+A link works only while it is unexpired and `revokedAt` is null. Revoking sets
+`revokedAt` instead of deleting the row, so a revoked link can never start
+working again by accident. `includeBodies` decides whether the public report
+shows entry text or only titles and fields.
+
+### Notifications
+
+The `notifications` table stores the in-app notification feed shown under the
+bell.
+
+| Column      | Type               | Constraints                        |
+| ----------- | ------------------ | ---------------------------------- |
+| `id`        | integer            | Primary key                        |
+| `userId`    | text               | Not null, foreign key to `user.id` |
+| `projectId` | integer            | Foreign key to `projects.id`       |
+| `type`      | `NotificationType` | Not null                           |
+| `title`     | text               | Not null                           |
+| `body`      | text               | Not null                           |
+| `readAt`    | timestamp          |                                    |
+| `createdAt` | timestamp          | Not null, default now              |
+
+`projectId` is optional because not every notification is about a project.
+`readAt` is null until the user reads it.
+
+## Enums
+
+| Enum                | Values                       | Used by                                                                         |
+| ------------------- | ---------------------------- | ------------------------------------------------------------------------------- |
+| `AuditAction`       | `CREATE`, `UPDATE`, `DELETE` | `audit_logs.action`: whether the entry was created, modified or deleted         |
+| `ReminderFrequency` | `DAILY`, `WEEKLY`, `OFF`     | `projects.reminderFrequency`: how long a project can go quiet before a reminder |
+| `NotificationType`  | `REMINDER`, `SYSTEM`         | `notifications.type`: a reminder about a quiet project, or a general message    |
+
+## Indexes
+
+Beyond primary keys and unique constraints, these indexes back the most common
+queries. See [Performance](/performance) for the measurements behind them.
+
+| Index                              | Speeds up                                        |
+| ---------------------------------- | ------------------------------------------------ |
+| `projects(userId)`                 | Listing a user's projects                        |
+| `field_definitions(projectId)`     | Loading a project's fields                       |
+| `entries(projectId)`               | Loading a project's entries                      |
+| `entries(date)`                    | Date-range filters, the heatmap and streaks      |
+| `entry_tags(tagId)`                | Filtering entries by tag                         |
+| `share_tokens(projectId)`          | Listing a project's share links                  |
+| `notifications(userId, createdAt)` | Loading a user's notification feed, newest first |
 
 ## Relationships
 
-- One user can have many sessions, and many accounts (one per linked sign-in method, such as email/password or Google).
-- One user can have many projects.
-- One project can have many field definitions.
-- One project can have many entries.
-- One entry can have many tags, and one tag can belong to many entries through the `entry_tags` junction table.
-- One entry can have many audit log records, allowing changes to an entry to be tracked over time.
-- One user can have many calendar suggestion records, one per Google Calendar event they've accepted or rejected.
+- One user has many sessions and many accounts (one per linked sign-in method,
+  such as email/password or Google).
+- One user has many projects, tags, notifications and calendar suggestion
+  records.
+- One project has many field definitions, entries, share tokens and
+  notifications.
+- One entry has many tags, and one tag belongs to many entries, through the
+  `entry_tags` junction table.
+- One entry has many audit log records, so changes to an entry are tracked over
+  time.
+- Deleting a user or project deletes everything that belongs to it (cascading
+  deletes), so nothing is left orphaned.
 
 ## Design Decisions
 
 ### Better Auth User Schema
 
-The `user`, `session`, `account` and `verification` tables follow the schema required by Better Auth so that authentication-related data — sessions, linked sign-in providers, and verification tokens — is compatible with the authentication system.
+The `user`, `session`, `account` and `verification` tables follow the schema
+Better Auth requires, so sessions, linked sign-in providers and verification
+tokens work with the authentication library unchanged.
 
 ### Dynamic Entry Content
 
-The `content` column in the `entries` table uses `jsonb` to support custom fields. Since users can define different fields for each project, the database cannot use a fixed column for every possible field.
+The `content` column in `entries` uses `jsonb` to hold custom field values.
+Each project defines different fields, so the database can't have a fixed
+column for every possible field. The API validates `content` against the
+project's field definitions before saving it.
+
+### Title and Body as Real Columns
+
+Entry titles and bodies were added in Sprint 3 as real columns rather than as
+more keys in `content`. Every entry has them regardless of project, and search
+needs to match them directly. User testing had shown free-text notes weren't
+discoverable when they depended on adding a custom field.
 
 ### Required Entry Date
 
-The `date` column is required so that every entry has a known date. This supports features such as timelines, statistics, and streak calculations.
+`date` is required so every entry has a known date. Timelines, statistics and
+streaks all depend on it.
 
 ### Many-to-Many Tags
 
-The `entry_tags` junction table allows entries and tags to have a many-to-many relationship while preventing duplicate tag assignments through its composite primary key.
+The `entry_tags` junction table gives entries and tags a many-to-many
+relationship, and its composite primary key prevents duplicate tag
+assignments.
 
 ### Audit History
 
-The `audit_logs` table preserves the history of changes made to entries by storing the action, previous data, and new data.
+`audit_logs` keeps the history of changes to entries by storing the action,
+the previous data and the new data. The brief asks for "a record of what they
+do", and a record that can be silently rewritten is a weaker one.
 
 ### Calendar Suggestion Status
 
-`calendar_suggestions.status` is a plain `varchar` rather than a Postgres enum
-like `audit_action`. The only two values today are `ACCEPTED` and `REJECTED`,
-but this table exists purely to remember a per-user, per-event decision —
-nothing joins or filters on `status` in a way that benefits from database-level
-enum validation, so a plain column avoids a migration if a future status (for
-example, "snoozed") is added.
+`calendar_suggestions.status` is plain text rather than a Postgres enum like
+`AuditAction`. The only values today are `ACCEPTED` and `REJECTED`, but this
+table only remembers a per-user, per-event decision. Nothing joins or filters
+on `status` in a way that benefits from database-level validation, so plain
+text avoids a migration if a new status (for example "snoozed") is added.
+
+### Share Tokens as Their Own Table
+
+Share links could have been a column on `projects`. A separate table lets a
+project have several links, each with its own expiry, and lets each one be
+revoked on its own without affecting the others.
+
+### Proposed, Not Yet Built: Tasks
+
+`schema.prisma` also contains a `Task` model (title, notes, due date,
+completed), proposed for standalone to-do items in a project. It has **no
+migration**, so the `tasks` table doesn't exist in any database, and no API
+route uses it. The "What's left" feature currently works from to-do fields on
+entries instead. `Task` is documented here so its presence in the schema isn't
+mistaken for a finished feature.
 
 ## Deployment
 
@@ -273,6 +496,6 @@ replayable.
 
 <AiDeclaration
   action="generated"
-  tools="ChatGPT[GPT-5.6 Luna], Claude-Code[Claude Sonnet 5]"
-  purpose="drafting and structuring the database design documentation, and updating it to cover the projects table's description/archived columns, the calendar_suggestions table, and database deployment"
+  tools="ChatGPT[GPT-5.6 Luna], Claude-Code[Claude Sonnet 5], Claude-Code[Claude Opus 5.5]"
+  purpose="drafting and structuring the database design documentation, and updating it to cover the projects table's description/archived columns, the calendar_suggestions table and database deployment, then bringing every table up to date with the Sprint 3 schema (share tokens, notifications, reminders, entry title and body), correcting column names and adding a Mermaid ERD"
 />

@@ -21,7 +21,7 @@ Browser
 frontend/  React SPA on Vercel
    │  fetch, JSON
    ▼
-backend/   Express API on Render
+backend/   Express API on Render ──► Google Calendar and OAuth, SendGrid
    │  Prisma
    ▼
 PostgreSQL on Neon
@@ -58,29 +58,36 @@ and runs on its own.
 | **Tailwind CSS**   | Styles live next to the markup, so there is no separate stylesheet to keep in sync and no naming conventions to argue about. It also removes the risk of one person's CSS quietly breaking another's page.                                                    |
 | **shadcn/ui**      | Components are copied into our repository rather than installed as a dependency. We own the code and can change it. Built on Radix, so keyboard navigation and screen reader support are correct by default — which the accessibility criterion is marked on. |
 | **React Router**   | The standard for client-side routing in React. Nothing exotic required.                                                                                                                                                                                       |
-| **Zustand**        | State that never touches the server, such as UI preferences. Chosen over Redux because Redux's boilerplate is only worth paying for at a scale we will not reach.                                                                                             |
 | **TanStack Query** | Everything that comes from the API. It handles caching, loading states, error states and refetching, which would otherwise be hand-written in every component and written slightly differently each time.                                                     |
-| **Recharts**       | Charts for the statistics view. Declarative and React-native, so charts are composed the same way as the rest of the interface.                                                                                                                               |
 
-The split between Zustand and TanStack Query is deliberate and worth stating
-plainly: **server data goes in TanStack Query, never in Zustand.** Mixing the two
-is the most common way React applications end up with stale data on screen.
+**Server data lives in TanStack Query and nowhere else.** The little client-only
+state the app has stays close to where it is used: component state for forms
+and dialogs, and `localStorage` for the dashboard layout (read through React's
+`useSyncExternalStore`, see `frontend/src/lib/dashboard.ts`). We planned to use
+Zustand for this and Recharts for charts, but neither turned out to be needed.
+The dashboard charts (heatmap, donut, bars) are small hand-built SVG components
+that match the Figma designs exactly, so both libraries were removed in Sprint 3
+rather than shipped unused.
 
 ### Supporting frontend packages
 
 Smaller dependencies, pulled in to support the tools above rather than chosen as
 standalone decisions:
 
-| Package                        | Why this one                                                                                                                                                                                                                                                          |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **radix-ui**                   | The unstyled, accessible primitives shadcn/ui is built on. Handles focus trapping, keyboard navigation and ARIA attributes for components like dialogs and menus.                                                                                                     |
-| **class-variance-authority**   | Defines the variant/size classes on generated shadcn/ui components (e.g. `button`'s `variant="outline"`). Required by the generator's own output, not chosen independently.                                                                                           |
-| **clsx** + **tailwind-merge**  | Compose the `cn()` helper (`frontend/src/lib/utils.ts`) that every shadcn/ui component calls to combine class names. `clsx` joins conditional classes; `tailwind-merge` resolves conflicts between them (e.g. a later `px-4` correctly overriding an earlier `px-2`). |
-| **tw-animate-css**             | Tailwind v4 has no built-in animation utilities. This restores the `animate-in`/`animate-out` classes shadcn/ui's generated components rely on, without pulling in a JS animation library.                                                                            |
-| **lucide-react**               | Icon set. shadcn/ui's generated components and CLI assume Lucide icons by default, so using anything else means fighting the generator on every new component.                                                                                                        |
-| **@fontsource-variable/geist** | Self-hosts the Geist variable font instead of loading it from Google Fonts or Vercel's CDN, removing a render-blocking third-party request and keeping the page working if that CDN is unreachable.                                                                   |
-| **@tailwindcss/vite**          | Official first-party Vite plugin for Tailwind v4. Compiles Tailwind as part of Vite's own build graph instead of a separate PostCSS pass, which is how Tailwind v4 expects to be integrated.                                                                          |
-| **shadcn** (CLI)               | Generates the components in `frontend/src/components/ui/` — see [Vendored code](#vendored-code) below. Not imported at runtime; used only via `npx shadcn add`.                                                                                                       |
+| Package                                                                        | Why this one                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **radix-ui**                                                                   | The unstyled, accessible primitives shadcn/ui is built on. Handles focus trapping, keyboard navigation and ARIA attributes for components like dialogs and menus.                                                                                                                                                      |
+| **class-variance-authority**                                                   | Defines the variant/size classes on generated shadcn/ui components (e.g. `button`'s `variant="outline"`). Required by the generator's own output, not chosen independently.                                                                                                                                            |
+| **clsx** + **tailwind-merge**                                                  | Compose the `cn()` helper (`frontend/src/lib/utils.ts`) that every shadcn/ui component calls to combine class names. `clsx` joins conditional classes; `tailwind-merge` resolves conflicts between them (e.g. a later `px-4` correctly overriding an earlier `px-2`).                                                  |
+| **tw-animate-css**                                                             | Tailwind v4 has no built-in animation utilities. This restores the `animate-in`/`animate-out` classes shadcn/ui's generated components rely on, without pulling in a JS animation library.                                                                                                                             |
+| **lucide-react**                                                               | Icon set. shadcn/ui's generated components and CLI assume Lucide icons by default, so using anything else means fighting the generator on every new component.                                                                                                                                                         |
+| **@fontsource-variable/dm-sans**, **lora**, **cormorant-garamond**, **caveat** | The four typefaces in the Figma design system: DM Sans for the interface, Lora and Cormorant Garamond for headings, and Caveat for handwritten accents. Self-hosted instead of loaded from Google Fonts, which removes a render-blocking third-party request and keeps the fonts working offline in the installed app. |
+| **sonner**                                                                     | Toast notifications for errors and confirmations. Wrapped in `frontend/src/lib/toast.ts` so pages never import it directly, and the library can be swapped without touching them.                                                                                                                                      |
+| **next-themes**                                                                | Only because shadcn/ui's generated `sonner` wrapper reads the colour theme through it. UniLogs doesn't use it for anything else.                                                                                                                                                                                       |
+| **react-markdown** + **remark-gfm**                                            | Renders the Markdown preview in the entry editor and on entry pages, including GitHub-flavoured extras such as task lists and tables. Renders to React elements rather than raw HTML, so entry text can't inject scripts.                                                                                              |
+| **@tailwindcss/typography**                                                    | The `prose` classes that style rendered Markdown (headings, lists, quotes, code) consistently without hand-writing styles for every element.                                                                                                                                                                           |
+| **@tailwindcss/vite**                                                          | Official first-party Vite plugin for Tailwind v4. Compiles Tailwind as part of Vite's own build graph instead of a separate PostCSS pass, which is how Tailwind v4 expects to be integrated.                                                                                                                           |
+| **shadcn** (CLI)                                                               | Generates the components in `frontend/src/components/ui/` — see [Vendored code](#vendored-code) below. Not imported at runtime; used only via `npx shadcn add`.                                                                                                                                                        |
 
 ### Vendored code
 
@@ -110,14 +117,16 @@ importing it as a black box.
 
 ### Supporting backend packages
 
-| Package                           | Why this one                                                                                                                                                                                                                                                                              |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **@prisma/adapter-pg** + **pg**   | Prisma 7's driver adapter mode. Prisma no longer bundles its own query engine binary for every database; instead it delegates connection handling to the standard `pg` driver via this adapter. Required for Prisma to talk to Neon at all under this version.                            |
-| **cors**                          | The frontend (Vercel) and backend (Render) are on different origins, so the browser blocks API requests without CORS headers. This middleware sets them for the frontend's allowed origin.                                                                                                |
-| **bcryptjs**                      | Hashes passwords for the email/password auth path. A pure-JavaScript implementation was chosen over the native `bcrypt` binding so installs do not depend on a C++ toolchain being available on every contributor's machine and on Render's build image.                                  |
-| **@scalar/express-api-reference** | Serves interactive API documentation ([`/api/docs`](https://unilogs.onrender.com/api/docs#description/introduction), live) generated from our OpenAPI spec, mounted directly as Express middleware. Chosen over Swagger UI for a more readable default theme with no extra configuration. |
-| **@sendgrid/mail**                | Sends the real emails behind email verification and password reset (Better Auth's callbacks only decide _when_ to send — something still has to deliver the message). See [Considered and rejected](#considered-and-rejected) for why SendGrid over Resend.                               |
-| **dotenv**                        | Loads `.env` into `process.env` for local development. Not used in production — Render injects environment variables directly.                                                                                                                                                            |
+| Package                           | Why this one                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **@prisma/adapter-pg** + **pg**   | Prisma 7's driver adapter mode. Prisma no longer bundles its own query engine binary for every database; instead it delegates connection handling to the standard `pg` driver via this adapter. Required for Prisma to talk to Neon at all under this version.                                                                                                     |
+| **cors**                          | The frontend (Vercel) and backend (Render) are on different origins, so the browser blocks API requests without CORS headers. This middleware sets them for the frontend's allowed origin.                                                                                                                                                                         |
+| **node-cron**                     | Runs the reminder sweep once an hour (`backend/src/scheduler.ts`): it finds projects that have gone quiet for longer than their reminder frequency, adds notifications and sends email digests. Runs inside the existing Express process, so reminders need no second service or paid scheduler. It is never started under test, so the suite stays deterministic. |
+| **@scalar/express-api-reference** | Serves interactive API documentation ([`/api/docs`](https://unilogs.onrender.com/api/docs#description/introduction), live) generated from our OpenAPI spec, mounted directly as Express middleware. Chosen over Swagger UI for a more readable default theme with no extra configuration.                                                                          |
+| **@sendgrid/mail**                | Sends every email UniLogs sends: verification codes, password reset links and reminder digests. Better Auth's callbacks only decide _when_ to send; something still has to deliver the message. See [External APIs](#external-apis), and [Considered and rejected](#considered-and-rejected) for why SendGrid over Resend.                                         |
+| **dotenv** (dev only)             | Loads `.env` and `.env.test` into `process.env` for local development, Prisma commands and the test suite. Not used in production, where Render injects environment variables directly.                                                                                                                                                                            |
+
+Password hashing is handled inside Better Auth, so there is no separate hashing library. An earlier version also used **bcryptjs** for password resets. It was removed in #238 after reset passwords turned out to be hashed differently from how sign-in verified them, so one library now owns both sides.
 
 ### A note on ESM
 
@@ -134,8 +143,14 @@ README because it is the most likely thing to block a new contributor.
 ## Documentation
 
 **Docusaurus**, deployed to Vercel. Purpose-built for documentation sites,
-supports MDX so React components can be embedded in pages, and gives us search
-and versioning without configuration.
+supports MDX so React components can be embedded in pages, and gives us
+versioning without configuration.
+
+Search comes from **@easyops-cn/docusaurus-search-local**, which builds a
+full-text index of every page at build time and searches it in the browser.
+Docusaurus's built-in option, Algolia DocSearch, needs an application and an
+external crawler. The local index needs no account or API key and works the
+same on a laptop as on Vercel.
 
 MDX matters for one specific reason: the course AI policy requires a declaration
 on every page. A reusable `<AiDeclaration />` component means that declaration has
@@ -171,6 +186,7 @@ tool, and the simpler option was better.
 | **React Testing Library** | Queries components the way a user finds them — by role, label, and visible text — rather than through internal component state. Catches real usability regressions and survives refactors that break tests written against implementation details.                                                                                                                         |
 | **Supertest**             | Drives the real Express app over HTTP from inside a test rather than calling route handlers directly, so backend tests exercise the same middleware, auth, and validation pipeline that runs in production.                                                                                                                                                                |
 | **Playwright**            | The layer above component tests: drives a real browser against the real frontend and backend together. Chosen over Cypress for first-party TypeScript support and because its own config can launch multiple dev servers directly (see `frontend/playwright.config.ts`), which fits this repo's two-server, no-workspaces layout without extra process-management tooling. |
+| **@vitest/coverage-v8**   | Measures coverage for both the frontend and backend suites using V8's built-in instrumentation, so no separate code transform is needed. Every `npm test` run reports it, and CI fails if it drops below the thresholds in [Testing Policy](/testing-policy).                                                                                                              |
 
 Three layers, each catching what the one below it cannot: Vitest unit tests
 check logic in isolation, the component/integration tests above check that a
@@ -195,15 +211,31 @@ Render's free tier spins a service down after inactivity, which adds a cold-star
 delay to the first request. Our `/api/health` endpoint exists partly for this
 reason — an uptime monitor pings it on a schedule to keep the service warm.
 
-## External API
+## External APIs
 
-**Google Calendar.** Students already keep their timetable there. Pulling
+UniLogs calls three third-party APIs. Every call is made from the backend, so no
+API key or OAuth secret ever reaches the browser.
+
+| API                                                                   | What UniLogs uses it for                                                            | Data involved                                                                                                 | If it is unavailable                                                                                                                                                          |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[Google Calendar API](https://developers.google.com/calendar/api)** | Turning upcoming events into entry suggestions, and the dashboard's Upcoming widget | Read-only (`calendar.readonly` scope). The next 30 days of the user's **primary** calendar, at most 20 events | The Suggestions page and Upcoming widget show an error with a **Try again** button. The rest of the app is unaffected.                                                        |
+| **Google OAuth 2.0**                                                  | "Sign in with Google", and the consent step that grants calendar access             | The user's name and email address. The calendar scope is requested only when they connect their calendar      | Google sign-in is unavailable. Email and password sign-in, the primary login method, still works.                                                                             |
+| **[SendGrid Mail API](https://www.twilio.com/docs/sendgrid)**         | Sending verification codes, password reset links and reminder digests               | The recipient's email address and the message                                                                 | The send is logged and skipped rather than crashing the request. Locally, without a SendGrid key, emails are printed to the console instead, so development needs no account. |
+
+**Why Google Calendar.** Students already keep their timetable there. Pulling
 scheduled events in means log entries can be created from something that already
 happened rather than typed from memory, which removes most of the friction the
 brief describes with the physical logbook.
 
-Google OAuth is required for this integration. It is separate from the compulsory
-email and password authentication, which remains the primary login method.
+**Why OAuth is separate from sign-in.** Connecting a calendar is optional and
+separate from the compulsory email and password authentication, which remains
+the primary login method. A user who signs up with email can still connect
+Google Calendar later from **Settings**.
+
+**Known limitation.** Only the primary calendar is read. Testers asked for
+multiple calendars (see [User Testing](/user-testing)). Supporting them means
+listing the user's calendars and merging their events, which is the first
+follow-up for this integration.
 
 ## Considered and rejected
 
@@ -212,7 +244,8 @@ email and password authentication, which remains the primary login method.
 | Vite              | Next.js                    | Server-side rendering solves problems a logged-in tool does not have, and adds deployment complexity.                                                                                                                                                                                                                                    |
 | Tailwind          | CSS Modules                | Slower to write and needs naming discipline across seven people.                                                                                                                                                                                                                                                                         |
 | shadcn/ui (Radix) | Base UI                    | Newer and shadcn's current recommendation, but Radix has years of existing answers online, which matters more when six people are learning at once.                                                                                                                                                                                      |
-| Zustand           | Redux Toolkit              | More boilerplate than our state complexity justifies.                                                                                                                                                                                                                                                                                    |
+| Component state   | Zustand, Redux Toolkit     | Redux has more boilerplate than our state justifies. We planned Zustand for UI state, but the only shared client state turned out to be the dashboard layout, which `localStorage` handles. Zustand was removed unused.                                                                                                                  |
+| Hand-built SVG    | Recharts                   | Planned for the statistics charts. The Figma charts (heatmap, donut, bars) are simple enough that hand-built SVG matches them exactly and ships no extra JavaScript. Recharts was removed unused.                                                                                                                                        |
 | Prisma            | Drizzle, raw SQL           | Drizzle is lighter but less familiar; raw SQL gives up type safety.                                                                                                                                                                                                                                                                      |
 | Better Auth       | Auth.js, hand-rolled       | Auth.js is Next-oriented. Hand-rolling authentication is not a risk worth taking.                                                                                                                                                                                                                                                        |
 | Docusaurus        | Markdown in the repository | Rejected on the grounds that the brief asks for a publicly accessible site with non-trivial content.                                                                                                                                                                                                                                     |
@@ -221,6 +254,6 @@ email and password authentication, which remains the primary login method.
 | SendGrid          | Resend                     | Resend only sends to arbitrary recipients once a domain is verified, and this project only has a free `*.vercel.app` subdomain, whose DNS Vercel controls, not us — so it can't be verified. SendGrid's Single Sender Verification needs just one confirmed email address, no domain ownership, so it actually reaches whoever signs up. |
 
 <AiDeclaration
-  tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Sonnet 5]"
-  purpose="drafting and structuring this page from decisions made by the team, adding the third-party package, vendored code, and testing sections, and documenting the SendGrid email integration and OTP-based email verification"
+  tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Sonnet 5], Claude-Code[Claude Opus 5.5]"
+  purpose="drafting and structuring this page from decisions made by the team, adding the third-party package, vendored code, and testing sections, documenting the SendGrid email integration and OTP-based email verification, and bringing the package and external API sections up to date with Sprint 3"
 />

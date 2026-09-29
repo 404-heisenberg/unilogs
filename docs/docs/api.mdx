@@ -1,0 +1,150 @@
+---
+title: API Overview
+description: Every UniLogs API endpoint grouped by resource, with a link to the live interactive reference.
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# API Overview
+
+The UniLogs backend is a hand-written Express API, deployed separately from the
+frontend on Render. This page is a map of every endpoint. For request and
+response schemas, and to try a request in the browser, use the live reference:
+
+**[Open the interactive API reference →](https://unilogs.onrender.com/api/docs#description/introduction)**
+
+The reference is generated from the OpenAPI 3 spec in `backend/src/openapi.ts`,
+and the raw spec is served at
+[`/openapi.json`](https://unilogs.onrender.com/openapi.json). The tables below
+list the same endpoints as that spec.
+
+## Conventions
+
+- **Base URL:** `https://unilogs.onrender.com`
+- **Authentication:** every `/api/*` endpoint except sign-up, sign-in, password
+  reset, Google sign-in and health needs a signed-in session. Better Auth sets the session as a
+  cookie on sign-in. Requests without one get `401`.
+- **Ownership:** users only ever see their own projects, entries, tags and
+  notifications. Asking for someone else's resource returns `404`, not `403`, so
+  the API doesn't reveal that it exists.
+- **Errors:** `400` for invalid input (with a message saying which field),
+  `401` when not signed in, `404` when the resource doesn't exist or isn't
+  yours.
+- **Public endpoints:** `/share/*` needs no account, so a supervisor can open a
+  report link. These endpoints are rate-limited and return `429` when the limit
+  is hit.
+
+## Authentication
+
+| Method | Path                        | What it does                          |
+| ------ | --------------------------- | ------------------------------------- |
+| POST   | `/api/auth/signup`          | Create an account with email/password |
+| POST   | `/api/auth/signin`          | Sign in                               |
+| POST   | `/api/auth/social/google`   | Start Google sign-in                  |
+| POST   | `/api/auth/forgot-password` | Email a password reset link           |
+| POST   | `/api/auth/reset-password`  | Set a new password from a reset link  |
+| DELETE | `/api/auth/account`         | Permanently delete the account        |
+
+## Projects
+
+| Method | Path                                     | What it does                                                 |
+| ------ | ---------------------------------------- | ------------------------------------------------------------ |
+| GET    | `/api/projects`                          | List projects (`?archived=true` for archived ones)           |
+| POST   | `/api/projects`                          | Create a project                                             |
+| GET    | `/api/projects/{id}`                     | Get a project                                                |
+| PATCH  | `/api/projects/{id}`                     | Rename or re-describe a project                              |
+| DELETE | `/api/projects/{id}`                     | Delete a project and everything in it                        |
+| POST   | `/api/projects/{id}/archive`             | Archive a project                                            |
+| POST   | `/api/projects/{id}/unarchive`           | Unarchive a project                                          |
+| GET    | `/api/projects/{id}/summary`             | Entry count, tracked time, last logged and entries this week |
+| POST   | `/api/projects/{id}/share-links`         | Create a read-only share link                                |
+| DELETE | `/api/projects/{id}/share-links/{token}` | Revoke a share link                                          |
+
+## Fields
+
+Each project defines its own entry fields (text, number, duration, toggle,
+date). Entry content is validated against these definitions.
+
+| Method | Path                                    | What it does                |
+| ------ | --------------------------------------- | --------------------------- |
+| GET    | `/api/field-definitions?projectId={id}` | List a project's fields     |
+| POST   | `/api/field-definitions`                | Add a field to a project    |
+| GET    | `/api/field-definitions/{id}`           | Get a field                 |
+| PUT    | `/api/field-definitions/{id}`           | Rename a field or change it |
+| DELETE | `/api/field-definitions/{id}`           | Remove a field              |
+
+## Entries
+
+| Method | Path                | What it does                                                                            |
+| ------ | ------------------- | --------------------------------------------------------------------------------------- |
+| GET    | `/api/entries`      | List entries, paged. Filters: `q` (search), `projectId`, `tagIds`, `dateFrom`, `dateTo` |
+| POST   | `/api/entries`      | Log an entry: date, title, Markdown body, field values and tags                         |
+| GET    | `/api/entries/{id}` | Get an entry                                                                            |
+| PUT    | `/api/entries/{id}` | Update an entry (every change is written to the audit log)                              |
+| DELETE | `/api/entries/{id}` | Delete an entry                                                                         |
+
+## Tags
+
+| Method | Path             | What it does |
+| ------ | ---------------- | ------------ |
+| GET    | `/api/tags`      | List tags    |
+| POST   | `/api/tags`      | Create a tag |
+| PATCH  | `/api/tags/{id}` | Rename a tag |
+| DELETE | `/api/tags/{id}` | Delete a tag |
+
+## Statistics
+
+| Method | Path                            | What it does                                                  |
+| ------ | ------------------------------- | ------------------------------------------------------------- |
+| GET    | `/api/stats`                    | Totals across all projects, with a per-project breakdown      |
+| GET    | `/api/stats/frequency`          | Entries per week and per term                                 |
+| GET    | `/api/stats/streak`             | Current logging streak in days                                |
+| GET    | `/api/stats/unfinished`         | Open to-do fields: overdue, due this week, no due date        |
+| GET    | `/api/stats/fields/{projectId}` | Per-field insights for one project (totals, averages, trends) |
+
+## Export and sharing
+
+| Method | Path                    | What it does                                              |
+| ------ | ----------------------- | --------------------------------------------------------- |
+| GET    | `/api/export`           | Download a project's entries as CSV or Markdown           |
+| GET    | `/share/{token}`        | **Public.** The read-only report behind a share link      |
+| GET    | `/share/{token}/export` | **Public.** Download the shared report as CSV or Markdown |
+
+## Google Calendar
+
+| Method | Path                                                | What it does                                        |
+| ------ | --------------------------------------------------- | --------------------------------------------------- |
+| GET    | `/api/calendar/status`                              | Whether the user's Google Calendar is connected     |
+| POST   | `/api/calendar/connect`                             | Start the Google consent flow                       |
+| DELETE | `/api/calendar/disconnect`                          | Disconnect Google Calendar                          |
+| GET    | `/api/calendar/events`                              | Upcoming events from the user's primary calendar    |
+| GET    | `/api/calendar/events/suggestions`                  | Events not yet logged, offered as entry suggestions |
+| POST   | `/api/calendar/events/suggestions/{eventId}/accept` | Turn a suggestion into an entry                     |
+| POST   | `/api/calendar/events/suggestions/{eventId}/reject` | Dismiss a suggestion                                |
+
+## Reminders and notifications
+
+| Method | Path                           | What it does                 |
+| ------ | ------------------------------ | ---------------------------- |
+| GET    | `/api/settings`                | Get the reminder setting     |
+| PATCH  | `/api/settings`                | Turn reminders on or off     |
+| GET    | `/api/notifications`           | The notification feed        |
+| POST   | `/api/notifications/{id}/read` | Mark one notification read   |
+| POST   | `/api/notifications/read-all`  | Mark every notification read |
+
+## Health
+
+| Method | Path          | What it does                                                  |
+| ------ | ------------- | ------------------------------------------------------------- |
+| GET    | `/api/health` | Returns `200` when the API and its database connection are up |
+
+## Testing
+
+Every route group has a Supertest suite in `backend/tests/` that runs against a
+real Postgres database in CI. See [Testing Policy](/testing-policy).
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Code[Claude Opus 5.5]"
+  purpose="summarising the OpenAPI spec in backend/src/openapi.ts into an endpoint map grouped by resource"
+/>
