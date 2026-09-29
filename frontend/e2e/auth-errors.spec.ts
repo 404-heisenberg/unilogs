@@ -27,8 +27,10 @@ test('signing up twice with the same email does not reveal the account exists', 
   await verifyEmail(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  // Sign out lives on the Settings page.
+  // Sign out lives in the Account section of the Settings page, and the page
+  // opens on the App section, so the tab has to be clicked first.
   await page.getByRole('link', { name: 'Settings' }).click();
+  await page.getByRole('tab', { name: 'Account' }).click();
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login$/);
 
@@ -57,8 +59,10 @@ test('logging in with the wrong password is rejected', async ({ page }) => {
   await verifyEmail(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  // Sign out lives on the Settings page.
+  // Sign out lives in the Account section of the Settings page, and the page
+  // opens on the App section, so the tab has to be clicked first.
   await page.getByRole('link', { name: 'Settings' }).click();
+  await page.getByRole('tab', { name: 'Account' }).click();
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login$/);
 

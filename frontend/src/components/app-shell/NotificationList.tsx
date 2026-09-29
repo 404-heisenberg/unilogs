@@ -89,7 +89,7 @@ export default function NotificationList({ onNavigate }: { onNavigate?: () => vo
 
       <div className="h-px w-full bg-sand" />
       <Link
-        to="/settings"
+        to="/settings?tab=app"
         onClick={onNavigate}
         className="px-4 py-3 text-xs font-semibold text-clay hover:text-espresso"
       >
