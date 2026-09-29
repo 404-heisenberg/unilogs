@@ -15,6 +15,7 @@ import {
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import {
   AGGREGATIONS,
+  AGGREGATION_HINT,
   FIELD_TYPE_LABELS,
   dayLabel,
   entryDurationHours,
@@ -123,22 +124,40 @@ function SummaryCards({ summary, today }: { summary: ProjectSummary | undefined;
     ? `${summary.entriesThisWeek} ${summary.entriesThisWeek === 1 ? 'entry' : 'entries'}`
     : '—';
 
+  // `numeric` drives the visual hierarchy: the two headline figures get the
+  // large display size, while the date and count-as-words values are set
+  // smaller so a row of mixed value types doesn't read as four equal numbers.
+  // Explicit flag rather than inspecting the string — the caller already knows.
   const cards = [
-    { label: 'Entries', value: summary ? String(summary.entryCount) : '—', Icon: FileText },
-    { label: 'Tracked', value: tracked, Icon: Clock },
-    { label: 'Last logged', value: lastLogged, Icon: CalendarDays },
-    { label: 'This week', value: thisWeek, Icon: TrendingUp },
+    {
+      label: 'Entries',
+      value: summary ? String(summary.entryCount) : '—',
+      Icon: FileText,
+      numeric: true,
+    },
+    { label: 'Tracked', value: tracked, Icon: Clock, numeric: true },
+    { label: 'Last logged', value: lastLogged, Icon: CalendarDays, numeric: false },
+    { label: 'This week', value: thisWeek, Icon: TrendingUp, numeric: false },
   ];
 
   return (
     <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {cards.map(({ label, value, Icon }) => (
+      {cards.map(({ label, value, Icon, numeric }) => (
         <div key={label} className={`${CARD} p-4`}>
           <div className="flex items-center justify-between">
             <dt className={LABEL}>{label}</dt>
             <Icon className="size-4.5 text-cocoa" strokeWidth={1.75} aria-hidden />
           </div>
-          <dd className="mt-2 truncate text-[28px] leading-9 font-bold text-espresso">{value}</dd>
+          <dd
+            title={value}
+            className={`mt-2 truncate ${
+              numeric
+                ? 'text-[28px] leading-9 font-bold text-espresso'
+                : 'text-lg leading-8 font-semibold text-espresso'
+            }`}
+          >
+            {value}
+          </dd>
         </div>
       ))}
     </dl>
@@ -257,7 +276,11 @@ function StillOpen({
       </div>
       {isLoading && <Skeleton rows={2} />}
       {isError && <p className={`text-sm ${MUTED}`}>Couldn't load open items.</p>}
-      {stats && rows.length === 0 && <p className={`text-sm ${MUTED}`}>Nothing open.</p>}
+      {stats && rows.length === 0 && (
+        <p className={`text-sm ${MUTED}`}>
+          Nothing outstanding — every tracked item in this project has been marked done.
+        </p>
+      )}
       {rows.length > 0 && (
         <ul className="flex flex-col gap-3">
           {rows.map(({ item, group }) => (
@@ -595,7 +618,8 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
             })
           }
           aria-label={`Aggregation for ${field.name}`}
-          className="rounded-md border border-line bg-white px-2 py-1 text-xs text-espresso"
+          title={AGGREGATION_HINT[field.aggregationOverride ?? 'sum']}
+          className="w-24 rounded bg-cream py-1 text-center text-[11px] text-cocoa outline-none focus:ring-2 focus:ring-espresso"
         >
           {AGGREGATIONS.map(({ kind, label }) => (
             <option key={kind} value={kind}>
@@ -664,6 +688,10 @@ export function FieldsTab({
       )}
       {fields.length > 0 && (
         <>
+          <p className={`mb-3 ${MUTED}`}>
+            Number and duration fields are combined into a single number on this project&apos;s
+            Insights tab. Choose how each one is combined.
+          </p>
           {/* Figma's table header; rows below line up with it. */}
           <div
             aria-hidden
@@ -671,6 +699,7 @@ export function FieldsTab({
           >
             <span className="flex-1">Name</span>
             <span className="w-24 text-center">Type</span>
+            <span className="w-24 text-center">Insight</span>
             <span className="w-24">Actions</span>
           </div>
           <ul className="flex flex-col">
