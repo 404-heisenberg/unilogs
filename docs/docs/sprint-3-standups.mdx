@@ -189,6 +189,43 @@ team kept merging up to the deadline:
   share routes proxied to the backend (#288), editor polish (#289–#293),
   loading skeletons app-wide (#296) and a collapsible properties pane (#297).
 
+## User testing round 2 — 28 September 2026
+
+Three moderated sessions were run on the Sprint 3 build, on 28 September, the
+day after the rubric-evidence walkthrough. This closes the second round of user
+testing carried forward from Sprint 2, and the full write-up is in
+[User Testing](/user-testing).
+
+- **Present:** Jared Bharath (Brave), Luthando Morera (Edge), Krisha Madhav
+  (Chrome), moderated by Renda.
+
+Two problems defeated all three participants independently: understanding what a
+project's **fields** are, and noticing the **right-hand panel** on the entry
+editor. Neither is a bug — both are the app failing to explain its own data
+model before asking a user to act on it.
+
+Five must-fix findings were built and merged the same day, as D-11 (#303, #305)
+and D-12 (#304, #306):
+
+| Finding                                                                | Issue | Pull request |
+| ---------------------------------------------------------------------- | ----- | ------------ |
+| `Blank` template read as "completely empty"                            | #303  | #305         |
+| Rail icons were unlabelled and the `UL` monogram was not a link        | #303  | #305         |
+| `sum` / `avg` / `min` / `max` were unexplained jargon                  | #303  | #305         |
+| Reminder rows did not report their real state                          | #303  | #305         |
+| Settings put sign out and delete account in the same list as reminders | #304  | #306         |
+
+The larger remainder is recorded as a backlog in the
+[User Testing](/user-testing) write-up rather than dropped. The two that most
+need a decision before Sprint 4 scoping:
+
+- **Project creation needs a redesign, not a fix.** The `Add` button's meaning,
+  field removal, step progression, duration input and project colour were all
+  flagged.
+- **The value proposition is not visible in the UI.** Jared's read — that
+  entries feeding statistics, insights and a growing logbook "did not land" —
+  is a positioning problem that no amount of tooltip copy resolves.
+
 ## Actions from Sprint 2, revisited
 
 - **Standups no more than 2–3 days apart.** Met. The gaps this sprint were 2,
@@ -208,8 +245,13 @@ team kept merging up to the deadline:
   waiting on backend endpoints.
 - Add a first-run walkthrough that guides a new user through creating a
   project and logging their first entry, as the client suggested at the
-  27 September review.
-- Run a second round of user testing on the redesigned app.
+  27 September review. **Independently reinforced** in user testing round 2 —
+  Luthando asked for a guided walkthrough unprompted, and our tutor raised it in
+  project meetings, which makes it the one round 2 finding corroborated from
+  outside the sessions.
+- ~~Run a second round of user testing on the redesigned app.~~ **Met** —
+  28 September 2026, three moderated sessions. Write-up in
+  [User Testing](/user-testing). The backlog it produced replaces this action.
 
 <AiDeclaration
   action="generated"
