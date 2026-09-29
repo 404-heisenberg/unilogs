@@ -121,3 +121,242 @@ reading the ratings on their own.
   tools="Claude-Code[Claude Sonnet 5], Claude-Code[Claude Opus 5.5]"
   purpose="writing up round 1 user testing findings from the Google Form export (17 responses) and the team's chart screenshots, and mapping each finding to the Sprint 3 pull requests that addressed it"
 />
+
+# User Testing — Round 2
+
+## Methodology
+
+Round 1 established _what_ to build, by surveying 17 students on which features
+mattered. Round 2 changes method entirely: three **moderated sessions** on the
+rebuilt app, run on 28 September 2026, with the screen shared so we could watch
+each person decide where to click rather than asking them to rate features in
+the abstract.
+
+This is the shift that made Round 2 worth running. A survey tells you a feature
+scores badly; a moderated session tells you the participant _hesitated at the
+word "aggregation"_, and that is a fix you can actually make. Round 1's
+follow-up action — run a second round on the redesigned app — is closed by this
+section.
+
+Participants used their own browsers rather than one controlled environment, on
+the Sprint 3 build. That means cross-browser differences show up in the findings
+instead of being ironed out by a single engine — worth having, given how much of
+this sprint touched navigation and layout.
+
+The sessions were exploratory rather than run from a fixed script. Each person
+was given a starting task and then left to click through the app in their own
+order, with the moderator answering questions but not steering. Six task areas
+came up:
+
+| #   | Task area              | What it exercised                                                |
+| --- | ---------------------- | ---------------------------------------------------------------- |
+| 1   | Create a project       | Template choice, naming, adding fields, duration, project colour |
+| 2   | Add a field            | Adding, editing and removing custom fields, step progression     |
+| 3   | Create an entry        | Field inputs, the right-hand panel, tags, the save/preview step  |
+| 4   | Navigate the app       | Rail icons, folder tree, dashboard widgets, account vs settings  |
+| 5   | Read a project's stats | Summary cards, field insights, the aggregation controls          |
+| 6   | Find and share entries | Search, filters, project view, and what a share link exposes     |
+
+**Difference from Round 1, stated plainly.** Round 1 produced charts because
+17 survey responses quantify cleanly. Round 2 has three participants, so it
+produces **no quantitative charts and no ratings** — the evidence here is
+per-task outcome and quoted behaviour. A three-person sample cannot support a
+statistic, and presenting one anyway would misrepresent it. What it can support
+is finding a problem three unrelated people hit the same way, which is what
+happened here: two things defeated all three participants independently —
+understanding what a project's **fields** are, and noticing the **right-hand
+panel** on the entry editor.
+
+**Limitations, stated honestly.** The sessions were not recorded, so the quotes
+below are the moderator's contemporaneous written notes. They are verbatim in
+wording but have lost the surrounding conversation, and are lightly
+copy-edited for spelling only — the same treatment Round 1's export got. Year
+of study and prior logbook use were not collected, so Round 2's participants
+cannot be compared against Round 1's respondent profile. Findings are reported
+individually rather than counted: three people failing at a screen is three
+observations, not "3/3 users", and should be read as _we have now seen this
+three times_, not as a prevalence figure.
+
+## Respondents
+
+Three participants, none of whom had built the app:
+
+| Participant     | Browser |
+| --------------- | ------- |
+| Jared Bharath   | Brave   |
+| Luthando Morera | Edge    |
+| Krisha Madhav   | Chrome  |
+
+Spanning three different browsers also gave incidental cross-browser coverage of
+the redesigned shell for free, which is worth something given how much of this
+sprint touched navigation and layout.
+
+## Tasks and outcomes
+
+Six task areas, reported per participant. **"Stalled"** means the participant
+needed the moderator to explain what the screen was for before they could
+continue.
+
+| #   | Task area              | Jared                                                                                              | Luthando                                                                                                     | Krisha                                                                      | Outcome                                                                                                                                              |
+| --- | ---------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Create a project       | Did not know what fields were from the create-project screen                                       | Pressed `Add` expecting to keep adding; it saved and reset                                                   | Had no idea what fields were; needed the moderator to explain               | **Stalled, all three.** The field model is the app's core concept and none of them could state what it was for                                       |
+| 2   | Add a field            | Clunky; wanted a create button, a bin icon not an `X`, and clearer step progression                | —                                                                                                            | —                                                                           | Partial confusion. Requested changes: `Create` in place of `Add`, bin icon, and a progress bar or "step 2 of 3"                                      |
+| 3   | Create an entry        | Creating entries "isn't intuitive and should be clearer"                                           | Did not know what the right panel was until pointed at it                                                    | Never touched the right panel; did not know its purpose                     | **Stalled, all three.** Two could not tell they were filling in fields; Krisha tried to save with every field empty                                  |
+| 4   | Navigate the app       | Dashboard icon confusing; wanted a person icon for account settings                                | Wanted the logo out of the navbar and down at the foot of the page, as his initials above the settings wheel | Wanted tooltips; opened every nav button one at a time to learn what it did | **All three.** Two formed _opposite_ wrong beliefs about the `UL` monogram: Luthando read it as inert, Krisha assumed it was clickable               |
+| 5   | Read a project's stats | Entry insights "don't currently do enough"; wanted them more engaging and field insights clickable | Projects page was "a bit of information overload"                                                            | Stat blocks were "bland and white"; unclear which mattered                  | The value proposition did not land. Krisha and the moderator both describe field insights as meant to tell a story over time — currently it does not |
+| 6   | Find and share entries | Described filters as "all the notes will have in common"                                           | Wanted fields shown on entries, searchable and filterable, in both project view and the timeline             | Agreed, but the suggestion had to be drawn out of her                       | Search/filter is built but undiscoverable and not field-aware. Krisha could not tell what a share link exposed, particularly entry bodies            |
+
+### What surprised the moderator
+
+Three things did not match our expectations going in:
+
+1. **The `UL` monogram split the room.** Luthando read it as decorative and
+   inert, and wanted it out of the navbar; Krisha assumed it was a link and
+   clicked it. An element that two users interpret in opposite ways is worse
+   than one they both ignore, because neither will ask. Both then converged on
+   the same replacement — their own **initials** (`LM`, `KM`) at the foot of the
+   page, directly above the settings wheel, leading to account settings. An
+   initials avatar next to the settings gear is a recognisable convention;
+   a gold `UL` monogram in the navbar is not, and means nothing to anyone who
+   has not already seen the product.
+2. **The `Save` step failed as a concept, not a control.** Jared and Luthando
+   both, unprompted, felt it was out of place. Neither realised it was showing
+   a _preview_ of the project before it was saved and before entries could be
+   created. A correctly-functioning button that reads as the wrong action.
+3. **The core premise did not survive contact.** Jared said the idea that
+   entries feed statistics, insights and a growing logbook simply "did not
+   land", and Krisha independently described the intended purpose of field
+   insights as one the app is not currently meeting. This is a product-positioning
+   gap, not a bug, and it is the most consequential thing Round 2 produced.
+
+## What testers actually said
+
+Verbatim from the moderator's session notes (spelling lightly corrected):
+
+> "all the notes will have in common"
+
+— Jared, describing what the entry filters do. Useful, because it is the mental
+model a first-time user brings, and it is not the one the UI teaches.
+
+> "blank meant completely empty"
+
+— Krisha, on the `Blank` template. She was confused about why she should not
+simply continue to the next step, and suggested renaming it to `Custom`.
+
+> "I couldn't scroll up while carrying a widget."
+
+— Krisha, on the dashboard. This is why moving a widget to the top meant
+dragging it past every other widget in turn.
+
+> "things in the navbar are expected to be clickable and it isn't"
+
+— Luthando, on the `UL` monogram. An item in the navbar that cannot be clicked
+is read as broken, so he wanted it out of the navbar altogether — replaced by his
+own **initials** at the foot of the page, sitting just above the settings wheel,
+with the click target being account settings. Krisha independently asked for the
+same change (`UL` → `KM`).
+
+> "we shouldn't say that we have email remainders if we don't implement or plan
+> on implementing it"
+
+— Luthando, on the reminder settings. He wanted in-app and email reminders
+stated separately, because the current wording left him believing email
+reminders did not exist at all.
+
+> "we changed what add means"
+
+— Luthando, on the `Add` button during project creation. He believed it was
+meant to save the current field and continue to a new one; instead it saved the
+field and then asked him to create another one, making it a two-click process.
+
+> "a guided walkthrough that other apps provide would work really well for our
+> app"
+
+— Luthando, unprompted. Worth flagging that our tutor raised the same thing in
+project meetings, which makes it the one Round 2 finding with independent
+corroboration from outside the sessions.
+
+## Changes made as a result
+
+Round 2 produced far more findings than we could close in this sprint. Five were
+treated as must-fix, built, merged, and tracked on the board. Everything else is
+recorded in the backlog table further down rather than quietly dropped.
+
+| Finding                                                                                                                                                                                        | Who              | What we changed                                                                                                                                                              | Issue | Pull request |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------------ |
+| The template was labelled `Blank`, but it seeds a default field set — so read literally, the label looked like a bug rather than a starting point                                              | Jared, Krisha    | Renamed to `Custom`, with the description corrected to say it starts with no fields                                                                                          | #303  | #305         |
+| Rail icons were unlabelled, so every destination had to be opened one at a time to be identified                                                                                               | Krisha, Jared    | Every rail link now carries a hover tooltip alongside its accessible name, and the monogram is a real link rather than an inert element                                      | #303  | #305         |
+| The field aggregation dropdown was unlabelled jargon — `sum` / `avg` / `min` / `max` were not explained, and it was not clear they drive the field insight statistic                           | Luthando, Krisha | The dropdown gained an `Insight` heading and plain-language hints per field type; summary cards now separate numeric from text values, with truncated text readable on hover | #303  | #305         |
+| Reminder rows did not report their real state, and in-app and email reminders were not distinguished, so one read as a feature that did not exist                                              | Luthando         | The daily and weekly reminder rows now report their live on/off state. `Coming soon` is kept only for the weekly digest, which genuinely is not built                        | #303  | #305         |
+| `/settings` was one undifferentiated column, so _sign out_ and _delete account_ sat in the same list as _turn a reminder on_. Nobody deleted their account, but nobody was sure they could not | Luthando, Jared  | The page is split into **Account** (profile, sign out, delete) and **App** (reminders, calendar, tags), with the section held in the URL so a link can target it             | #304  | #306         |
+
+### What these five fixes did not cover
+
+Being precise about this matters more than the fixes themselves:
+
+- Renaming `Blank` to `Custom` does **not** answer Krisha's other point — that
+  she knew they were templates but not what they were for or how they affected
+  her project. There is still no explanation of what fields _are_, at the point
+  of creation. That was all three participants' single largest problem, and it
+  is untouched.
+- Two participants asked for the `UL` monogram to become their **own initials**
+  (`LM`, `KM`) at the foot of the page, above the settings wheel, linking to
+  account settings. We made it a working link instead. That answers Krisha's
+  belief that it was already clickable, but not Luthando's objection that a
+  non-clickable item has no business sitting in the navbar. The initials change
+  is cheap, and two people asked for it independently.
+- Jared's person icon for account settings, and his dashboard-icon confusion,
+  are untouched. #304 separates the _sections_; the rail _icons_ are unchanged.
+- Live reminder state is now shown, but the in-app versus email conflation
+  Luthando identified is not resolved — the settings still do not clearly
+  separate the two.
+- The summary-card hierarchy change addresses legibility of the values. It does
+  not address Krisha's "bland and white" nor Luthando's "information overload".
+
+One finding is worth calling out because of _how_ it surfaced. Moving sign out
+into the Account section broke the two e2e error-path specs, which reach the
+button by role and accessible name. Labelling the monogram `Your account
+settings` separately collided with an existing `getByRole('link', { name:
+'Settings' })` locator, because Playwright matches accessible names as
+case-insensitive substrings. Neither was a product defect — both were the test
+layer correctly refusing to let a refactor pass unnoticed, and the second is a
+concrete argument for keeping the e2e suite thin but real.
+
+### Not built — the rest of Round 2
+
+Recorded so they are not lost. Grouped by area, in rough priority order.
+
+| Area                 | What participants said                                                                                                                                                                                                                                                                                                         | Status                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Project creation     | Fields are unexplained (all three). `Add` semantics changed (Luthando). Wanted: a `Create` button, a bin icon instead of `X`, a colour-changing progress bar or "step 2 of 3", duration as `2:30` rather than 2.5 hours, a multi-tag add affordance, and a project colour with more visual impact                              | Not started. The highest-value Round 2 item                                                              |
+| Entry editor         | The right-hand panel defeated all three. Tags live there, so nobody found them. Krisha saved an entry with every field empty. Tags should be global and easy to track (Jared)                                                                                                                                                  | Not started. Empty-field validation also missing                                                         |
+| Navigation and shell | Rail tooltips, a person icon for account settings, a different dashboard icon, folder collapse via the chevron, animations on side-panel collapse, and a guided walkthrough or onboarding tour. Luthando and Krisha both asked for `UL` to become their initials (`LM`, `KM`) at the foot of the page above the settings wheel | Tooltips shipped in #305. The rest is not started. The walkthrough was independently raised by our tutor |
+| Dashboard            | Empty dashboard shows the project-creation guide, so dashboard, projects page and project workspace blur together; Luthando expected the dashboard to list his projects. Widget dragging was undiscoverable and you cannot scroll the grid while dragging a widget                                                             | Not started                                                                                              |
+| Stats and insights   | Stat blocks are bland and white with no hierarchy of importance; the projects page is an information overload; entry insights are not engaging enough and the "your logbook grows" premise did not land                                                                                                                        | Only the card value hierarchy shipped. The positioning gap is not addressed                              |
+| Entries and filters  | Filters are not understood. Fields should be shown on entries and be searchable and filterable, in both project workspace and the entries timeline                                                                                                                                                                             | Search/filter is built; field-awareness and discoverability are not                                      |
+| Sharing              | It is not clear what a share link exposes, particularly whether entry bodies are included                                                                                                                                                                                                                                      | Not started                                                                                              |
+| Visual polish        | Home page background does not suit the text and its lines do not align with the type size; side panels pop in and out with no animation; more motion and hover effects wanted generally                                                                                                                                        | Not started                                                                                              |
+| Dead UI              | The empty "incomplete entries" section on the projects page was unclear enough that the moderator did not notice it until the participant raised it                                                                                                                                                                            | Candidate for removal rather than build                                                                  |
+
+### What Round 2 actually told us
+
+The five shipped fixes are real but they are the small end of this. The
+consistent signal across all three sessions is that UniLogs asks a first-time
+user to understand a three-level model — project, fields, entries — and gives
+them no explanation of it before asking them to act. Two participants could not
+tell they were filling in fields; two could not find the panel that holds them.
+
+The second signal is that the product's reason for existing is not visible in
+the interface. Entry insights were described from the outside as bland, and
+from the inside as not doing their job. Jared's reading — that entries feeding
+statistics, insights and a growing logbook did not land — is a positioning
+problem, and no amount of tooltip copy fixes it.
+
+The third is that unlabelled icons and unexplained jargon are not cosmetic. They
+are where the sessions were lost, repeatedly.
+
+<AiDeclaration
+  action="generated"
+  tools="opencode[big-pickle]"
+  purpose="writing up the round 2 moderated user testing findings from the moderator's session notes, mapping the five shipped fixes to their issues and pull requests, and recording the unbuilt remainder as a backlog"
+/>
