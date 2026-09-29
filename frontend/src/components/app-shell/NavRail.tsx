@@ -47,8 +47,8 @@ export default function NavRail({
 
         <Link
           to="/settings?tab=account"
-          aria-label="Your account settings"
-          title="Your account settings"
+          aria-label="Your account"
+          title="Your account"
           className="flex size-9 items-center justify-center rounded-lg bg-gold"
         >
           <span className="text-base font-extrabold text-rail">UL</span>
