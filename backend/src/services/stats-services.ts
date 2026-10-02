@@ -5,11 +5,16 @@ async function getDistinctEntryDates(userId: string): Promise<string[]> {
   // rows instead of shipping every entry date to the app and de-duplicating in
   // JS. `date` is TIMESTAMP(3), so to_char returns the same calendar day that
   // the previous `toISOString().split('T')[0]` produced.
+  // `deletedAt IS NULL` is written out because raw SQL is invisible to the
+  // soft-delete extension in lib/prisma.ts: a deleted entry must not hold a
+  // day in the streak alive.
   const rows = await prisma.$queryRaw<{ day: string }[]>`
     SELECT DISTINCT to_char(e.date, 'YYYY-MM-DD') AS day
     FROM entries e
     JOIN projects p ON p.id = e."projectId"
-    WHERE p."userId" = ${userId} AND p.archived = false
+    WHERE p."userId" = ${userId}
+      AND p.archived = false
+      AND e."deletedAt" IS NULL
   `;
 
   return rows.map((row) => row.day);

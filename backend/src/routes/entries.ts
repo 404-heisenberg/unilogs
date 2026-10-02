@@ -1,9 +1,15 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { prisma } from '../lib/prisma.js';
+import { prisma, prismaWithDeleted } from '../lib/prisma.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
 import { parseEntryListQuery } from '../lib/entryFilters.js';
+import { toAuditData, toEntrySnapshot } from '../lib/audit-snapshot.js';
+import {
+  listEntryVersions,
+  restoreEntryVersion,
+  undeleteEntry,
+} from '../services/entry-history-service.js';
 
 const router = Router();
 
@@ -130,7 +136,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       data: {
         entryId: entry.id,
         action: 'CREATE',
-        newData: JSON.parse(JSON.stringify(entry)),
+        newData: toAuditData(toEntrySnapshot(entry)),
       },
     });
 
@@ -191,7 +197,9 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
 
     const existing = await prisma.entry.findUnique({
       where: { id },
-      include: { project: { include: { fields: true } } },
+      // `tags` is loaded so the pre-edit snapshot records which tags the entry
+      // had. Without it a restored version could never put them back.
+      include: { project: { include: { fields: true } }, tags: true },
     });
 
     if (!existing) {
@@ -253,8 +261,8 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
       data: {
         entryId: id,
         action: 'UPDATE',
-        oldData: JSON.parse(JSON.stringify(existing)),
-        newData: JSON.parse(JSON.stringify(updated)),
+        oldData: toAuditData(toEntrySnapshot(existing)),
+        newData: toAuditData(toEntrySnapshot(updated)),
       },
     });
 
@@ -265,6 +273,10 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
   }
 });
 
+// Soft delete. The row stays, stamped with `deletedAt`, so the deletion can be
+// undone from `GET /api/projects/:id/trash`. Its audit rows stay too - this
+// route used to write a DELETE audit row and then immediately delete every
+// audit row for the entry, which left nothing to recover and nothing to read.
 router.delete('/:id', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
@@ -277,9 +289,11 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'id must be a valid integer' });
     }
 
+    // `prisma` hides soft-deleted rows, so an entry that is already in the
+    // trash is a 404 here rather than a second delete.
     const existing = await prisma.entry.findUnique({
       where: { id },
-      include: { project: true },
+      include: { project: true, tags: true },
     });
 
     if (!existing) {
@@ -290,24 +304,117 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'You do not have access to this entry' });
     }
 
-    await prisma.auditLog.create({
-      data: {
-        entryId: id,
-        action: 'DELETE',
-        oldData: JSON.parse(JSON.stringify(existing)),
-      },
-    });
+    await prismaWithDeleted.$transaction(async (tx) => {
+      await tx.entry.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
 
-    await prisma.auditLog.deleteMany({
-      where: { entryId: id },
+      await tx.auditLog.create({
+        data: {
+          entryId: id,
+          action: 'DELETE',
+          // The state being removed, so the as-at view can still show this
+          // entry for any date before the deletion.
+          oldData: toAuditData(toEntrySnapshot(existing)),
+        },
+      });
     });
-
-    await prisma.entry.delete({ where: { id } });
 
     return res.status(204).send();
   } catch (err) {
     console.error('DELETE /api/entries/:id error:', err);
     return res.status(500).json({ error: 'Failed to delete entry' });
+  }
+});
+
+router.get('/:id/history', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = parseInt(String(req.params.id), 10);
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const entry = await prisma.entry.findFirst({
+      where: { id, project: { userId } },
+      select: { id: true },
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    const versions = await listEntryVersions(id);
+    if (!versions) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    return res.status(200).json({ versions });
+  } catch (err) {
+    console.error('GET /api/entries/:id/history error:', err);
+    return res.status(500).json({ error: 'Failed to fetch entry history' });
+  }
+});
+
+router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = parseInt(String(req.params.id), 10);
+    const auditId = parseInt(String(req.params.auditId), 10);
+    if (Number.isNaN(id) || Number.isNaN(auditId)) {
+      return res.status(400).json({ error: 'id and auditId must be valid integers' });
+    }
+
+    const result = await restoreEntryVersion(userId, id, auditId);
+
+    if (!result.ok) {
+      if (result.status === 400 && result.errors) {
+        return res.status(400).json({ errors: result.errors });
+      }
+      return res.status(result.status).json({ error: 'Version not found' });
+    }
+
+    return res.status(200).json({
+      entry: result.entry,
+      tagsChanged: result.tagsChanged,
+    });
+  } catch (err) {
+    console.error('POST /api/entries/:id/history/:auditId/restore error:', err);
+    return res.status(500).json({ error: 'Failed to restore version' });
+  }
+});
+
+router.post('/:id/restore', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = parseInt(String(req.params.id), 10);
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const result = await undeleteEntry(userId, id);
+
+    if (!result.ok) {
+      return res.status(result.status).json({ error: result.error });
+    }
+
+    return res.status(200).json(result.entry);
+  } catch (err) {
+    console.error('POST /api/entries/:id/restore error:', err);
+    return res.status(500).json({ error: 'Failed to restore entry' });
   }
 });
 

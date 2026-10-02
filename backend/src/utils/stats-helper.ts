@@ -30,12 +30,16 @@ export async function getWeeklyEntryCounts(
   // Count entries per day in Postgres: at most a few hundred rows come back
   // instead of every entry in range. `date` is TIMESTAMP(3) (UTC), so to_char
   // gives the same calendar day that `toISOString().split('T')[0]` did.
+  // `deletedAt IS NULL` is written out because raw SQL is invisible to the
+  // soft-delete extension in lib/prisma.ts - without it, deleted entries would
+  // keep counting towards the dashboard.
   const dailyCounts = await prisma.$queryRaw<{ day: string; count: number }[]>`
     SELECT to_char(e.date, 'YYYY-MM-DD') AS day, COUNT(*)::int AS count
     FROM entries e
     JOIN projects p ON p.id = e."projectId"
     WHERE p."userId" = ${userId}
       AND p.archived = false
+      AND e."deletedAt" IS NULL
       AND e.date >= ${start}
       AND e.date <= ${end}
     GROUP BY 1

@@ -19,6 +19,10 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     // with each of its project's duration fields, and only JSON numbers count,
     // matching the old in-memory `typeof value === 'number'` check. Projects
     // with no duration fields or no entries still appear, with 0 hours.
+    // The soft-delete filter sits in the JOIN, not the WHERE: it is a LEFT
+    // JOIN, so filtering in the WHERE would drop projects that have no live
+    // entries left. Raw SQL is invisible to the extension in lib/prisma.ts,
+    // hence the explicit column.
     const [perProject, streak] = await Promise.all([
       prisma.$queryRaw<{ projectId: number; projectName: string; totalHours: number }[]>`
         SELECT p.id AS "projectId",
@@ -30,7 +34,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
                ) AS "totalHours"
         FROM projects p
         LEFT JOIN field_definitions f ON f."projectId" = p.id AND f."fieldType" = 'duration'
-        LEFT JOIN entries e ON e."projectId" = p.id
+        LEFT JOIN entries e ON e."projectId" = p.id AND e."deletedAt" IS NULL
         WHERE p."userId" = ${userId} AND p.archived = false
         GROUP BY p.id, p.name
         ORDER BY p.id
