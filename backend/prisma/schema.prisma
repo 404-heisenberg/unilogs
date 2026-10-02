@@ -159,6 +159,12 @@ model Entry {
   // SQL in utils/stats-helper.ts filter it explicitly.
   deletedAt DateTime?
 
+  // Client-generated id, set only by `POST /api/entries/sync`. It makes
+  // offline capture idempotent: re-sending a queued batch after a retry
+  // matches the existing row instead of creating a second one. Nullable
+  // because entries created through the app do not have one.
+  clientId String? @unique
+
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   tags      EntryTag[]
