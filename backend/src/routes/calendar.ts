@@ -10,8 +10,14 @@ const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly
 const FRONTEND_URL = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
 const SETTINGS_URL = `${FRONTEND_URL}/settings`;
 
-type GoogleCalendarResponse = {
-  items?: unknown[];
+type GoogleCalendarListEntry = {
+  id: string;
+  summary?: string;
+  backgroundColor?: string;
+};
+
+type GoogleCalendarListResponse = {
+  items?: GoogleCalendarListEntry[];
 };
 
 type GoogleCalendarEvent = {
@@ -25,10 +31,48 @@ type GoogleCalendarEvent = {
     dateTime?: string;
     date?: string;
   };
+  calendarId?: string;
+  color?: string | null;
 };
 
 function hasCalendarScope(account: { scope?: string | null } | null): boolean {
   return Boolean(account?.scope?.includes(GOOGLE_CALENDAR_SCOPE));
+}
+
+async function getGoogleCalendars(req: Request) {
+  const account = await prisma.account.findFirst({
+    where: {
+      userId: req.userId,
+      providerId: 'google',
+    },
+  });
+
+  if (!account || !hasCalendarScope(account)) {
+    return null;
+  }
+
+  const tokenResult = await auth.api.getAccessToken({
+    body: {
+      accountId: account.id,
+    },
+    headers: req.headers,
+  });
+
+  const url = new URL('https://www.googleapis.com/calendar/v3/users/me/calendarList');
+
+  const googleResponse = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${tokenResult.accessToken}`,
+    },
+  });
+
+  if (!googleResponse.ok) {
+    throw new Error('Failed to fetch Google Calendar list');
+  }
+
+  const data = (await googleResponse.json()) as GoogleCalendarListResponse;
+
+  return data.items ?? [];
 }
 
 async function getCalendarEvents(req: Request) {
@@ -97,6 +141,62 @@ router.get('/status', authenticate, async (req, res) => {
 
     return res.status(500).json({
       error: 'Failed to fetch Google Calendar status',
+    });
+  }
+});
+
+router.get('/sources', authenticate, async (req, res) => {
+  try {
+    const calendars = await getGoogleCalendars(req);
+
+    if (calendars === null) {
+      return res.status(200).json({
+        connected: false,
+        sources: [],
+      });
+    }
+
+    for (const [index, calendar] of calendars.entries()) {
+      await prisma.calendarSource.upsert({
+        where: {
+          userId_calendarId: {
+            userId: req.userId,
+            calendarId: calendar.id,
+          },
+        },
+        update: {
+          summary: calendar.summary ?? 'Untitled calendar',
+          color: calendar.backgroundColor ?? null,
+        },
+        create: {
+          userId: req.userId,
+          calendarId: calendar.id,
+          summary: calendar.summary ?? 'Untitled calendar',
+          color: calendar.backgroundColor ?? null,
+          enabled: true,
+          order: index,
+        },
+      });
+    }
+
+    const sources = await prisma.calendarSource.findMany({
+      where: {
+        userId: req.userId,
+      },
+      orderBy: {
+        order: 'asc',
+      },
+    });
+
+    return res.status(200).json({
+      connected: true,
+      sources,
+    });
+  } catch (error) {
+    console.error('Google Calendar sources error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to fetch Google Calendar sources',
     });
   }
 });
