@@ -267,6 +267,70 @@ export const openapiSpec = {
         },
       },
 
+      AsAtEntry: {
+        type: 'object',
+        description:
+          'One entry as it stood on the requested day. Same shape as an entry from `GET /api/entries`, so the timeline can render a reconstructed day and the live one identically.',
+        properties: {
+          id: {
+            type: 'integer',
+            description: 'The real entry id, so it can be linked through to.',
+          },
+          projectId: { type: 'integer' },
+          title: { type: 'string', nullable: true },
+          body: { type: 'string', nullable: true },
+          content: { type: 'object', additionalProperties: true },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            description:
+              'The date the entry carried at that moment. An entry edited after the requested day is returned with its *old* date, not its current one.',
+          },
+          project: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              name: { type: 'string' },
+            },
+          },
+          tags: {
+            type: 'array',
+            description:
+              'Tags as they were then, resolved from the ids in the snapshot. A tag deleted since then is left off rather than rendered as a dangling id.',
+            items: {
+              type: 'object',
+              properties: {
+                tagId: { type: 'integer' },
+                tag: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer' },
+                    name: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      AsAtResponse: {
+        type: 'object',
+        properties: {
+          entries: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/AsAtEntry' },
+          },
+          total: { type: 'integer', description: 'Count of reconstructed entries.' },
+          date: {
+            type: 'string',
+            format: 'date',
+            description: 'The day that was asked for, echoed back.',
+            example: '2026-09-08',
+          },
+        },
+      },
+
       EntryVersion: {
         type: 'object',
         properties: {
@@ -2098,6 +2162,59 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to restore entry.',
+          },
+        },
+      },
+    },
+
+    '/api/entries/as-at': {
+      get: {
+        summary: 'Get entries as they stood on a given date',
+        description:
+          'Read-only reconstruction of the logbook as it was on the chosen day, built by replaying the audit log. For each entry the state is the newest audit row at or before the end of that day: an entry edited later appears with its earlier content, an entry deleted later still appears, and an entry created later does not appear at all. Read-only — there is nothing here that can be restored or edited. Scoped to the caller’s own, non-archived projects. The other list filters (`q`, `tagIds`, `dateFrom`, `dateTo`, pagination) are not supported on this route.',
+
+        parameters: [
+          {
+            name: 'date',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+              format: 'date',
+              example: '2026-09-08',
+            },
+            description:
+              'The day to reconstruct, as `YYYY-MM-DD`. This means the state at the **end** of that day, so anything logged during it counts.',
+          },
+          {
+            name: 'projectId',
+            in: 'query',
+            schema: { type: 'integer' },
+            description:
+              'Restrict to one project. A project owned by somebody else simply returns nothing.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'The reconstructed timeline.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AsAtResponse' },
+              },
+            },
+          },
+
+          '400': {
+            description: '`date` missing or not `YYYY-MM-DD`, or `projectId` not an integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to reconstruct entries.',
           },
         },
       },
