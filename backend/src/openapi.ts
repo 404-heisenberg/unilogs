@@ -215,11 +215,79 @@ export const openapiSpec = {
               notes: 'Had an unproductive study session.',
             },
           },
+          deletedAt: {
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            description:
+              'Set when the entry has been deleted. Deleted entries are excluded from every read path and are listed by `GET /api/projects/{id}/trash`.',
+            example: null,
+          },
           tags: {
             type: 'array',
             items: {
               $ref: '#/components/schemas/EntryTag',
             },
+          },
+        },
+      },
+
+      EntrySnapshot: {
+        type: 'object',
+        description:
+          'The values one version of an entry held. Deliberately trimmed to the entry itself - earlier snapshots also embedded the project and its field definitions.',
+        properties: {
+          title: {
+            type: 'string',
+            nullable: true,
+            example: 'Fixed the login bug',
+          },
+          body: {
+            type: 'string',
+            nullable: true,
+            example: '## What I did\n\n- Wrote unit tests',
+          },
+          content: {
+            type: 'object',
+            additionalProperties: true,
+            example: { Hours: 3 },
+          },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            example: '2026-09-09T13:52:00.000Z',
+          },
+          tagIds: {
+            type: 'array',
+            items: { type: 'integer' },
+            description:
+              'Absent on versions written before tags were captured, which means "unknown" rather than "no tags".',
+            example: [1, 4],
+          },
+        },
+      },
+
+      EntryVersion: {
+        type: 'object',
+        properties: {
+          auditId: {
+            type: 'integer',
+            description: 'Pass this as `auditId` to restore this version.',
+            example: 42,
+          },
+          action: {
+            type: 'string',
+            enum: ['CREATE', 'UPDATE', 'DELETE'],
+            example: 'UPDATE',
+          },
+          modifiedAt: {
+            type: 'string',
+            format: 'date-time',
+            example: '2026-09-09T14:05:00.000Z',
+          },
+          snapshot: {
+            allOf: [{ $ref: '#/components/schemas/EntrySnapshot' }],
+            nullable: true,
           },
         },
       },
@@ -1008,6 +1076,68 @@ export const openapiSpec = {
       },
     },
 
+    '/api/projects/{id}/trash': {
+      get: {
+        summary: 'List deleted entries in a project',
+        description:
+          'Returns the soft-deleted entries of a project, most recently deleted first. These entries are hidden from every other read path while they sit here, and can be brought back with `POST /api/entries/{id}/restore`.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The project ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Deleted entries retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    project: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'integer', example: 1 },
+                        name: { type: 'string', example: 'Thesis research' },
+                      },
+                    },
+                    entries: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Entry' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Project ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Project not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch deleted entries.',
+          },
+        },
+      },
+    },
+
     '/api/projects/{id}/archive': {
       post: {
         summary: 'Archive a project',
@@ -1757,7 +1887,8 @@ export const openapiSpec = {
 
       delete: {
         summary: 'Delete an entry',
-        description: 'Deletes an entry belonging to the authenticated user.',
+        description:
+          'Soft-deletes an entry belonging to the authenticated user: the row is stamped with a deletion timestamp rather than removed, so it leaves the timeline, stats, exports and shared reports immediately and can be brought back from `GET /api/projects/{id}/trash`. Its version history is kept. Deleting an entry that is already deleted returns 404.',
 
         parameters: [
           {
@@ -1794,6 +1925,179 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to delete entry.',
+          },
+        },
+      },
+    },
+
+    '/api/entries/{id}/history': {
+      get: {
+        summary: 'Get an entry version history',
+        description:
+          'Returns every recorded version of an entry, newest first. The list is append-only: restoring an older version adds a new version rather than rewriting history. A `DELETE` version carries the state it removed in its `snapshot`.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Versions retrieved successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    versions: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/EntryVersion' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '500': {
+            description: 'Failed to fetch entry history.',
+          },
+        },
+      },
+    },
+
+    '/api/entries/{id}/history/{auditId}/restore': {
+      post: {
+        summary: 'Restore a previous version of an entry',
+        description:
+          'Applies a previous version to the entry and appends a new version recording the change. History is never rewritten. Refuses with 400 when the version no longer satisfies the project field definitions - for example after a field has been renamed.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+          {
+            name: 'auditId',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The version ID from `GET /api/entries/{id}/history`.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Version restored successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    entry: { $ref: '#/components/schemas/Entry' },
+                    tagsChanged: {
+                      type: 'boolean',
+                      description:
+                        'False when the stored version predates tag capture, so the entry keeps its current tags.',
+                    },
+                  },
+                },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'Entry ID or version ID must be a valid integer, or the version cannot be applied to the current project fields.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Entry not found, or version not found.',
+          },
+
+          '500': {
+            description: 'Failed to restore version.',
+          },
+        },
+      },
+    },
+
+    '/api/entries/{id}/restore': {
+      post: {
+        summary: 'Restore a deleted entry',
+        description:
+          'Clears the soft delete on an entry, bringing it back to the timeline with its tags intact. Only meaningful for an entry that is currently in the project trash.',
+
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The entry ID.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'Entry restored successfully.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Entry' },
+              },
+            },
+          },
+
+          '400': {
+            description: 'Entry ID must be a valid integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '404': {
+            description: 'Entry not found.',
+          },
+
+          '409': {
+            description: 'Entry is not deleted.',
+          },
+
+          '500': {
+            description: 'Failed to restore entry.',
           },
         },
       },
