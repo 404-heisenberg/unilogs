@@ -19,6 +19,11 @@ export async function buildProjectSummary(userId: string, projectId: number) {
         },
       },
       entries: {
+        // Explicit, because the soft-delete extension in lib/prisma.ts only
+        // intercepts top-level model operations - a nested relation load
+        // would otherwise hand back soft-deleted entries and inflate the
+        // counts and totals below.
+        where: { deletedAt: null },
         select: {
           date: true,
           content: true,

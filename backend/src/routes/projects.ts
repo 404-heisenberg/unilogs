@@ -9,6 +9,7 @@ import {
   revokeProjectShares,
   revokeShareToken,
 } from '../services/share-services.js';
+import { listProjectTrash } from '../services/entry-history-service.js';
 
 const router = Router();
 
@@ -83,6 +84,46 @@ router.get('/:id/summary', authenticate, async (req, res) => {
     return res.status(200).json(summary);
   } catch {
     return res.status(500).json({ error: 'Failed to fetch project summary' });
+  }
+});
+
+// Soft-deleted entries for this project, newest deletion first. They are
+// invisible everywhere else: the default client excludes them, so a deleted
+// entry leaves the timeline, the stats, the export and the shared report the
+// moment it is deleted, and comes back only from here.
+router.get('/:id/trash', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'id must be a valid integer' });
+    }
+
+    const trash = await listProjectTrash(userId, id);
+
+    if (!trash) {
+      return res.status(404).json({ error: 'project not found' });
+    }
+
+    return res.status(200).json({
+      project: trash.project,
+      entries: trash.entries.map((entry) => ({
+        id: entry.id,
+        date: entry.date,
+        title: entry.title,
+        body: entry.body,
+        content: entry.content,
+        deletedAt: entry.deletedAt,
+        tags: entry.tags.map((entryTag) => entryTag.tag),
+      })),
+    });
+  } catch (err) {
+    console.error('GET /api/projects/:id/trash error:', err);
+    return res.status(500).json({ error: 'Failed to fetch deleted entries' });
   }
 });
 

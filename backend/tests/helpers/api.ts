@@ -117,6 +117,7 @@ type EntryInput = {
   content?: Record<string, unknown>;
   title?: string;
   body?: string;
+  tagIds?: number[];
 };
 
 export async function createEntry(agent: TestAgent, projectId: number, input: EntryInput = {}) {
@@ -126,6 +127,7 @@ export async function createEntry(agent: TestAgent, projectId: number, input: En
     title: input.title ?? 'Test entry',
     body: input.body,
     content: input.content ?? {},
+    tagIds: input.tagIds,
   });
 
   if (response.status !== 201) {

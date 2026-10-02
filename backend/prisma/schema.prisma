@@ -152,6 +152,13 @@ model Entry {
   title String?
   body  String?
 
+  // Soft delete. `DELETE /api/entries/:id` stamps this column instead of
+  // removing the row, so a deletion is recoverable from the project trash.
+  // Every read path excludes soft-deleted rows — mostly automatically via the
+  // Prisma extension in src/lib/prisma.ts, but the nested reads and the raw
+  // SQL in utils/stats-helper.ts filter it explicitly.
+  deletedAt DateTime?
+
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   tags      EntryTag[]
@@ -159,6 +166,9 @@ model Entry {
 
   @@index([date])
   @@index([projectId])
+  // Serves the trash listing (`projectId` + `deletedAt IS NOT NULL`, newest
+  // deleted first) without scanning the whole project's history.
+  @@index([projectId, deletedAt])
   @@map("entries")
 }
 
