@@ -267,6 +267,106 @@ export const openapiSpec = {
         },
       },
 
+      SyncQueuedEntry: {
+        type: 'object',
+        required: ['clientId', 'projectId', 'content'],
+        description:
+          'One entry as it was queued offline. Every field is validated on arrival, because this is the only route that accepts a shape no UI can produce.',
+        properties: {
+          clientId: {
+            type: 'string',
+            maxLength: 191,
+            description:
+              'Client-generated id, unique per entry. This is what makes a retried batch idempotent. It must be stable across retries — regenerating it on every attempt would create a new entry each time.',
+            example: 'a5f0c9e2-1d3b-4c8a-9e77-2b6d4f0a1c33',
+          },
+          projectId: {
+            type: 'integer',
+            description: 'Must be a project the authenticated user owns.',
+            example: 1,
+          },
+          title: {
+            type: 'string',
+            nullable: true,
+          },
+          body: {
+            type: 'string',
+            nullable: true,
+          },
+          content: {
+            type: 'object',
+            additionalProperties: true,
+            description: 'Field values, validated against the project’s field definitions.',
+            example: { timeSpent: '3 hours' },
+          },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            description:
+              'Omit to record the entry as created now. An unparseable value fails rather than defaulting to today.',
+            example: '2026-10-01T09:00:00.000Z',
+          },
+          tagIds: {
+            type: 'array',
+            items: { type: 'integer' },
+            description: 'Tags the user owns. A tag id belonging to anyone else fails the entry.',
+            example: [4],
+          },
+        },
+      },
+
+      SyncRequest: {
+        type: 'object',
+        required: ['entries'],
+        properties: {
+          entries: {
+            type: 'array',
+            maxItems: 100,
+            items: { $ref: '#/components/schemas/SyncQueuedEntry' },
+          },
+        },
+      },
+
+      SyncEntryResult: {
+        type: 'object',
+        required: ['clientId', 'status'],
+        properties: {
+          clientId: {
+            type: 'string',
+            description:
+              'Matches the queued entry. Empty when the queued entry had no usable `clientId`, so the client can still tell which queue row failed.',
+            example: 'a5f0c9e2-1d3b-4c8a-9e77-2b6d4f0a1c33',
+          },
+          status: {
+            type: 'string',
+            enum: ['created', 'duplicate', 'failed'],
+            description:
+              '`created` — synced now. `duplicate` — a `clientId` already exists, nothing was written. `failed` — this entry was rejected; every other entry in the batch still went through.',
+          },
+          entryId: {
+            type: 'integer',
+            description:
+              'Present for `created` and `duplicate`, so the client can map its queue row to the entry it now owns.',
+            example: 87,
+          },
+          reason: {
+            type: 'string',
+            description: 'Why a `failed` entry failed, or the context for a `duplicate`.',
+            example: 'You do not have access to this project',
+          },
+        },
+      },
+
+      SyncResponse: {
+        type: 'object',
+        properties: {
+          results: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/SyncEntryResult' },
+          },
+        },
+      },
+
       EntryVersion: {
         type: 'object',
         properties: {
@@ -2098,6 +2198,66 @@ export const openapiSpec = {
 
           '500': {
             description: 'Failed to restore entry.',
+          },
+        },
+      },
+    },
+
+    '/api/entries/sync': {
+      post: {
+        summary: 'Sync a queue of offline entries',
+        description:
+          'Accepts entries captured while the client was offline, each carrying a client-generated `clientId`. Syncing is idempotent: an entry whose `clientId` already exists is reported as `duplicate` and never created twice, so a batch can be retried safely after a dropped connection. Create-only — an entry that already exists is never updated. One invalid entry does not fail the rest of the batch; each entry carries its own outcome so the client can keep the failures in its queue and drop the rest.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SyncRequest' },
+              examples: {
+                queue: {
+                  summary: 'A queued batch',
+                  value: {
+                    entries: [
+                      {
+                        clientId: 'a5f0c9e2-1d3b-4c8a-9e77-2b6d4f0a1c33',
+                        projectId: 1,
+                        title: 'Library run',
+                        body: 'Read chapter 3',
+                        content: { timeSpent: '3 hours' },
+                        date: '2026-10-01T09:00:00.000Z',
+                        tagIds: [4],
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description:
+              'Every queued entry has an outcome. A mixed batch still returns 200 — per-entry `status` is what carries success or failure.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/SyncResponse' },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'The body itself is unusable: `entries` is not an array, or the batch exceeds 100 entries.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to sync entries.',
           },
         },
       },
