@@ -66,9 +66,9 @@ describe('expression lexer + parser + evaluator', () => {
       expect((caught as ExpressionError).message).toContain('mystery');
     });
 
-    it('rejects ambiguous parses', () => {
-      // Both "a b" and "a" + "b" could parse
-      expect(() => parseExpression('a b', ['a', 'b', 'a b'])).toThrow(/ambiguous/i);
+    it('parses a compound field name as a single field', () => {
+      const ast = parseExpression('a b', ['a', 'b', 'a b']);
+      expect(ast).toEqual({ kind: 'field', name: 'a b' });
     });
   });
 
