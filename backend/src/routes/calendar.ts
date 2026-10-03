@@ -23,6 +23,7 @@ type GoogleCalendarListResponse = {
 type GoogleCalendarEvent = {
   id?: string;
   summary?: string;
+  calendarSummary?: string;
   start?: {
     dateTime?: string;
     date?: string;
@@ -142,6 +143,7 @@ async function getCalendarEvents(req: Request) {
       allEvents.push({
         ...event,
         calendarId: source.calendarId,
+        calendarSummary: source.summary,
         color: source.color,
       });
     }
@@ -514,15 +516,15 @@ router.post('/events/suggestions/:eventId/accept', authenticate, async (req, res
       });
     }
 
-    const { projectId, content, date } = req.body;
+    const { projectId, content, date, calendarId } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    if (!projectId || !content) {
+    if (!projectId || !content || !calendarId) {
       return res.status(400).json({
-        error: 'projectId and content are required',
+        error: 'projectId, calendarId and content are required',
       });
     }
 
@@ -569,6 +571,7 @@ router.post('/events/suggestions/:eventId/accept', authenticate, async (req, res
     await prisma.calendarSuggestion.create({
       data: {
         userId,
+        calendarId,
         eventId,
         status: 'ACCEPTED',
       },
@@ -588,6 +591,7 @@ router.post('/events/suggestions/:eventId/reject', authenticate, async (req, res
   try {
     const userId = req.userId;
     const eventId = req.params.eventId as string;
+    const { calendarId } = req.body;
 
     if (!eventId) {
       return res.status(400).json({
@@ -595,9 +599,16 @@ router.post('/events/suggestions/:eventId/reject', authenticate, async (req, res
       });
     }
 
+    if (!calendarId) {
+      return res.status(400).json({
+        error: 'calendarId is required',
+      });
+    }
+
     await prisma.calendarSuggestion.create({
       data: {
         userId,
+        calendarId,
         eventId,
         status: 'REJECTED',
       },
