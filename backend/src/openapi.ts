@@ -729,6 +729,33 @@ export const openapiSpec = {
           },
         ],
       },
+
+      StatPanel: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          userId: { type: 'string' },
+          projectId: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'Total volume' },
+          expression: { type: 'string', example: 'weight * reps' },
+          aggregation: { type: 'string', enum: ['sum', 'average'], example: 'sum' },
+          rangeDays: { type: 'integer', example: 30 },
+          position: { type: 'integer', example: 0 },
+          createdAt: { type: 'string', format: 'date-time' },
+          value: { type: 'number', nullable: true, example: 980 },
+          sampleCount: { type: 'integer', example: 2 },
+          series: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string', format: 'date', example: '2026-10-03' },
+                value: { type: 'number', example: 500 },
+              },
+            },
+          },
+        },
+      },
     },
   },
 
@@ -3716,14 +3743,171 @@ export const openapiSpec = {
           '200': {
             description: 'Calendar suggestion rejected.',
           },
-
           '401': {
             description: 'Unauthorized.',
           },
-
           '500': {
             description: 'Failed to reject calendar suggestion.',
           },
+        },
+      },
+    },
+
+    '/api/projects/{id}/stat-panels': {
+      get: {
+        summary: 'List stat panels for a project',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: {
+          '200': {
+            description: 'Panels with computed values.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/StatPanel' },
+                },
+              },
+            },
+          },
+          '401': { description: 'Unauthorized.' },
+          '404': { description: 'Project not found.' },
+          '500': { description: 'Failed to fetch panels.' },
+        },
+      },
+      post: {
+        summary: 'Create a stat panel',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name', 'expression'],
+                properties: {
+                  name: { type: 'string', example: 'Total volume' },
+                  expression: { type: 'string', example: 'weight * reps' },
+                  aggregation: { type: 'string', enum: ['sum', 'average'], default: 'sum' },
+                  rangeDays: { type: 'integer', default: 30 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Panel created.',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/StatPanel' } },
+            },
+          },
+          '400': { description: 'Invalid expression, aggregation, or rangeDays.' },
+          '401': { description: 'Unauthorized.' },
+          '404': { description: 'Project not found.' },
+        },
+      },
+    },
+
+    '/api/projects/{id}/stat-panels/preview': {
+      post: {
+        summary: 'Preview an unsaved stat expression',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['expression'],
+                properties: {
+                  expression: { type: 'string', example: 'weight * reps' },
+                  aggregation: { type: 'string', enum: ['sum', 'average'], default: 'sum' },
+                  rangeDays: { type: 'integer', default: 30 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Computed value, sample count, and series.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    value: { type: 'number' },
+                    sampleCount: { type: 'integer' },
+                    series: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          date: { type: 'string' },
+                          value: { type: 'number' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '400': { description: 'Invalid expression, aggregation, or rangeDays.' },
+          '401': { description: 'Unauthorized.' },
+          '404': { description: 'Project not found.' },
+        },
+      },
+    },
+
+    '/api/projects/{id}/stat-panels/{panelId}': {
+      patch: {
+        summary: 'Rename, re-order, or re-scope a stat panel',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+          { name: 'panelId', in: 'path', required: true, schema: { type: 'integer' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  position: { type: 'integer' },
+                  rangeDays: { type: 'integer' },
+                  aggregation: { type: 'string', enum: ['sum', 'average'] },
+                  expression: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Panel updated.',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/StatPanel' } },
+            },
+          },
+          '400': { description: 'Invalid field.' },
+          '401': { description: 'Unauthorized.' },
+          '403': { description: 'Panel belongs to another user.' },
+          '404': { description: 'Panel not found.' },
+        },
+      },
+      delete: {
+        summary: 'Delete a stat panel',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+          { name: 'panelId', in: 'path', required: true, schema: { type: 'integer' } },
+        ],
+        responses: {
+          '204': { description: 'Panel deleted.' },
+          '401': { description: 'Unauthorized.' },
+          '403': { description: 'Panel belongs to another user.' },
+          '404': { description: 'Panel not found.' },
         },
       },
     },
