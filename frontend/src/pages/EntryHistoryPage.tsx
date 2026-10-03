@@ -116,12 +116,17 @@ function getVersionTags(
   const snapshot = (v.snapshot ?? v.data ?? v) as Record<string, unknown>;
   const rawTags = v.tags ?? snapshot.tags;
   if (Array.isArray(rawTags)) {
-    return rawTags.map((t: any) => {
-      if (t.tag) return t;
-      if (typeof t === 'object' && t !== null && 'id' in t && 'name' in t) {
-        return { tag: t };
+    return rawTags.map((t: unknown) => {
+      const item = t as Record<string, unknown>;
+      if (item && typeof item === 'object') {
+        if ('tag' in item && item.tag) {
+          return item as { tag: { id: number; name: string; userId?: string } };
+        }
+        if ('id' in item && 'name' in item) {
+          return { tag: item as unknown as { id: number; name: string; userId?: string } };
+        }
       }
-      return t;
+      return { tag: { id: 0, name: '' } };
     });
   }
   return fallbackEntry?.tags ?? [];
