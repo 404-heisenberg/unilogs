@@ -201,6 +201,123 @@ router.get('/sources', authenticate, async (req, res) => {
   }
 });
 
+router.patch('/sources/:id', authenticate, async (req, res) => {
+  try {
+    const sourceId = parseInt(req.params.id as string, 10);
+
+    if (Number.isNaN(sourceId)) {
+      return res.status(400).json({
+        error: 'Invalid calendar source id',
+      });
+    }
+
+    const { enabled, color, order } = req.body;
+
+    const source = await prisma.calendarSource.findFirst({
+      where: {
+        id: sourceId,
+        userId: req.userId,
+      },
+    });
+
+    if (!source) {
+      return res.status(404).json({
+        error: 'Calendar source not found',
+      });
+    }
+    if (color !== undefined && (typeof color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(color))) {
+      return res.status(400).json({
+        error: 'Invalid calendar source color',
+      });
+    }
+
+    if (enabled !== undefined && typeof enabled !== 'boolean') {
+      return res.status(400).json({
+        error: 'Invalid calendar source enabled value',
+      });
+    }
+
+    if (order !== undefined) {
+      const sourceCount = await prisma.calendarSource.count({
+        where: {
+          userId: req.userId,
+        },
+      });
+
+      if (!Number.isInteger(order) || order < 0 || order >= sourceCount) {
+        return res.status(400).json({
+          error: 'Invalid calendar source order',
+        });
+      }
+    }
+    const updatedSource = await prisma.$transaction(async (tx) => {
+      if (order !== undefined && order > source.order) {
+        const sourcesToShift = await tx.calendarSource.findMany({
+          where: {
+            userId: req.userId,
+            order: {
+              gt: source.order,
+              lte: order,
+            },
+          },
+        });
+
+        for (const sourceToShift of sourcesToShift) {
+          await tx.calendarSource.update({
+            where: {
+              id: sourceToShift.id,
+            },
+            data: {
+              order: sourceToShift.order - 1,
+            },
+          });
+        }
+      }
+
+      if (order !== undefined && order < source.order) {
+        const sourcesToShift = await tx.calendarSource.findMany({
+          where: {
+            userId: req.userId,
+            order: {
+              gte: order,
+              lt: source.order,
+            },
+          },
+        });
+
+        for (const sourceToShift of sourcesToShift) {
+          await tx.calendarSource.update({
+            where: {
+              id: sourceToShift.id,
+            },
+            data: {
+              order: sourceToShift.order + 1,
+            },
+          });
+        }
+      }
+
+      return tx.calendarSource.update({
+        where: {
+          id: sourceId,
+        },
+        data: {
+          ...(enabled !== undefined && { enabled }),
+          ...(color !== undefined && { color }),
+          ...(order !== undefined && { order }),
+        },
+      });
+    });
+    return res.status(200).json(updatedSource);
+  } catch (error) {
+    console.error('Googe Calendar source update error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to update calendar sources',
+    });
+  }
+});
+
 router.post('/connect', authenticate, async (req, res) => {
   try {
     const account = await prisma.account.findFirst({
