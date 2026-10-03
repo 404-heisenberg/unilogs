@@ -461,11 +461,14 @@ router.get('/events/suggestions', authenticate, async (req, res) => {
         userId: req.userId,
       },
       select: {
+        calendarId: true,
         eventId: true,
       },
     });
 
-    const handledEventIds = new Set(handledSuggestions.map((suggestion) => suggestion.eventId));
+    const handledEvents = new Set(
+      handledSuggestions.map((suggestion) => `${suggestion.calendarId}:${suggestion.eventId}`),
+    );
 
     if (events === null) {
       return res.status(200).json({
@@ -475,9 +478,13 @@ router.get('/events/suggestions', authenticate, async (req, res) => {
     }
 
     const suggestions = (events as GoogleCalendarEvent[])
-      .filter((event) => event.id && !handledEventIds.has(event.id))
+      .filter(
+        (event) =>
+          event.id && event.calendarId && !handledEvents.has(`${event.calendarId}:${event.id}`),
+      )
       .map((event) => ({
         id: event.id,
+        calendarId: event.calendarId,
         title: event.summary ?? 'Untitled event',
         start: event.start?.dateTime ?? event.start?.date,
         end: event.end?.dateTime ?? event.end?.date,
