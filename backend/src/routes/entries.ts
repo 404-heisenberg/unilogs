@@ -433,6 +433,8 @@ router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, 
       title?: string | null;
       body?: string | null;
       content?: Record<string, unknown>;
+      tagIds?: number[];
+      tags?: Array<{ tagId?: number; id?: number }>;
     }
 
     const snapshot = (auditLog.newData || auditLog.oldData) as EntrySnapshotData;
@@ -443,6 +445,13 @@ router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, 
     const targetTitle = snapshot.title ?? null;
     const targetBody = snapshot.body ?? null;
     const targetContent = snapshot.content ?? {};
+    const targetTagIds =
+      snapshot.tagIds ??
+      (snapshot.tags
+        ? snapshot.tags
+            .map((t) => t.tagId ?? t.id)
+            .filter((tagId): tagId is number => typeof tagId === 'number')
+        : undefined);
 
     // 3. Validate historical custom fields against current project field definitions
     const contentErrors = validateEntryContent(targetContent, entry.project.fields);
@@ -450,7 +459,11 @@ router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, 
       return res.status(400).json({ errors: contentErrors });
     }
 
-    // 4. Update the entry, explicitly restoring title, body, and custom fields content
+    const currentTagIds = entry.tags.map((t) => t.tagId).sort();
+    const newTagIds = targetTagIds !== undefined ? [...targetTagIds].sort() : currentTagIds;
+    const tagsChanged = JSON.stringify(currentTagIds) !== JSON.stringify(newTagIds);
+
+    // 4. Update the entry, explicitly restoring title, body, custom fields content, and tags
     const updatedEntry = await prisma.entry.update({
       where: { id },
       data: {
@@ -459,6 +472,13 @@ router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, 
         content: targetContent as NonNullable<
           Parameters<typeof prisma.entry.update>[0]['data']
         >['content'],
+        tags:
+          targetTagIds !== undefined
+            ? {
+                deleteMany: {},
+                create: targetTagIds.map((tagId: number) => ({ tag: { connect: { id: tagId } } })),
+              }
+            : undefined,
       },
       include: {
         tags: { include: { tag: true } },
@@ -477,7 +497,7 @@ router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, 
 
     return res.status(200).json({
       entry: updatedEntry,
-      tagsChanged: false,
+      tagsChanged,
     });
   } catch (err) {
     console.error('POST /api/entries/:id/history/:auditId/restore error:', err);

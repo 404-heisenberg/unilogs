@@ -108,6 +108,25 @@ function getVersionFields(
   return {};
 }
 
+function getVersionTags(
+  version: EntryVersion | Record<string, unknown>,
+  fallbackEntry: Entry | null,
+): Array<{ tag: { id: number; name: string; userId?: string } }> {
+  const v = version as Record<string, unknown>;
+  const snapshot = (v.snapshot ?? v.data ?? v) as Record<string, unknown>;
+  const rawTags = v.tags ?? snapshot.tags;
+  if (Array.isArray(rawTags)) {
+    return rawTags.map((t: any) => {
+      if (t.tag) return t;
+      if (typeof t === 'object' && t !== null && 'id' in t && 'name' in t) {
+        return { tag: t };
+      }
+      return t;
+    });
+  }
+  return fallbackEntry?.tags ?? [];
+}
+
 export default function EntryHistoryPage() {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
@@ -219,7 +238,7 @@ export default function EntryHistoryPage() {
   const fieldTypes = new Map(fields.map((field) => [field.name, field.fieldType]));
   const contentRecord = getVersionFields(selectedVersion, entry);
   const contentEntries = Object.entries(contentRecord);
-  const tags = entry.tags ?? [];
+  const tags = getVersionTags(selectedVersion, entry);
   const projectName = entry.project?.name;
   const formattedDate = formatDate(selectedVersion?.createdAt ?? entry.date);
   const formattedTime = formatTime(selectedVersion?.createdAt ?? entry.createdAt);
