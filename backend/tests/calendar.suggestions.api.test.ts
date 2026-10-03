@@ -39,7 +39,7 @@ describe('POST /api/calendar/events/suggestions/:eventId/accept', () => {
     const response = await agent.post('/api/calendar/events/suggestions/evt-1/accept').send({});
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: 'projectId and content are required' });
+    expect(response.body).toEqual({ error: 'projectId, calendarId and content are required' });
   });
 
   it('rejects a non-numeric projectId', async () => {
@@ -47,7 +47,7 @@ describe('POST /api/calendar/events/suggestions/:eventId/accept', () => {
 
     const response = await agent
       .post('/api/calendar/events/suggestions/evt-1/accept')
-      .send({ projectId: 'not-a-number', content: { Notes: 'x' } });
+      .send({ projectId: 'not-a-number', content: { Notes: 'x' }, calendarId: 'calendar-1' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'projectId must be a valid integer' });
@@ -60,7 +60,7 @@ describe('POST /api/calendar/events/suggestions/:eventId/accept', () => {
 
     const response = await agent
       .post('/api/calendar/events/suggestions/evt-1/accept')
-      .send({ projectId: otherProject.id, content: {} });
+      .send({ projectId: otherProject.id, content: {}, calendarId: 'calendar-1' });
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual({ error: 'You do not have access to this project' });
@@ -73,7 +73,7 @@ describe('POST /api/calendar/events/suggestions/:eventId/accept', () => {
 
     const response = await agent
       .post('/api/calendar/events/suggestions/evt-1/accept')
-      .send({ projectId: project.id, content: {} });
+      .send({ projectId: project.id, content: {}, calendarId: 'calendar-1' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ errors: ["Field 'Notes' is required"] });
@@ -84,11 +84,13 @@ describe('POST /api/calendar/events/suggestions/:eventId/accept', () => {
     const project = await createProject(agent);
     await createFieldDefinition(agent, project.id, { name: 'Notes', fieldType: 'text' });
     const eventId = `evt-${randomUUID()}`;
+    const calendarId = 'calendar-1';
 
     const response = await agent.post(`/api/calendar/events/suggestions/${eventId}/accept`).send({
       projectId: project.id,
       content: { Notes: 'From calendar' },
       date: '2026-09-11',
+      calendarId,
     });
 
     expect(response.status).toBe(201);
@@ -101,7 +103,7 @@ describe('POST /api/calendar/events/suggestions/:eventId/accept', () => {
 
     const user = await prisma.user.findUniqueOrThrow({ where: { email } });
     const suggestion = await prisma.calendarSuggestion.findUnique({
-      where: { userId_eventId: { userId: user.id, eventId } },
+      where: { userId_calendarId_eventId: { userId: user.id, calendarId, eventId } },
     });
     expect(suggestion?.status).toBe('ACCEPTED');
   });
@@ -110,10 +112,18 @@ describe('POST /api/calendar/events/suggestions/:eventId/accept', () => {
     const { agent } = await createAuthenticatedUser();
     const project = await createProject(agent);
     await createFieldDefinition(agent, project.id, { name: 'Notes', fieldType: 'text' });
+
     const eventId = `evt-${randomUUID()}`;
-    const body = { projectId: project.id, content: { Notes: 'From calendar' } };
+    const calendarId = 'calendar-1';
+
+    const body = {
+      projectId: project.id,
+      content: { Notes: 'From Calendar' },
+      calendarId,
+    };
 
     const first = await agent.post(`/api/calendar/events/suggestions/${eventId}/accept`).send(body);
+
     const second = await agent
       .post(`/api/calendar/events/suggestions/${eventId}/accept`)
       .send(body);
@@ -133,15 +143,18 @@ describe('POST /api/calendar/events/suggestions/:eventId/reject', () => {
   it('records the suggestion as rejected', async () => {
     const { agent, email } = await createAuthenticatedUser();
     const eventId = `evt-${randomUUID()}`;
+    const calendarId = 'calendar-1';
 
-    const response = await agent.post(`/api/calendar/events/suggestions/${eventId}/reject`);
+    const response = await agent
+      .post(`/api/calendar/events/suggestions/${eventId}/reject`)
+      .send({ calendarId });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ message: 'Calendar suggestion rejected' });
 
     const user = await prisma.user.findUniqueOrThrow({ where: { email } });
     const suggestion = await prisma.calendarSuggestion.findUnique({
-      where: { userId_eventId: { userId: user.id, eventId } },
+      where: { userId_calendarId_eventId: { userId: user.id, calendarId, eventId } },
     });
     expect(suggestion?.status).toBe('REJECTED');
   });
@@ -149,9 +162,14 @@ describe('POST /api/calendar/events/suggestions/:eventId/reject', () => {
   it('rejects rejecting the same event twice', async () => {
     const { agent } = await createAuthenticatedUser();
     const eventId = `evt-${randomUUID()}`;
+    const calendarId = 'calendar-1';
 
-    const first = await agent.post(`/api/calendar/events/suggestions/${eventId}/reject`);
-    const second = await agent.post(`/api/calendar/events/suggestions/${eventId}/reject`);
+    const first = await agent
+      .post(`/api/calendar/events/suggestions/${eventId}/reject`)
+      .send({ calendarId });
+    const second = await agent
+      .post(`/api/calendar/events/suggestions/${eventId}/reject`)
+      .send({ calendarId });
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(500);
