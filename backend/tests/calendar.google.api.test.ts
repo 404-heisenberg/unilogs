@@ -157,10 +157,287 @@ describe('DELETE /api/calendar/disconnect', () => {
   });
 });
 
+describe('GET /api/calendar/sources', () => {
+  it('rejects unauthenticated requests', async () => {
+    const api = await getApiClient();
+
+    const response = await api.get('/api/calendar/sources');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('reports disconnected when there is no linked Google account', async () => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.get('/api/calendar/sources');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      connected: false,
+      sources: [],
+    });
+  });
+
+  it('fetches calendars from Google and saves them as sources', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+
+    getAccessToken.mockResolvedValue({
+      accessToken: 'test-access-token',
+    });
+
+    const calendars = [
+      {
+        id: 'calendar-1',
+        summary: 'Lectures',
+        description: 'University lectures',
+        backgroundColor: '#4285F4',
+      },
+      {
+        id: 'calendar-2',
+        summary: 'Tutorials',
+        backgroundColor: '#A47AE2',
+      },
+    ];
+
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ items: calendars }), { status: 200 }),
+    );
+
+    const response = await agent.get('/api/calendar/sources');
+
+    expect(response.status).toBe(200);
+    expect(response.body.connected).toBe(true);
+    expect(response.body.sources).toHaveLength(2);
+
+    expect(response.body.sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          calendarId: 'calendar-1',
+          summary: 'Lectures',
+          description: 'University lectures',
+          color: '#4285F4',
+          enabled: true,
+          order: 0,
+        }),
+        expect.objectContaining({
+          calendarId: 'calendar-2',
+          summary: 'Tutorials',
+          description: 'No description provided',
+          color: '#A47AE2',
+          enabled: true,
+          order: 1,
+        }),
+      ]),
+    );
+
+    const [url, init] = vi.mocked(fetch).mock.calls[0];
+
+    expect(String(url)).toContain('https://www.googleapis.com/calendar/v3/users/me/calendarList');
+
+    expect(init?.headers).toEqual({
+      Authorization: 'Bearer test-access-token',
+    });
+  });
+
+  it('returns 500 when Google Calendar list fetch fails', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+
+    getAccessToken.mockResolvedValue({
+      accessToken: 'test-access-token',
+    });
+
+    vi.mocked(fetch).mockResolvedValue(new Response('', { status: 500 }));
+
+    const response = await agent.get('/api/calendar/sources');
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      error: 'Failed to fetch Google Calendar sources',
+    });
+  });
+});
+
+describe('PATCH /api/calendar/sources/:id', () => {
+  it('rejects unauthenticated requests', async () => {
+    const api = await getApiClient();
+
+    const response = await api.patch('/api/calendar/sources/1').send({
+      enabled: false,
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('rejects an invalid source id', async () => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.patch('/api/calendar/sources/not-a-number').send({
+      enabled: false,
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'Invalid calendar source id',
+    });
+  });
+
+  it('returns 404 when the source does not belong to the user', async () => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.patch('/api/calendar/sources/999999').send({
+      enabled: false,
+    });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      error: 'Calendar source not found',
+    });
+  });
+
+  it('updates enabled, color, and order', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    const userId = await getUserId(email);
+
+    const first = await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        summary: 'Lectures',
+        color: '#4285F4',
+        enabled: true,
+        order: 0,
+      },
+    });
+
+    const second = await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-2',
+        summary: 'Tutorials',
+        color: '#A47AE2',
+        enabled: true,
+        order: 1,
+      },
+    });
+
+    const response = await agent.patch(`/api/calendar/sources/${second.id}`).send({
+      enabled: false,
+      color: '#FF0000',
+      order: 0,
+    });
+
+    expect(response.status).toBe(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: second.id,
+        enabled: false,
+        color: '#FF0000',
+        order: 0,
+      }),
+    );
+
+    const updatedFirst = await prisma.calendarSource.findUniqueOrThrow({
+      where: { id: first.id },
+    });
+
+    expect(updatedFirst.order).toBe(1);
+  });
+
+  it('rejects an invalid color', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    const userId = await getUserId(email);
+
+    const source = await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        summary: 'Lectures',
+        color: '#4285F4',
+        enabled: true,
+        order: 0,
+      },
+    });
+
+    const response = await agent.patch(`/api/calendar/sources/${source.id}`).send({
+      color: 'red',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'Invalid calendar source color',
+    });
+  });
+
+  it('rejects an invalid enabled value', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    const userId = await getUserId(email);
+
+    const source = await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        summary: 'Lectures',
+        color: '#4285F4',
+        enabled: true,
+        order: 0,
+      },
+    });
+
+    const response = await agent.patch(`/api/calendar/sources/${source.id}`).send({
+      enabled: 'false',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'Invalid calendar source enabled value',
+    });
+  });
+
+  it('rejects an invalid order', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    const userId = await getUserId(email);
+
+    const source = await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        summary: 'Lectures',
+        color: '#4285F4',
+        enabled: true,
+        order: 0,
+      },
+    });
+
+    const response = await agent.patch(`/api/calendar/sources/${source.id}`).send({
+      order: 5,
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'Invalid calendar source order',
+    });
+  });
+});
+
 describe('GET /api/calendar/events', () => {
   it('returns events fetched from the Google Calendar API', async () => {
     const { agent, email } = await createAuthenticatedUser();
     await connectAccount(email);
+    const userId = await getUserId(email);
+    await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        summary: 'Tutorials',
+        color: '#4285F4',
+        enabled: true,
+        order: 0,
+      },
+    });
+
     getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
     const events = [{ id: 'evt-1', summary: 'Lecture' }];
     vi.mocked(fetch).mockResolvedValue(
@@ -170,16 +447,38 @@ describe('GET /api/calendar/events', () => {
     const response = await agent.get('/api/calendar/events');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ connected: true, events });
+    expect(response.body).toEqual({
+      connected: true,
+      events: [
+        {
+          id: 'evt-1',
+          summary: 'Lecture',
+          calendarId: 'calendar-1',
+          calendarSummary: 'Tutorials',
+          color: '#4285F4',
+        },
+      ],
+    });
 
     const [url, init] = vi.mocked(fetch).mock.calls[0];
-    expect(String(url)).toContain('calendars/primary/events');
+    expect(String(url)).toContain('calendars/calendar-1/events');
     expect(init?.headers).toEqual({ Authorization: 'Bearer test-access-token' });
   });
 
   it('returns 500 when the Google Calendar API responds with an error', async () => {
     const { agent, email } = await createAuthenticatedUser();
     await connectAccount(email);
+    const userId = await getUserId(email);
+    await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        summary: 'Tutorials',
+        color: '#4285F4',
+        enabled: true,
+        order: 0,
+      },
+    });
     getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
     vi.mocked(fetch).mockResolvedValue(new Response('', { status: 500 }));
 
@@ -195,6 +494,7 @@ describe('GET /api/calendar/events', () => {
   it('returns 500 when the access token cannot be retrieved', async () => {
     const { agent, email } = await createAuthenticatedUser();
     await connectAccount(email);
+
     getAccessToken.mockRejectedValue(new Error('token expired'));
 
     const response = await agent.get('/api/calendar/events');
@@ -223,6 +523,17 @@ describe('GET /api/calendar/events/suggestions', () => {
   it('excludes events that already have an accepted or rejected suggestion', async () => {
     const { agent, email } = await createAuthenticatedUser();
     await connectAccount(email);
+    const userId = await getUserId(email);
+    await prisma.calendarSource.create({
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        summary: 'Tutorials',
+        color: '#4285F4',
+        enabled: true,
+        order: 0,
+      },
+    });
     getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
     const events = [
       { id: 'evt-handled', summary: 'Already handled', start: { date: '2026-09-10' } },
@@ -237,7 +548,12 @@ describe('GET /api/calendar/events/suggestions', () => {
       new Response(JSON.stringify({ items: events }), { status: 200 }),
     );
     await prisma.calendarSuggestion.create({
-      data: { userId: await getUserId(email), eventId: 'evt-handled', status: 'REJECTED' },
+      data: {
+        userId,
+        calendarId: 'calendar-1',
+        eventId: 'evt-handled',
+        status: 'REJECTED',
+      },
     });
 
     const response = await agent.get('/api/calendar/events/suggestions');
@@ -248,6 +564,7 @@ describe('GET /api/calendar/events/suggestions', () => {
       suggestions: [
         {
           id: 'evt-new',
+          calendarId: 'calendar-1',
           title: 'New lecture',
           start: '2026-09-11T10:00:00Z',
           end: '2026-09-11T11:00:00Z',
