@@ -13,6 +13,7 @@ const SETTINGS_URL = `${FRONTEND_URL}/settings`;
 type GoogleCalendarListEntry = {
   id: string;
   summary?: string;
+  description?: string;
   backgroundColor?: string;
 };
 
@@ -196,13 +197,14 @@ router.get('/sources', authenticate, async (req, res) => {
         },
         update: {
           summary: calendar.summary ?? 'Untitled calendar',
-          color: calendar.backgroundColor ?? null,
+          description: calendar.description ?? 'No description provided',
         },
         create: {
           userId: req.userId,
           calendarId: calendar.id,
           summary: calendar.summary ?? 'Untitled calendar',
-          color: calendar.backgroundColor ?? null,
+          description: calendar.description ?? 'No description provided',
+          color: calendar.backgroundColor ?? '#808080',
           enabled: true,
           order: index,
         },
@@ -340,7 +342,7 @@ router.patch('/sources/:id', authenticate, async (req, res) => {
     });
     return res.status(200).json(updatedSource);
   } catch (error) {
-    console.error('Googe Calendar source update error:', error);
+    console.error('Google Calendar source update error:', error);
 
     return res.status(500).json({
       error: 'Failed to update calendar sources',

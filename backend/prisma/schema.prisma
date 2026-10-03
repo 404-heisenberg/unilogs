@@ -54,13 +54,14 @@ model CalendarSuggestion {
 }
 
 model CalendarSource {
-  id         Int     @id @default(autoincrement())
-  userId     String
-  calendarId String
-  summary    String
-  color      String?
-  enabled    Boolean @default(true)
-  order      Int     @default(0)
+  id          Int     @id @default(autoincrement())
+  userId      String
+  calendarId  String
+  summary     String
+  description String?
+  color       String?
+  enabled     Boolean @default(true)
+  order       Int     @default(0)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
