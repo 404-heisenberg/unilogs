@@ -173,6 +173,136 @@ export const openapiSpec = {
           },
         },
       },
+      CalendarSource: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          userId: {
+            type: 'string',
+            example: 'userId-example123',
+          },
+          calendarId: {
+            type: 'string',
+            example: 'mokoatledikeledi4@gmail.com',
+          },
+          summary: {
+            type: 'string',
+            example: 'Tutorials',
+          },
+          description: {
+            type: 'string',
+            example: 'Tutorial sessions',
+          },
+          color: {
+            type: 'string',
+            nullable: true,
+            example: '#a47ae2',
+          },
+          enabled: {
+            type: 'boolean',
+            example: true,
+          },
+          order: {
+            type: 'integer',
+            example: 0,
+          },
+        },
+        required: [
+          'id',
+          'userId',
+          'calendarId',
+          'summary',
+          'description',
+          'color',
+          'enabled',
+          'order',
+        ],
+      },
+
+      CalendarEvent: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            example: '2co75sie84t6bssva0aed8ec3t',
+          },
+          summary: {
+            type: 'string',
+            example: 'skincare',
+          },
+          calendarId: {
+            type: 'string',
+            example:
+              '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+          },
+          calendarSummary: {
+            type: 'string',
+            example: 'Personal Care',
+          },
+          color: {
+            type: 'string',
+            nullable: true,
+            example: '#FF0000',
+          },
+          start: {
+            type: 'object',
+            properties: {
+              dateTime: {
+                type: 'string',
+                format: 'date-time',
+              },
+              date: {
+                type: 'string',
+                format: 'date',
+              },
+            },
+          },
+          end: {
+            type: 'object',
+            properties: {
+              dateTime: {
+                type: 'string',
+                format: 'date-time',
+              },
+              date: {
+                type: 'string',
+                format: 'date',
+              },
+            },
+          },
+        },
+      },
+
+      CalendarSuggestion: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            example: '2co75sie84t6bssva0aed8ec3t',
+          },
+          calendarId: {
+            type: 'string',
+            example:
+              '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+          },
+          title: {
+            type: 'string',
+            example: 'skincare',
+          },
+          start: {
+            type: 'string',
+            example: '2026-10-12',
+          },
+          end: {
+            type: 'string',
+            example: '2026-10-13',
+          },
+        },
+        required: ['id', 'calendarId', 'title', 'start', 'end'],
+      },
 
       Entry: {
         type: 'object',
@@ -3273,6 +3403,113 @@ export const openapiSpec = {
         },
       },
     },
+    '/api/calendar/sources': {
+      get: {
+        summary: 'Get Google Calendar sources',
+        description:
+          'Refreshes the authenticated user calendar sources from Google Calendar and returns the calendars available for event syncing.',
+        responses: {
+          '200': {
+            description: 'Calendar sources returned successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                    sources: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/CalendarSource',
+                      },
+                    },
+                  },
+                  required: ['connected', 'sources'],
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized.',
+          },
+          '500': {
+            description: 'Failed to fetch Google Calendar sources.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/sources/{id}': {
+      patch: {
+        summary: 'Update a Google Calendar source',
+        description:
+          'Updates the enabled state, display colour, or ordering of a calendar source belonging to the authenticated user.',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The local calendar source ID.',
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  enabled: {
+                    type: 'boolean',
+                    example: false,
+                  },
+                  color: {
+                    type: 'string',
+                    pattern: '^#[0-9A-Fa-f]{6}$',
+                    example: '#FF0000',
+                  },
+                  order: {
+                    type: 'integer',
+                    minimum: 0,
+                    example: 1,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Calendar source updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CalendarSource',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Invalid calendar source ID, enabled value, color, or order.',
+          },
+          '401': {
+            description: 'Unauthorized.',
+          },
+          '404': {
+            description: 'Calendar source not found.',
+          },
+          '500': {
+            description: 'Failed to update calendar source.',
+          },
+        },
+      },
+    },
 
     '/api/calendar/connect': {
       post: {
@@ -3318,6 +3555,26 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Upcoming calendar events returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                    events: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/CalendarEvent',
+                      },
+                    },
+                  },
+                  required: ['connected', 'events'],
+                },
+              },
+            },
           },
 
           '401': {
@@ -3337,6 +3594,26 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Calendar suggestions returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                    suggestions: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/CalendarSuggestion',
+                      },
+                    },
+                  },
+                  required: ['connected', 'suggestions'],
+                },
+              },
+            },
           },
 
           '401': {
@@ -3367,10 +3644,15 @@ export const openapiSpec = {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['projectId', 'content'],
+                required: ['projectId', 'content', 'calendarId'],
                 properties: {
                   projectId: { type: 'integer', example: 1 },
                   content: { type: 'object' },
+                  calendarId: {
+                    type: 'string',
+                    example:
+                      '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+                  },
                   date: { type: 'string', format: 'date-time' },
                 },
               },
@@ -3412,6 +3694,24 @@ export const openapiSpec = {
             schema: { type: 'string' },
           },
         ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['calendarId'],
+                properties: {
+                  calendarId: {
+                    type: 'string',
+                    example:
+                      '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+                  },
+                },
+              },
+            },
+          },
+        },
         responses: {
           '200': {
             description: 'Calendar suggestion rejected.',
