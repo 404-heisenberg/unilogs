@@ -21,6 +21,8 @@ model User {
   createdAt        DateTime
   updatedAt        DateTime
   remindersEnabled Boolean  @default(true)
+  dashboardLayout Json?
+  statPanels      StatPanel[]
 
   projects            Project[]
   sessions            Session[]
@@ -86,6 +88,7 @@ model Project {
   notifications Notification[]
   tasks         Task[]
   shareTokens   ShareToken[]
+  statPanels StatPanel[]
 
   @@index([userId])
   @@map("projects")
@@ -288,4 +291,22 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+model StatPanel {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  projectId   Int
+  name        String
+  expression  String
+  aggregation String   @default("sum")
+  rangeDays   Int      @default(30)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("stat_panels")
 }
