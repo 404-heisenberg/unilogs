@@ -83,7 +83,7 @@ async function getCalendarEvents(req: Request) {
     },
   });
 
-  if (!account) {
+  if (!account || !hasCalendarScope(account)) {
     return null;
   }
 
@@ -94,32 +94,60 @@ async function getCalendarEvents(req: Request) {
     headers: req.headers,
   });
 
-  const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+  const sources = await prisma.calendarSource.findMany({
+    where: {
+      userId: req.userId,
+      enabled: true,
+    },
+    orderBy: {
+      order: 'asc',
+    },
+  });
 
   const now = new Date();
   const timeMax = new Date();
 
   timeMax.setDate(timeMax.getDate() + 30);
 
-  url.searchParams.set('timeMin', now.toISOString());
-  url.searchParams.set('timeMax', timeMax.toISOString());
-  url.searchParams.set('singleEvents', 'true');
-  url.searchParams.set('orderBy', 'startTime');
-  url.searchParams.set('maxResults', '20');
+  const allEvents: GoogleCalendarEvent[] = [];
 
-  const googleResponse = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${tokenResult.accessToken}`,
-    },
-  });
+  for (const source of sources) {
+    const url = new URL(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(source.calendarId)}/events`,
+    );
 
-  if (!googleResponse.ok) {
-    throw new Error('Failed to fecth Google Calendar events');
+    url.searchParams.set('timeMin', now.toISOString());
+    url.searchParams.set('timeMax', timeMax.toISOString());
+    url.searchParams.set('singleEvents', 'true');
+    url.searchParams.set('orderBy', 'startTime');
+    url.searchParams.set('maxResults', '20');
+
+    const googleResponse = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${tokenResult.accessToken}`,
+      },
+    });
+
+    if (!googleResponse.ok) {
+      throw new Error('Failed to fetch Google Calendar events');
+    }
+
+    const data = (await googleResponse.json()) as {
+      items?: GoogleCalendarEvent[];
+    };
+
+    const events = data.items ?? [];
+
+    for (const event of events) {
+      allEvents.push({
+        ...event,
+        calendarId: source.calendarId,
+        color: source.color,
+      });
+    }
   }
 
-  const data = (await googleResponse.json()) as GoogleCalendarResponse;
-
-  return data.items ?? [];
+  return allEvents;
 }
 
 // A DB-only check so Settings can show connection status without calling
