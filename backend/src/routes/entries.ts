@@ -5,11 +5,7 @@ import { authenticate } from '../middleware/authenticate.js';
 import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
 import { parseEntryListQuery } from '../lib/entryFilters.js';
 import { toAuditData, toEntrySnapshot } from '../lib/audit-snapshot.js';
-import {
-  listEntryVersions,
-  restoreEntryVersion,
-  undeleteEntry,
-} from '../services/entry-history-service.js';
+import { listEntryVersions, undeleteEntry } from '../services/entry-history-service.js';
 import { MAX_SYNC_BATCH_SIZE, syncEntries } from '../services/sync-service.js';
 
 const router = Router();
@@ -414,18 +410,74 @@ router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, 
       return res.status(400).json({ error: 'id and auditId must be valid integers' });
     }
 
-    const result = await restoreEntryVersion(userId, id, auditId);
+    // 1. Verify entry and project ownership, include project fields for validation
+    const entry = await prisma.entry.findFirst({
+      where: { id, project: { userId } },
+      include: { project: { include: { fields: true } }, tags: true },
+    });
 
-    if (!result.ok) {
-      if (result.status === 400 && result.errors) {
-        return res.status(400).json({ errors: result.errors });
-      }
-      return res.status(result.status).json({ error: 'Version not found' });
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
     }
 
+    // 2. Fetch the specific audit log record acting as the version snapshot
+    const auditLog = await prisma.auditLog.findFirst({
+      where: { id: auditId, entryId: id },
+    });
+
+    if (!auditLog) {
+      return res.status(404).json({ error: 'Version not found' });
+    }
+
+    interface EntrySnapshotData {
+      title?: string | null;
+      body?: string | null;
+      content?: Record<string, unknown>;
+    }
+
+    const snapshot = (auditLog.newData || auditLog.oldData) as EntrySnapshotData;
+    if (!snapshot) {
+      return res.status(400).json({ error: 'Version snapshot data is missing' });
+    }
+
+    const targetTitle = snapshot.title ?? null;
+    const targetBody = snapshot.body ?? null;
+    const targetContent = snapshot.content ?? {};
+
+    // 3. Validate historical custom fields against current project field definitions
+    const contentErrors = validateEntryContent(targetContent, entry.project.fields);
+    if (contentErrors.length > 0) {
+      return res.status(400).json({ errors: contentErrors });
+    }
+
+    // 4. Update the entry, explicitly restoring title, body, and custom fields content
+    const updatedEntry = await prisma.entry.update({
+      where: { id },
+      data: {
+        title: targetTitle,
+        body: targetBody,
+        content: targetContent as NonNullable<
+          Parameters<typeof prisma.entry.update>[0]['data']
+        >['content'],
+      },
+      include: {
+        tags: { include: { tag: true } },
+      },
+    });
+
+    // 5. Record an audit log for the restoration action
+    await prisma.auditLog.create({
+      data: {
+        entryId: id,
+        action: 'UPDATE',
+        oldData: toAuditData(toEntrySnapshot(entry)),
+        newData: toAuditData(toEntrySnapshot(updatedEntry)),
+      },
+    });
+
     return res.status(200).json({
-      entry: result.entry,
-      tagsChanged: result.tagsChanged,
+      entry: updatedEntry,
+      tagsChanged: false,
     });
   } catch (err) {
     console.error('POST /api/entries/:id/history/:auditId/restore error:', err);

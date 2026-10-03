@@ -188,6 +188,12 @@ export default function EntryDetailPage() {
         </nav>
         <div className="relative flex shrink-0 items-center gap-2">
           <Link
+            to={`/entries/${entryId}/history`}
+            className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 text-[13px] font-semibold text-espresso transition-colors hover:bg-cream md:min-h-8"
+          >
+            History
+          </Link>
+          <Link
             to={`/entries/${entryId}/edit`}
             className="inline-flex min-h-11 items-center rounded-lg bg-espresso px-4 text-[13px] font-semibold text-cream transition-opacity hover:opacity-90 md:min-h-8"
           >

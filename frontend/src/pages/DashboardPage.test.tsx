@@ -33,6 +33,7 @@ const SUMMARY = {
   ],
   totalHours: 100,
   streak: 6,
+  currentStreak: 6,
 };
 
 function makeEntry(
@@ -164,7 +165,12 @@ afterEach(() => {
 
 describe('DashboardPage', () => {
   it('shows the first-run setup prompt when there are no entries yet', async () => {
-    mocks.getStatsSummary.mockResolvedValue({ perProject: [], totalHours: 0, streak: 0 });
+    mocks.getStatsSummary.mockResolvedValue({
+      perProject: [],
+      totalHours: 0,
+      streak: 0,
+      currentStreak: 0,
+    });
 
     renderPage();
 

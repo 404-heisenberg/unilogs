@@ -30,7 +30,7 @@ router.post('/signup', async (req, res) => {
     const { email, password, name } = req.body;
     const result = await auth.api.signUpEmail({
       body: { email, password, name },
-      headers: req.headers,
+      headers: req.headers as unknown as Record<string, string>,
       asResponse: true,
     });
 
@@ -46,7 +46,7 @@ router.post('/signin', async (req, res) => {
     const { email, password } = req.body;
     const result = await auth.api.signInEmail({
       body: { email, password },
-      headers: req.headers,
+      headers: req.headers as unknown as Record<string, string>,
       asResponse: true,
     });
 
@@ -79,7 +79,7 @@ router.post('/social/google', async (req, res) => {
         callbackURL: `${FRONTEND_URL}/dashboard`,
         errorCallbackURL: `${FRONTEND_URL}/${from}`,
       },
-      headers: req.headers,
+      headers: req.headers as unknown as Record<string, string>,
       asResponse: true,
     });
 
@@ -221,7 +221,7 @@ router.delete('/account', authenticate, async (req, res) => {
     }
 
     await auth.api.deleteUser({
-      headers: req.headers,
+      headers: req.headers as unknown as Record<string, string>,
       body: {
         password,
       },

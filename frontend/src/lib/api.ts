@@ -83,3 +83,12 @@ export function getStatsSummary() {
 export function getFrequencyStats() {
   return api.get<FrequencyStats>('/api/stats/frequency');
 }
+
+// Entry history endpoints
+export function getEntryHistory(entryId: string | number) {
+  return api.get<import('@/types').EntryVersion[]>(`/api/entries/${entryId}/history`);
+}
+
+export function restoreEntryVersion(entryId: string | number, versionId: number) {
+  return api.post<import('@/types').Entry>(`/api/entries/${entryId}/history/${versionId}/restore`);
+}

@@ -42,6 +42,15 @@ export type Entry = {
   isCompleted?: boolean;
 };
 
+export type EntryVersion = {
+  id: number;
+  entryId: number;
+  title?: string | null;
+  body?: string | null;
+  content: EntryContent;
+  createdAt: string;
+};
+
 export type PagedEntries = {
   entries: Entry[];
   total: number;
