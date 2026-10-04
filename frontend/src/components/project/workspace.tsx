@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import SkeletonPrimitive from '@/components/Skeleton';
+import { formatRelativeTime } from '@/lib/time';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -11,6 +12,7 @@ import {
   Hash,
   TrendingUp,
   Type,
+  Trash2,
 } from 'lucide-react';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import {
@@ -33,7 +35,7 @@ import {
   type UnfinishedStats,
   type WeekBar,
 } from '@/lib/project-workspace';
-import type { Entry, FieldDefinition, Project } from '@/types';
+import type { Entry, FieldDefinition, Project, TrashEntry } from '@/types';
 import { projectColor } from '@/lib/colors';
 
 const CARD = 'rounded-xl border border-cream bg-paper';
@@ -382,6 +384,75 @@ function RecentEntries({ entries, today }: { entries: Entry[]; today: string }) 
   );
 }
 
+function trashEntryTitle(entry: TrashEntry): string {
+  const title = entry.title?.trim();
+  if (title) return title;
+  const firstText = Object.values(entry.content).find(
+    (value): value is string => typeof value === 'string' && value.trim() !== '',
+  );
+  return firstText?.trim() ?? 'Untitled entry';
+}
+
+function RecentlyDeleted({
+  entries,
+  isLoading,
+  isError,
+  restoringId,
+  onRestore,
+}: {
+  entries: TrashEntry[];
+  isLoading: boolean;
+  isError: boolean;
+  restoringId: number | null;
+  onRestore: (entry: TrashEntry) => void;
+}) {
+  return (
+    <section aria-labelledby="recently-deleted-heading">
+      <div className="mb-4">
+        <h2 id="recently-deleted-heading" className={SECTION_HEADING}>
+          Recently deleted
+        </h2>
+        <span className="mt-1 block h-1 w-12 rounded-sm bg-gold-light" aria-hidden />
+      </div>
+      {isLoading && <Skeleton rows={2} />}
+      {isError && <ErrorNote>Failed to load deleted entries. Try refreshing the page.</ErrorNote>}
+      {!isLoading && !isError && entries.length === 0 && (
+        <p className={`text-sm ${MUTED}`}>Nothing deleted.</p>
+      )}
+      {entries.length > 0 && (
+        <ul className="flex flex-col">
+          {entries.map((entry) => (
+            <li
+              key={entry.id}
+              className="flex min-h-11 items-center justify-between gap-3 border-b border-cream py-3 text-sm last:border-b-0"
+            >
+              <span className="flex min-w-0 items-center gap-2.5">
+                <Trash2 className="h-4 w-4 shrink-0 text-clay" strokeWidth={1.75} aria-hidden />
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-espresso">
+                    {trashEntryTitle(entry)}
+                  </span>
+                  <span className={`block text-[13px] ${MUTED}`}>
+                    deleted {formatRelativeTime(entry.deletedAt)}
+                  </span>
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => onRestore(entry)}
+                disabled={restoringId === entry.id}
+                className={`${DARK_BUTTON} shrink-0 bg-gold text-espresso hover:bg-gold-light`}
+              >
+                {restoringId === entry.id ? 'Restoring…' : 'Restore'}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 type OverviewProps = {
   today: string;
   summary: ProjectSummary | undefined;
@@ -399,6 +470,13 @@ type OverviewProps = {
   };
   markFailed: boolean;
   onMarkDone: (item: UnfinishedItem) => void;
+  trash: {
+    entries: TrashEntry[];
+    isLoading: boolean;
+    isError: boolean;
+  };
+  restoringId: number | null;
+  onRestore: (entry: TrashEntry) => void;
 };
 
 export function OverviewTab({
@@ -414,6 +492,9 @@ export function OverviewTab({
   unfinished,
   markFailed,
   onMarkDone,
+  trash,
+  restoringId,
+  onRestore,
 }: OverviewProps) {
   return (
     <div className="flex flex-col gap-8">
@@ -455,6 +536,14 @@ export function OverviewTab({
           <RecentEntries entries={recent} today={today} />
         </div>
       )}
+
+      <RecentlyDeleted
+        entries={trash.entries}
+        isLoading={trash.isLoading}
+        isError={trash.isError}
+        restoringId={restoringId}
+        onRestore={onRestore}
+      />
     </div>
   );
 }

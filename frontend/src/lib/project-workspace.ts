@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, getProjectTrash, restoreEntry } from '@/lib/api';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { toast } from '@/lib/toast';
-import type { Entry, FieldDefinition, PagedEntries, Project } from '@/types';
+import type { Entry, FieldDefinition, PagedEntries, Project, TrashEntry } from '@/types';
 
 export type TabId = 'overview' | 'entries' | 'fields';
 
@@ -366,7 +366,13 @@ export function useProjectWorkspace(projectId: string) {
     retry: false,
   });
 
-  return { project, fields, entries, summary, insights, unfinished };
+  const trash = useQuery({
+    queryKey: ['project-trash', projectId],
+    queryFn: () => getProjectTrash(projectId),
+    enabled,
+  });
+
+  return { project, fields, entries, summary, insights, unfinished, trash };
 }
 
 export type FieldActions = {
@@ -489,6 +495,17 @@ export function useProjectMutations(projectId: string) {
     },
   });
 
+  const restore = useMutation({
+    mutationFn: (entry: TrashEntry) => restoreEntry(entry.id),
+    onSuccess: (_result, entry) => {
+      toast.success(`Restored "${entry.title?.trim() || 'Untitled entry'}"`);
+      queryClient.invalidateQueries({ queryKey: ['project-trash', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['unfinished', projectId] });
+      invalidateEntries();
+    },
+    onError: (error) => toast.error(error),
+  });
+
   const fieldActions: FieldActions = {
     create: createField.mutate,
     update: updateField.mutate,
@@ -509,5 +526,7 @@ export function useProjectMutations(projectId: string) {
     projectActions,
     markDone: markDone.mutate,
     markFailed: markDone.isError,
+    restoreEntry: restore.mutate,
+    restoringId: restore.isPending ? (restore.variables?.id ?? null) : null,
   };
 }

@@ -766,7 +766,7 @@ export default function EntryCreatePage() {
             onClick={() => {
               if (
                 window.confirm(
-                  'Are you sure you want to delete this entry? This action cannot be undone.',
+                  'Delete this entry? It will move to Recently deleted, where you can restore it from the project workspace.',
                 )
               ) {
                 deleteEntry.mutate();
