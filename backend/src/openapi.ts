@@ -173,6 +173,136 @@ export const openapiSpec = {
           },
         },
       },
+      CalendarSource: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1,
+          },
+          userId: {
+            type: 'string',
+            example: 'userId-example123',
+          },
+          calendarId: {
+            type: 'string',
+            example: 'mokoatledikeledi4@gmail.com',
+          },
+          summary: {
+            type: 'string',
+            example: 'Tutorials',
+          },
+          description: {
+            type: 'string',
+            example: 'Tutorial sessions',
+          },
+          color: {
+            type: 'string',
+            nullable: true,
+            example: '#a47ae2',
+          },
+          enabled: {
+            type: 'boolean',
+            example: true,
+          },
+          order: {
+            type: 'integer',
+            example: 0,
+          },
+        },
+        required: [
+          'id',
+          'userId',
+          'calendarId',
+          'summary',
+          'description',
+          'color',
+          'enabled',
+          'order',
+        ],
+      },
+
+      CalendarEvent: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            example: '2co75sie84t6bssva0aed8ec3t',
+          },
+          summary: {
+            type: 'string',
+            example: 'skincare',
+          },
+          calendarId: {
+            type: 'string',
+            example:
+              '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+          },
+          calendarSummary: {
+            type: 'string',
+            example: 'Personal Care',
+          },
+          color: {
+            type: 'string',
+            nullable: true,
+            example: '#FF0000',
+          },
+          start: {
+            type: 'object',
+            properties: {
+              dateTime: {
+                type: 'string',
+                format: 'date-time',
+              },
+              date: {
+                type: 'string',
+                format: 'date',
+              },
+            },
+          },
+          end: {
+            type: 'object',
+            properties: {
+              dateTime: {
+                type: 'string',
+                format: 'date-time',
+              },
+              date: {
+                type: 'string',
+                format: 'date',
+              },
+            },
+          },
+        },
+      },
+
+      CalendarSuggestion: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            example: '2co75sie84t6bssva0aed8ec3t',
+          },
+          calendarId: {
+            type: 'string',
+            example:
+              '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+          },
+          title: {
+            type: 'string',
+            example: 'skincare',
+          },
+          start: {
+            type: 'string',
+            example: '2026-10-12',
+          },
+          end: {
+            type: 'string',
+            example: '2026-10-13',
+          },
+        },
+        required: ['id', 'calendarId', 'title', 'start', 'end'],
+      },
 
       Entry: {
         type: 'object',
@@ -263,6 +393,106 @@ export const openapiSpec = {
             description:
               'Absent on versions written before tags were captured, which means "unknown" rather than "no tags".',
             example: [1, 4],
+          },
+        },
+      },
+
+      SyncQueuedEntry: {
+        type: 'object',
+        required: ['clientId', 'projectId', 'content'],
+        description:
+          'One entry as it was queued offline. Every field is validated on arrival, because this is the only route that accepts a shape no UI can produce.',
+        properties: {
+          clientId: {
+            type: 'string',
+            maxLength: 191,
+            description:
+              'Client-generated id, unique per entry. This is what makes a retried batch idempotent. It must be stable across retries — regenerating it on every attempt would create a new entry each time.',
+            example: 'a5f0c9e2-1d3b-4c8a-9e77-2b6d4f0a1c33',
+          },
+          projectId: {
+            type: 'integer',
+            description: 'Must be a project the authenticated user owns.',
+            example: 1,
+          },
+          title: {
+            type: 'string',
+            nullable: true,
+          },
+          body: {
+            type: 'string',
+            nullable: true,
+          },
+          content: {
+            type: 'object',
+            additionalProperties: true,
+            description: 'Field values, validated against the project’s field definitions.',
+            example: { timeSpent: '3 hours' },
+          },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            description:
+              'Omit to record the entry as created now. An unparseable value fails rather than defaulting to today.',
+            example: '2026-10-01T09:00:00.000Z',
+          },
+          tagIds: {
+            type: 'array',
+            items: { type: 'integer' },
+            description: 'Tags the user owns. A tag id belonging to anyone else fails the entry.',
+            example: [4],
+          },
+        },
+      },
+
+      SyncRequest: {
+        type: 'object',
+        required: ['entries'],
+        properties: {
+          entries: {
+            type: 'array',
+            maxItems: 100,
+            items: { $ref: '#/components/schemas/SyncQueuedEntry' },
+          },
+        },
+      },
+
+      SyncEntryResult: {
+        type: 'object',
+        required: ['clientId', 'status'],
+        properties: {
+          clientId: {
+            type: 'string',
+            description:
+              'Matches the queued entry. Empty when the queued entry had no usable `clientId`, so the client can still tell which queue row failed.',
+            example: 'a5f0c9e2-1d3b-4c8a-9e77-2b6d4f0a1c33',
+          },
+          status: {
+            type: 'string',
+            enum: ['created', 'duplicate', 'failed'],
+            description:
+              '`created` — synced now. `duplicate` — a `clientId` already exists, nothing was written. `failed` — this entry was rejected; every other entry in the batch still went through.',
+          },
+          entryId: {
+            type: 'integer',
+            description:
+              'Present for `created` and `duplicate`, so the client can map its queue row to the entry it now owns.',
+            example: 87,
+          },
+          reason: {
+            type: 'string',
+            description: 'Why a `failed` entry failed, or the context for a `duplicate`.',
+            example: 'You do not have access to this project',
+          },
+        },
+      },
+
+      SyncResponse: {
+        type: 'object',
+        properties: {
+          results: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/SyncEntryResult' },
           },
         },
       },
@@ -498,6 +728,33 @@ export const openapiSpec = {
             },
           },
         ],
+      },
+
+      StatPanel: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          userId: { type: 'string' },
+          projectId: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'Total volume' },
+          expression: { type: 'string', example: 'weight * reps' },
+          aggregation: { type: 'string', enum: ['sum', 'average'], example: 'sum' },
+          rangeDays: { type: 'integer', example: 30 },
+          position: { type: 'integer', example: 0 },
+          createdAt: { type: 'string', format: 'date-time' },
+          value: { type: 'number', nullable: true, example: 980 },
+          sampleCount: { type: 'integer', example: 2 },
+          series: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                date: { type: 'string', format: 'date', example: '2026-10-03' },
+                value: { type: 'number', example: 500 },
+              },
+            },
+          },
+        },
       },
     },
   },
@@ -2103,6 +2360,66 @@ export const openapiSpec = {
       },
     },
 
+    '/api/entries/sync': {
+      post: {
+        summary: 'Sync a queue of offline entries',
+        description:
+          'Accepts entries captured while the client was offline, each carrying a client-generated `clientId`. Syncing is idempotent: an entry whose `clientId` already exists is reported as `duplicate` and never created twice, so a batch can be retried safely after a dropped connection. Create-only — an entry that already exists is never updated. One invalid entry does not fail the rest of the batch; each entry carries its own outcome so the client can keep the failures in its queue and drop the rest.',
+
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SyncRequest' },
+              examples: {
+                queue: {
+                  summary: 'A queued batch',
+                  value: {
+                    entries: [
+                      {
+                        clientId: 'a5f0c9e2-1d3b-4c8a-9e77-2b6d4f0a1c33',
+                        projectId: 1,
+                        title: 'Library run',
+                        body: 'Read chapter 3',
+                        content: { timeSpent: '3 hours' },
+                        date: '2026-10-01T09:00:00.000Z',
+                        tagIds: [4],
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        responses: {
+          '200': {
+            description:
+              'Every queued entry has an outcome. A mixed batch still returns 200 — per-entry `status` is what carries success or failure.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/SyncResponse' },
+              },
+            },
+          },
+
+          '400': {
+            description:
+              'The body itself is unusable: `entries` is not an array, or the batch exceeds 100 entries.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to sync entries.',
+          },
+        },
+      },
+    },
+
     '/api/field-definitions': {
       get: {
         summary: 'Get field definitions',
@@ -3113,6 +3430,113 @@ export const openapiSpec = {
         },
       },
     },
+    '/api/calendar/sources': {
+      get: {
+        summary: 'Get Google Calendar sources',
+        description:
+          'Refreshes the authenticated user calendar sources from Google Calendar and returns the calendars available for event syncing.',
+        responses: {
+          '200': {
+            description: 'Calendar sources returned successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                    sources: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/CalendarSource',
+                      },
+                    },
+                  },
+                  required: ['connected', 'sources'],
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized.',
+          },
+          '500': {
+            description: 'Failed to fetch Google Calendar sources.',
+          },
+        },
+      },
+    },
+
+    '/api/calendar/sources/{id}': {
+      patch: {
+        summary: 'Update a Google Calendar source',
+        description:
+          'Updates the enabled state, display colour, or ordering of a calendar source belonging to the authenticated user.',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'integer',
+            },
+            description: 'The local calendar source ID.',
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  enabled: {
+                    type: 'boolean',
+                    example: false,
+                  },
+                  color: {
+                    type: 'string',
+                    pattern: '^#[0-9A-Fa-f]{6}$',
+                    example: '#FF0000',
+                  },
+                  order: {
+                    type: 'integer',
+                    minimum: 0,
+                    example: 1,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Calendar source updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CalendarSource',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Invalid calendar source ID, enabled value, color, or order.',
+          },
+          '401': {
+            description: 'Unauthorized.',
+          },
+          '404': {
+            description: 'Calendar source not found.',
+          },
+          '500': {
+            description: 'Failed to update calendar source.',
+          },
+        },
+      },
+    },
 
     '/api/calendar/connect': {
       post: {
@@ -3158,6 +3582,26 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Upcoming calendar events returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                    events: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/CalendarEvent',
+                      },
+                    },
+                  },
+                  required: ['connected', 'events'],
+                },
+              },
+            },
           },
 
           '401': {
@@ -3177,6 +3621,26 @@ export const openapiSpec = {
         responses: {
           '200': {
             description: 'Calendar suggestions returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    connected: {
+                      type: 'boolean',
+                      example: true,
+                    },
+                    suggestions: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/CalendarSuggestion',
+                      },
+                    },
+                  },
+                  required: ['connected', 'suggestions'],
+                },
+              },
+            },
           },
 
           '401': {
@@ -3207,10 +3671,15 @@ export const openapiSpec = {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['projectId', 'content'],
+                required: ['projectId', 'content', 'calendarId'],
                 properties: {
                   projectId: { type: 'integer', example: 1 },
                   content: { type: 'object' },
+                  calendarId: {
+                    type: 'string',
+                    example:
+                      '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+                  },
                   date: { type: 'string', format: 'date-time' },
                 },
               },
@@ -3252,18 +3721,193 @@ export const openapiSpec = {
             schema: { type: 'string' },
           },
         ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['calendarId'],
+                properties: {
+                  calendarId: {
+                    type: 'string',
+                    example:
+                      '318d502e84822eb30bd185a9d98f30319635ad6a130ee2abc26d018c69a021ac@group.calendar.google.com',
+                  },
+                },
+              },
+            },
+          },
+        },
         responses: {
           '200': {
             description: 'Calendar suggestion rejected.',
           },
-
           '401': {
             description: 'Unauthorized.',
           },
-
           '500': {
             description: 'Failed to reject calendar suggestion.',
           },
+        },
+      },
+    },
+
+    '/api/projects/{id}/stat-panels': {
+      get: {
+        summary: 'List stat panels for a project',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: {
+          '200': {
+            description: 'Panels with computed values.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/StatPanel' },
+                },
+              },
+            },
+          },
+          '401': { description: 'Unauthorized.' },
+          '404': { description: 'Project not found.' },
+          '500': { description: 'Failed to fetch panels.' },
+        },
+      },
+      post: {
+        summary: 'Create a stat panel',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name', 'expression'],
+                properties: {
+                  name: { type: 'string', example: 'Total volume' },
+                  expression: { type: 'string', example: 'weight * reps' },
+                  aggregation: { type: 'string', enum: ['sum', 'average'], default: 'sum' },
+                  rangeDays: { type: 'integer', default: 30 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Panel created.',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/StatPanel' } },
+            },
+          },
+          '400': { description: 'Invalid expression, aggregation, or rangeDays.' },
+          '401': { description: 'Unauthorized.' },
+          '404': { description: 'Project not found.' },
+        },
+      },
+    },
+
+    '/api/projects/{id}/stat-panels/preview': {
+      post: {
+        summary: 'Preview an unsaved stat expression',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['expression'],
+                properties: {
+                  expression: { type: 'string', example: 'weight * reps' },
+                  aggregation: { type: 'string', enum: ['sum', 'average'], default: 'sum' },
+                  rangeDays: { type: 'integer', default: 30 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Computed value, sample count, and series.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    value: { type: 'number' },
+                    sampleCount: { type: 'integer' },
+                    series: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          date: { type: 'string' },
+                          value: { type: 'number' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '400': { description: 'Invalid expression, aggregation, or rangeDays.' },
+          '401': { description: 'Unauthorized.' },
+          '404': { description: 'Project not found.' },
+        },
+      },
+    },
+
+    '/api/projects/{id}/stat-panels/{panelId}': {
+      patch: {
+        summary: 'Rename, re-order, or re-scope a stat panel',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+          { name: 'panelId', in: 'path', required: true, schema: { type: 'integer' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  position: { type: 'integer' },
+                  rangeDays: { type: 'integer' },
+                  aggregation: { type: 'string', enum: ['sum', 'average'] },
+                  expression: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Panel updated.',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/StatPanel' } },
+            },
+          },
+          '400': { description: 'Invalid field.' },
+          '401': { description: 'Unauthorized.' },
+          '403': { description: 'Panel belongs to another user.' },
+          '404': { description: 'Panel not found.' },
+        },
+      },
+      delete: {
+        summary: 'Delete a stat panel',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+          { name: 'panelId', in: 'path', required: true, schema: { type: 'integer' } },
+        ],
+        responses: {
+          '204': { description: 'Panel deleted.' },
+          '401': { description: 'Unauthorized.' },
+          '403': { description: 'Panel belongs to another user.' },
+          '404': { description: 'Panel not found.' },
         },
       },
     },
