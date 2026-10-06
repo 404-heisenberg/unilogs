@@ -29,6 +29,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'methodology',
+        'bug-tracking',
         'git-methodology',
         'development-plan',
         'sprint-1-standups',
