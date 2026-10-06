@@ -11,6 +11,7 @@ import {
   undeleteEntry,
 } from '../services/entry-history-service.js';
 import { parseAsAtDate, reconstructAsAt } from '../services/asat-service.js';
+import { MAX_SYNC_BATCH_SIZE, syncEntries } from '../services/sync-service.js';
 
 const router = Router();
 
@@ -183,6 +184,45 @@ router.get('/as-at', authenticate, async (req: Request, res: Response) => {
   } catch (err) {
     console.error('GET /api/entries/as-at error:', err);
     return res.status(500).json({ error: 'Failed to reconstruct entries' });
+  }
+});
+
+// Offline capture. The client queues entries locally with a generated clientId
+// and replays them here after regaining a connection. Registered before any
+// `/:id` route would shadow it, so keep it above them.
+router.post('/sync', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { entries } = req.body ?? {};
+
+    if (!Array.isArray(entries)) {
+      return res.status(400).json({ error: 'entries must be an array' });
+    }
+
+    if (entries.length > MAX_SYNC_BATCH_SIZE) {
+      return res.status(400).json({
+        error: `A sync batch is limited to ${MAX_SYNC_BATCH_SIZE} entries`,
+      });
+    }
+
+    // An empty queue is a normal state after a successful flush, not an error,
+    // and must not be mistaken for a malformed body.
+    if (entries.length === 0) {
+      return res.status(200).json({ results: [] });
+    }
+
+    // One bad entry must not lose the rest of the queue, so the outcome of each
+    // entry travels in the response instead of in the status code.
+    const results = await syncEntries(userId, entries);
+
+    return res.status(200).json({ results });
+  } catch (err) {
+    console.error('POST /api/entries/sync error:', err);
+    return res.status(500).json({ error: 'Failed to sync entries' });
   }
 });
 
