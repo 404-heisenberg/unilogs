@@ -397,6 +397,70 @@ export const openapiSpec = {
         },
       },
 
+      AsAtEntry: {
+        type: 'object',
+        description:
+          'One entry as it stood on the requested day. Same shape as an entry from `GET /api/entries`, so the timeline can render a reconstructed day and the live one identically.',
+        properties: {
+          id: {
+            type: 'integer',
+            description: 'The real entry id, so it can be linked through to.',
+          },
+          projectId: { type: 'integer' },
+          title: { type: 'string', nullable: true },
+          body: { type: 'string', nullable: true },
+          content: { type: 'object', additionalProperties: true },
+          date: {
+            type: 'string',
+            format: 'date-time',
+            description:
+              'The date the entry carried at that moment. An entry edited after the requested day is returned with its *old* date, not its current one.',
+          },
+          project: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              name: { type: 'string' },
+            },
+          },
+          tags: {
+            type: 'array',
+            description:
+              'Tags as they were then, resolved from the ids in the snapshot. A tag deleted since then is left off rather than rendered as a dangling id.',
+            items: {
+              type: 'object',
+              properties: {
+                tagId: { type: 'integer' },
+                tag: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer' },
+                    name: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      AsAtResponse: {
+        type: 'object',
+        properties: {
+          entries: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/AsAtEntry' },
+          },
+          total: { type: 'integer', description: 'Count of reconstructed entries.' },
+          date: {
+            type: 'string',
+            format: 'date',
+            description: 'The day that was asked for, echoed back.',
+            example: '2026-09-08',
+          },
+        },
+      },
+
       SyncQueuedEntry: {
         type: 'object',
         required: ['clientId', 'projectId', 'content'],
@@ -407,7 +471,7 @@ export const openapiSpec = {
             type: 'string',
             maxLength: 191,
             description:
-              'Client-generated id, unique per entry. This is what makes a retried batch idempotent. It must be stable across retries — regenerating it on every attempt would create a new entry each time.',
+              'Client-generated id, unique per entry. This is what makes a retried batch idempotent. It must be stable across retries ÔÇö regenerating it on every attempt would create a new entry each time.',
             example: 'a5f0c9e2-1d3b-4c8a-9e77-2b6d4f0a1c33',
           },
           projectId: {
@@ -426,7 +490,7 @@ export const openapiSpec = {
           content: {
             type: 'object',
             additionalProperties: true,
-            description: 'Field values, validated against the project’s field definitions.',
+            description: 'Field values, validated against the projectÔÇÖs field definitions.',
             example: { timeSpent: '3 hours' },
           },
           date: {
@@ -471,7 +535,7 @@ export const openapiSpec = {
             type: 'string',
             enum: ['created', 'duplicate', 'failed'],
             description:
-              '`created` — synced now. `duplicate` — a `clientId` already exists, nothing was written. `failed` — this entry was rejected; every other entry in the batch still went through.',
+              '`created` ÔÇö synced now. `duplicate` ÔÇö a `clientId` already exists, nothing was written. `failed` ÔÇö this entry was rejected; every other entry in the batch still went through.',
           },
           entryId: {
             type: 'integer',
@@ -2360,11 +2424,64 @@ export const openapiSpec = {
       },
     },
 
+    '/api/entries/as-at': {
+      get: {
+        summary: 'Get entries as they stood on a given date',
+        description:
+          'Read-only reconstruction of the logbook as it was on the chosen day, built by replaying the audit log. For each entry the state is the newest audit row at or before the end of that day: an entry edited later appears with its earlier content, an entry deleted later still appears, and an entry created later does not appear at all. Read-only ÔÇö there is nothing here that can be restored or edited. Scoped to the callerÔÇÖs own, non-archived projects. The other list filters (`q`, `tagIds`, `dateFrom`, `dateTo`, pagination) are not supported on this route.',
+
+        parameters: [
+          {
+            name: 'date',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+              format: 'date',
+              example: '2026-09-08',
+            },
+            description:
+              'The day to reconstruct, as `YYYY-MM-DD`. This means the state at the **end** of that day, so anything logged during it counts.',
+          },
+          {
+            name: 'projectId',
+            in: 'query',
+            schema: { type: 'integer' },
+            description:
+              'Restrict to one project. A project owned by somebody else simply returns nothing.',
+          },
+        ],
+
+        responses: {
+          '200': {
+            description: 'The reconstructed timeline.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AsAtResponse' },
+              },
+            },
+          },
+
+          '400': {
+            description: '`date` missing or not `YYYY-MM-DD`, or `projectId` not an integer.',
+          },
+
+          '401': {
+            description: 'Unauthorized.',
+          },
+
+          '500': {
+            description: 'Failed to reconstruct entries.',
+          },
+        },
+      },
+    },
+
     '/api/entries/sync': {
       post: {
         summary: 'Sync a queue of offline entries',
         description:
-          'Accepts entries captured while the client was offline, each carrying a client-generated `clientId`. Syncing is idempotent: an entry whose `clientId` already exists is reported as `duplicate` and never created twice, so a batch can be retried safely after a dropped connection. Create-only — an entry that already exists is never updated. One invalid entry does not fail the rest of the batch; each entry carries its own outcome so the client can keep the failures in its queue and drop the rest.',
+          'Accepts entries captured while the client was offline, each carrying a client-generated `clientId`. Syncing is idempotent: an entry whose `clientId` already exists is reported as `duplicate` and never created twice, so a batch can be retried safely after a dropped connection. Create-only ÔÇö an entry that already exists is never updated. One invalid entry does not fail the rest of the batch; each entry carries its own outcome so the client can keep the failures in its queue and drop the rest.',
 
         requestBody: {
           required: true,
@@ -2396,7 +2513,7 @@ export const openapiSpec = {
         responses: {
           '200': {
             description:
-              'Every queued entry has an outcome. A mixed batch still returns 200 — per-entry `status` is what carries success or failure.',
+              'Every queued entry has an outcome. A mixed batch still returns 200 ÔÇö per-entry `status` is what carries success or failure.',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/SyncResponse' },
