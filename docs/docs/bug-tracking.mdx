@@ -1,0 +1,102 @@
+---
+sidebar_position: 3.5
+title: Bug Tracking
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# How we track bugs
+
+Bugs found during client and user testing are not silently fixed and forgotten.
+Each one becomes a labelled GitHub issue that stays findable after it is closed,
+because the marks for the project are given on evidence, and "we fixed it in the
+sprint" is not something a marker can verify. This page is where the tutor —
+and any new team member — should look to find that evidence.
+
+## Filing a bug
+
+Use the **Bug** issue template when you click **New issue**. It asks for:
+
+| Field | Why it is there |
+| --- | --- |
+| Severity | Decides the label, and therefore the milestone band |
+| Description | What is wrong |
+| Screenshot / recording | Evidence that it is real |
+| Steps to reproduce | Without these, "it doesn't work" cannot be verified or fixed |
+| Expected behaviour | The behaviour being compared against |
+| Actual behaviour | What happened instead |
+| Environment | Browser, OS, device, and deployed or local |
+
+Filing a bug assigns the `bug` label automatically, and a GitHub Actions
+workflow ([`route-bugs.yml`](https://github.com/404-heisenberg/unilogs/blob/main/.github/workflows/route-bugs.yml))
+notices that label and sets the issue's Status to **Bugs** on the project board.
+You do not need to move the card yourself.
+
+:::note
+The severity dropdown in the template records your answer in the issue body only.
+**You still have to apply the matching label by hand** — see below.
+:::
+
+## Severity
+
+Severity is a label, not just a dropdown answer, so that it shows on the card
+without opening the issue. Two labels, matching the two dropdown options:
+
+| Label | Meaning |
+| --- | --- |
+| `severe` | Blocks a key feature, corrupts data, or crashes |
+| `minor` | Cosmetic, low-impact, or a small edge case |
+
+Severity is not about how much work a fix is. A one-character label change that
+breaks the share link is `severe`; a misaligned icon on one page is `minor`.
+
+Severity matters because of the milestone rule: the top band allows **at most one
+non-severe bug**. Filing accurately is what keeps that budget meaningful instead
+of something we renegotiate at the end.
+
+Every bug issue should carry `bug` **and** one severity label. If only `bug` is
+present, the bug has not been triaged.
+
+## Lifecycle
+
+```
+filed  ──▶  Bugs column  ──▶  assigned  ──▶  in progress  ──▶  Done
+(issue + `bug`          (owner + pair label on    (branch named
+ + severity label)        the board)                after the issue)
+```
+
+1. **Filed** — the issue exists with `bug` plus a severity label, and the
+   workflow has moved it to **Bugs**.
+2. **Triaged** — confirmed against the milestone band rule. If two people
+   disagree on severity, the more severe reading wins until it is fixed.
+3. **Assigned** — an owner and a `backend pair` / `frontend pair` /
+   `devops/docs pair` label are set, and the card moves out of **Bugs** into the
+   sprint being worked on.
+4. **Fixed** — a branch named after the issue (`bugfix/<number>-<short>`) with a
+   pull request that `Closes #<number>`. The issue closes automatically when the
+   pull request merges.
+5. **Done** — the card stays on the board with both labels intact.
+
+## Where the tutor finds bugs
+
+- **Open and closed bugs together:** the board's **Bugs** view. Filter by
+  `bug` in GitHub Issues for the same list without the board.
+- **Per-bug severity at a glance:** the labels stay on the card when it moves to
+  **Done**, so the history of what we found reads directly off the board.
+- **Per-bug evidence:** each issue body keeps its reproduction steps, screenshot
+  and environment, so a claim can be checked without asking anyone.
+
+## Older bugs
+
+The severity labels were added in Sprint 4. Bugs filed before then — #61, #66,
+#104, #171–#179, #235, #237 — carry `bug` only. They were triaged against the
+milestone band at the time, so the missing label is a gap in the record rather
+than a statement that they were untriaged. Do not backfill them: an issue
+labelled long after the fact records when the label was applied, not when the
+bug was found.
+
+<AiDeclaration
+  action="generated"
+  tools="Claude-Web[Claude Opus 5]"
+  purpose="documenting the bug filing process, the severity labels, the board lifecycle and where completed bugs remain visible as milestone evidence"
+/>
