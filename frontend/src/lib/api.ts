@@ -1,3 +1,5 @@
+import type { Entry, ProjectTrash } from '@/types';
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 export class ApiError extends Error {
@@ -91,4 +93,10 @@ export function getEntryHistory(entryId: string | number) {
 
 export function restoreEntryVersion(entryId: string | number, versionId: number) {
   return api.post<import('@/types').Entry>(`/api/entries/${entryId}/history/${versionId}/restore`);
+export function getProjectTrash(projectId: number | string) {
+  return api.get<ProjectTrash>(`/api/projects/${projectId}/trash`);
+}
+
+export function restoreEntry(entryId: number) {
+  return api.post<Entry>(`/api/entries/${entryId}/restore`);
 }

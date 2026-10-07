@@ -58,6 +58,23 @@ export type PagedEntries = {
   limit: number;
 };
 
+export type TrashTag = { id: number; name: string };
+
+export type TrashEntry = {
+  id: number;
+  date: string;
+  title?: string | null;
+  body?: string | null;
+  content: EntryContent;
+  deletedAt: string;
+  tags: TrashTag[];
+};
+
+export type ProjectTrash = {
+  project: Project;
+  entries: TrashEntry[];
+};
+
 export type Notification = {
   id: number;
   userId: string;

@@ -37,6 +37,8 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
     const panels = await listPanelsForProject(userId, projectId);
+    const includeHidden = req.query.includeHidden === 'true';
+    const panels = await listPanelsForProject(userId, projectId, { includeHidden });
     return res.status(200).json(panels);
   } catch (err) {
     console.error('GET stat-panels error:', err);
@@ -94,7 +96,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     const project = await getOwnedProject(projectId, userId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
-    const { name, expression, aggregation, rangeDays } = req.body ?? {};
+    const { name, expression, aggregation, rangeDays, hidden } = req.body ?? {};
 
     if (typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({ error: 'name is required' });
@@ -108,12 +110,16 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     if (rangeDays !== undefined && (typeof rangeDays !== 'number' || rangeDays < 1)) {
       return res.status(400).json({ error: 'rangeDays must be a positive integer' });
     }
+    if (hidden !== undefined && typeof hidden !== 'boolean') {
+      return res.status(400).json({ error: 'hidden must be a boolean' });
+    }
 
     const panel = await createPanel(userId, projectId, {
       name: name.trim(),
       expression,
       aggregation: aggregation as Aggregation | undefined,
       rangeDays,
+      hidden,
     });
     return res.status(201).json(panel);
   } catch (err: unknown) {
@@ -142,7 +148,7 @@ router.patch('/:panelId', authenticate, async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'You do not have access to this panel' });
     }
 
-    const { name, position, rangeDays, aggregation, expression } = req.body ?? {};
+    const { name, position, rangeDays, aggregation, expression, hidden } = req.body ?? {};
 
     if (aggregation !== undefined && !isAggregation(aggregation)) {
       return res.status(400).json({ error: 'aggregation must be sum or average' });

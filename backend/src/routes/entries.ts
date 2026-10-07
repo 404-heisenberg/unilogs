@@ -6,6 +6,11 @@ import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
 import { parseEntryListQuery } from '../lib/entryFilters.js';
 import { toAuditData, toEntrySnapshot } from '../lib/audit-snapshot.js';
 import { listEntryVersions, undeleteEntry } from '../services/entry-history-service.js';
+import {
+  listEntryVersions,
+  restoreEntryVersion,
+  undeleteEntry,
+} from '../services/entry-history-service.js';
 import { parseAsAtDate, reconstructAsAt } from '../services/asat-service.js';
 import { MAX_SYNC_BATCH_SIZE, syncEntries } from '../services/sync-service.js';
 
