@@ -1,4 +1,4 @@
-import type { Entry, ProjectTrash } from '@/types';
+import type { Entry, ProjectTrash, StatPanel, StatPanelInput, StatPanelPreview } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -84,6 +84,36 @@ export function getStatsSummary() {
 
 export function getFrequencyStats() {
   return api.get<FrequencyStats>('/api/stats/frequency');
+}
+
+const statPanelsPath = (projectId: number | string) => `/api/projects/${projectId}/stat-panels`;
+
+// One request returns visible AND hidden panels; the UI splits them on `hidden`.
+export function listStatPanels(projectId: number | string) {
+  return api.get<StatPanel[]>(`${statPanelsPath(projectId)}?includeHidden=true`);
+}
+
+export function previewStatPanel(projectId: number | string, input: StatPanelInput) {
+  return api.post<StatPanelPreview>(`${statPanelsPath(projectId)}/preview`, input);
+}
+
+export function createStatPanel(
+  projectId: number | string,
+  input: StatPanelInput & { name: string },
+) {
+  return api.post<StatPanel>(statPanelsPath(projectId), input);
+}
+
+export function updateStatPanel(
+  projectId: number | string,
+  panelId: number,
+  input: Partial<StatPanelInput & { name: string; position: number; hidden: boolean }>,
+) {
+  return api.patch<StatPanel>(`${statPanelsPath(projectId)}/${panelId}`, input);
+}
+
+export function deleteStatPanel(projectId: number | string, panelId: number) {
+  return api.delete<void>(`${statPanelsPath(projectId)}/${panelId}`);
 }
 
 export function getProjectTrash(projectId: number | string) {

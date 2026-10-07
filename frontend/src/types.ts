@@ -87,3 +87,37 @@ export type Tag = {
   name: string;
   usageCount: number;
 };
+
+export type StatPanelAggregation = 'sum' | 'average';
+
+export type StatPanelPoint = { date: string; value: number };
+
+export type StatPanel = {
+  id: number;
+  projectId: number;
+  name: string;
+  expression: string;
+  aggregation: StatPanelAggregation;
+  rangeDays: number;
+  position: number;
+  hidden: boolean;
+  createdAt: string;
+  // The list endpoint computes these. `value` is null when evaluation failed,
+  // and `error` then carries the reason.
+  value: number | null;
+  sampleCount: number;
+  series: StatPanelPoint[];
+  error?: string;
+};
+
+export type StatPanelInput = {
+  expression: string;
+  aggregation: StatPanelAggregation;
+  rangeDays: number;
+};
+
+export type StatPanelPreview = {
+  value: number;
+  sampleCount: number;
+  series: StatPanelPoint[];
+};
