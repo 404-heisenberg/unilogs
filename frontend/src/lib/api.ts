@@ -1,4 +1,4 @@
-import type { StatPanel, StatPanelInput, StatPanelPreview } from '@/types';
+import type { Entry, ProjectTrash, StatPanel, StatPanelInput, StatPanelPreview } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -114,4 +114,12 @@ export function updateStatPanel(
 
 export function deleteStatPanel(projectId: number | string, panelId: number) {
   return api.delete<void>(`${statPanelsPath(projectId)}/${panelId}`);
+}
+
+export function getProjectTrash(projectId: number | string) {
+  return api.get<ProjectTrash>(`/api/projects/${projectId}/trash`);
+}
+
+export function restoreEntry(entryId: number) {
+  return api.post<Entry>(`/api/entries/${entryId}/restore`);
 }

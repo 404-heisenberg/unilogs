@@ -42,8 +42,16 @@ export default function ProjectDetailPage() {
     summary,
     insights: insightsQuery,
     unfinished,
+    trash,
   } = useProjectWorkspace(projectId);
-  const { fieldActions, projectActions, markDone, markFailed } = useProjectMutations(projectId);
+  const {
+    fieldActions,
+    projectActions,
+    markDone,
+    markFailed,
+    restoreEntry: restoreTrashEntry,
+    restoringId,
+  } = useProjectMutations(projectId);
 
   const fieldList = useMemo(() => fields.data ?? [], [fields.data]);
   const sortedEntries = useMemo(() => sortEntries(entries.data ?? []), [entries.data]);
@@ -191,6 +199,13 @@ export default function ProjectDetailPage() {
                 }}
                 markFailed={markFailed}
                 onMarkDone={markDone}
+                trash={{
+                  entries: trash.data?.entries ?? [],
+                  isLoading: trash.isPending && trash.fetchStatus !== 'idle',
+                  isError: trash.isError,
+                }}
+                restoringId={restoringId}
+                onRestore={restoreTrashEntry}
               />
             )}
             {tab === 'entries' && (
