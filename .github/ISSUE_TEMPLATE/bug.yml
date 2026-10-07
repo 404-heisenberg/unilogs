@@ -13,6 +13,18 @@ body:
         **non-severe** bug:
         - **Severe** — blocks a key feature, corrupts data, or crashes.
         - **Minor** — cosmetic, low-impact, or a small edge case.
+
+        > **After submitting, apply the matching severity label.** The dropdown
+        > below only records your answer in the issue body, so the severity also
+        > has to be put on the card:
+        >
+        > - chose **Severe** → apply the `severe` label
+        > - chose **Minor** → apply the `minor` label
+        >
+        > A bug should always carry `bug` **and** one severity label. The label is
+        > what stays visible on the card after the bug is closed, which is how
+        > the tutor reviews what we found. The full process is in
+        > [How we track bugs](https://github.com/404-heisenberg/unilogs/blob/main/docs/docs/bug-tracking.mdx).
   - type: dropdown
     id: severity
     attributes:

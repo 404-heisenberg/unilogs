@@ -10,6 +10,7 @@ import {
   revokeShareToken,
 } from '../services/share-services.js';
 import { listProjectTrash } from '../services/entry-history-service.js';
+import statPanelsRoutes from './stat-panels.js';
 
 const router = Router();
 
@@ -333,5 +334,6 @@ function setArchived(archived: boolean, action: string): RequestHandler {
 
 router.post('/:id/archive', authenticate, setArchived(true, 'archive'));
 router.post('/:id/unarchive', authenticate, setArchived(false, 'unarchive'));
+router.use('/:id/stat-panels', statPanelsRoutes);
 
 export default router;

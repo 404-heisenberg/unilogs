@@ -21,12 +21,15 @@ model User {
   createdAt        DateTime
   updatedAt        DateTime
   remindersEnabled Boolean  @default(true)
+  dashboardLayout Json?
+  statPanels      StatPanel[]
 
   projects            Project[]
   sessions            Session[]
   accounts            Account[]
   tags                Tag[]
   calendarSuggestions CalendarSuggestion[]
+  calendarSources     CalendarSource[]
   notifications       Notification[]
 
   @@map("user")
@@ -39,16 +42,34 @@ enum ReminderFrequency {
 }
 
 model CalendarSuggestion {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  eventId   String
-  status    String
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  userId     String
+  calendarId String
+  eventId    String
+  status     String
+  createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, eventId])
+  @@unique([userId, calendarId, eventId])
   @@map("calendar_suggestions")
+}
+
+model CalendarSource {
+  id          Int     @id @default(autoincrement())
+  userId      String
+  calendarId  String
+  summary     String
+  description String?
+  color       String?
+  enabled     Boolean @default(true)
+  order       Int     @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, calendarId])
+  @@index([userId, order])
+  @@map("calendar_sources")
 }
 
 model Project {
@@ -67,6 +88,7 @@ model Project {
   notifications Notification[]
   tasks         Task[]
   shareTokens   ShareToken[]
+  statPanels StatPanel[]
 
   @@index([userId])
   @@map("projects")
@@ -269,4 +291,23 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+model StatPanel {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  projectId   Int
+  name        String
+  expression  String
+  aggregation String   @default("sum")
+  rangeDays   Int      @default(30)
+  position    Int      @default(0)
+  hidden      Boolean  @default(false)   
+  createdAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("stat_panels")
 }
