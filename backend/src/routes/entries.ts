@@ -6,6 +6,7 @@ import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
 import { parseEntryListQuery } from '../lib/entryFilters.js';
 import { toAuditData, toEntrySnapshot } from '../lib/audit-snapshot.js';
 import { listEntryVersions, undeleteEntry } from '../services/entry-history-service.js';
+import { parseAsAtDate, reconstructAsAt } from '../services/asat-service.js';
 import { MAX_SYNC_BATCH_SIZE, syncEntries } from '../services/sync-service.js';
 
 const router = Router();
@@ -141,6 +142,44 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   } catch (err) {
     console.error('POST /api/entries error:', err);
     return res.status(500).json({ error: 'Failed to create entry' });
+  }
+});
+
+// Read-only reconstruction of the logbook as it stood on a given date. Must
+// stay above `GET /:id`, or `as-at` is parsed as an entry id and 400s.
+router.get('/as-at', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const cutoff = parseAsAtDate(req.query.date);
+    if (!cutoff) {
+      return res.status(400).json({ error: 'date is required as YYYY-MM-DD' });
+    }
+
+    let projectId: number | undefined;
+    if (req.query.projectId !== undefined) {
+      const parsed = Number(req.query.projectId);
+      if (!Number.isInteger(parsed)) {
+        return res.status(400).json({ error: 'projectId must be a valid integer' });
+      }
+      projectId = parsed;
+    }
+
+    const entries = await reconstructAsAt(userId, cutoff, { projectId });
+
+    return res.status(200).json({
+      entries,
+      total: entries.length,
+      // The day asked for, echoed back because the cutoff itself is exclusive
+      // and midnight the following day is not a useful thing to show a caller.
+      date: String(req.query.date).trim(),
+    });
+  } catch (err) {
+    console.error('GET /api/entries/as-at error:', err);
+    return res.status(500).json({ error: 'Failed to reconstruct entries' });
   }
 });
 
