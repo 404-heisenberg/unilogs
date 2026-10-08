@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CalendarSourcesSettings from '@/components/settings/CalendarSourcesSettings';
 import NotificationsSettings from '@/components/settings/NotificationsSettings';
 import TagsSettings from '@/components/settings/TagsSettings';
 import { useCalendarConnection } from '@/hooks/useCalendarConnection';
@@ -289,6 +290,8 @@ export default function SettingsPage() {
           <NotificationsSettings />
 
           <GoogleCalendarSection />
+
+          <CalendarSourcesSettings />
 
           <TagsSettings />
         </div>

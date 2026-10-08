@@ -64,6 +64,23 @@ export type CalendarStatus = { connected: boolean };
 
 export type CalendarConnectResult = { url?: string; connected?: boolean };
 
+// One of the user's Google calendars. `enabled` decides whether its events
+// feed suggestions and the upcoming list.
+export type CalendarSource = {
+  id: number;
+  calendarId: string;
+  summary: string;
+  description: string;
+  color: string;
+  enabled: boolean;
+  order: number;
+};
+
+export type CalendarSourcesResponse = {
+  connected: boolean;
+  sources: CalendarSource[];
+};
+
 export type CalendarSuggestion = {
   id: string;
   title: string;
@@ -77,6 +94,17 @@ export type CalendarSuggestionsResponse = {
   connected: boolean;
   suggestions: CalendarSuggestion[];
 };
+
+export function listCalendarSources() {
+  return api.get<CalendarSourcesResponse>('/api/calendar/sources');
+}
+
+export function updateCalendarSource(
+  id: number,
+  input: Partial<Pick<CalendarSource, 'enabled' | 'color' | 'order'>>,
+) {
+  return api.patch<CalendarSource>(`/api/calendar/sources/${id}`, input);
+}
 
 export function getStatsSummary() {
   return api.get<StatsSummary>('/api/stats');
