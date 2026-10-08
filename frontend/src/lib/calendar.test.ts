@@ -6,10 +6,43 @@ import {
   shiftAnchor,
   toGridEntry,
   toGridEvent,
+  textOn,
   visibleWeeks,
+  type GridEntry,
+  type GridEvent,
   type GridItem,
 } from './calendar';
 import type { Entry } from '@/types';
+
+function gridEvent(overrides: Partial<GridEvent>): GridEvent {
+  return {
+    kind: 'event',
+    key: 'event',
+    day: 'd',
+    time: null,
+    hour: null,
+    title: 't',
+    description: null,
+    calendar: 'A',
+    color: '#000000',
+    start: null,
+    ...overrides,
+  };
+}
+
+function gridEntry(overrides: Partial<GridEntry>): GridEntry {
+  return {
+    kind: 'entry',
+    key: 'entry',
+    day: 'd',
+    id: 1,
+    title: 'Entry',
+    projectId: 1,
+    time: '10:00',
+    hour: 10,
+    ...overrides,
+  };
+}
 
 describe('visibleWeeks', () => {
   it('pads a month out to whole Monday-first weeks', () => {
@@ -81,44 +114,23 @@ describe('toGridEntry', () => {
       content: { Notes: 'Cache results' },
     } as Entry;
 
-    expect(toGridEntry(entry)).toMatchObject({ day: '2026-09-10', title: 'Cache results' });
+    const logged = new Date('2026-09-10T15:00:00.000Z');
+    expect(toGridEntry(entry)).toMatchObject({
+      day: '2026-09-10',
+      title: 'Cache results',
+      // Placed by when it was logged, in the viewer's time zone.
+      hour: logged.getHours(),
+    });
   });
 });
 
 describe('groupByDay', () => {
   it('orders timed events, then all-day events, then entries', () => {
     const items: GridItem[] = [
-      { kind: 'entry', key: 'e', day: 'd', id: 1, title: 'Entry', projectId: 1 },
-      {
-        kind: 'event',
-        key: 'late',
-        day: 'd',
-        time: '15:00',
-        title: 'Late',
-        calendar: 'A',
-        color: '#000',
-        start: null,
-      },
-      {
-        kind: 'event',
-        key: 'all',
-        day: 'd',
-        time: null,
-        title: 'All day',
-        calendar: 'A',
-        color: '#000',
-        start: null,
-      },
-      {
-        kind: 'event',
-        key: 'early',
-        day: 'd',
-        time: '09:00',
-        title: 'Early',
-        calendar: 'A',
-        color: '#000',
-        start: null,
-      },
+      gridEntry({ key: 'e' }),
+      gridEvent({ key: 'late', time: '15:00', hour: 15 }),
+      gridEvent({ key: 'all' }),
+      gridEvent({ key: 'early', time: '09:00', hour: 9 }),
     ];
 
     expect(
@@ -131,16 +143,8 @@ describe('groupByDay', () => {
 
 describe('legendCalendars', () => {
   it('lists each calendar once, in first-seen order', () => {
-    const event = (calendar: string, color: string) => ({
-      kind: 'event' as const,
-      key: calendar + color,
-      day: 'd',
-      time: null,
-      title: 't',
-      calendar,
-      color,
-      start: null,
-    });
+    const event = (calendar: string, color: string) =>
+      gridEvent({ key: calendar + color, calendar, color });
 
     expect(
       legendCalendars([
@@ -152,5 +156,13 @@ describe('legendCalendars', () => {
       { name: 'Lectures', color: '#d4a843' },
       { name: 'Tutorials', color: '#44a054' },
     ]);
+  });
+});
+
+describe('textOn', () => {
+  it('puts dark text on gold and white text on blue or green', () => {
+    expect(textOn('#d4a843')).toBe('dark');
+    expect(textOn('#4178db')).toBe('light');
+    expect(textOn('#44a054')).toBe('light');
   });
 });

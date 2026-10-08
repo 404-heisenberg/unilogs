@@ -85,6 +85,7 @@ export type CalendarSuggestion = {
 export type CalendarEvent = {
   id?: string;
   summary?: string;
+  description?: string;
   start?: { dateTime?: string; date?: string };
   end?: { dateTime?: string; date?: string };
   calendarId?: string;

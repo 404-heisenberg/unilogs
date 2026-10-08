@@ -46,6 +46,9 @@
   --color-danger: #9c2a2a; /* destructive buttons */
   --color-danger-text: #8c2121;
   --color-danger-soft: #f5e0e0; /* destructive button fill */
+  --color-logged: #d4843a; /* logged entries on the calendar */
+  --color-logged-soft: #fdf4e5; /* "Logged" badge fill */
+  --color-today-soft: #fffaf0; /* today's calendar cell */
   /* Categorical colours for projects, tags and charts. */
   --color-data-orange: #ef8a4b;
   --color-data-olive: #c9b559;

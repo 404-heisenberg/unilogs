@@ -32,6 +32,10 @@ export function localToday(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
+function clock(date: Date): string {
+  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 function parts(day: string) {
   const [year, month, date] = day.split('-').map(Number);
   return { year, month, date };
@@ -122,7 +126,10 @@ export type GridEvent = {
   day: string;
   /** `14:00`, or null for an all-day event. */
   time: string | null;
+  /** The hour row it sits in on the week view; null for all-day. */
+  hour: number | null;
   title: string;
+  description: string | null;
   calendar: string;
   color: string;
   start: string | null;
@@ -135,6 +142,9 @@ export type GridEntry = {
   id: number;
   title: string;
   projectId: number;
+  /** When it was logged, `16:35`; the week view places it by this. */
+  time: string;
+  hour: number;
 };
 
 export type GridItem = GridEvent | GridEntry;
@@ -158,10 +168,10 @@ export function toGridEvent(event: CalendarEvent, index: number): GridEvent | nu
     kind: 'event',
     key: `event-${event.calendarId ?? ''}-${event.id ?? index}`,
     day,
-    time: start
-      ? start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
-      : null,
+    time: start ? clock(start) : null,
+    hour: start ? start.getHours() : null,
     title: event.summary?.trim() || 'Untitled event',
+    description: event.description?.trim() || null,
     calendar: event.calendarSummary ?? 'Calendar',
     color: event.color ?? FALLBACK_COLOR,
     start: dateTime ?? allDay ?? null,
@@ -172,9 +182,12 @@ export function toGridEntry(entry: Entry): GridEntry {
   const fromContent = Object.values(entry.content).find(
     (value) => typeof value === 'string' && value.trim() !== '',
   );
+  const logged = new Date(entry.createdAt);
   return {
     kind: 'entry',
     key: `entry-${entry.id}`,
+    time: clock(logged),
+    hour: logged.getHours(),
     // Entry dates are stored as midnight UTC, so the first ten characters
     // are the day itself.
     day: entry.date.slice(0, 10),
@@ -193,8 +206,7 @@ export function groupByDay(items: GridItem[]): Map<string, GridItem[]> {
   const sorted = [...items].sort((a, b) => {
     const byRank = rank(a) - rank(b);
     if (byRank !== 0) return byRank;
-    if (a.kind === 'event' && b.kind === 'event') return (a.time ?? '').localeCompare(b.time ?? '');
-    return 0;
+    return (a.time ?? '').localeCompare(b.time ?? '');
   });
 
   const byDay = new Map<string, GridItem[]>();
@@ -213,4 +225,13 @@ export function legendCalendars(events: GridEvent[]): { name: string; color: str
     if (!seen.has(event.calendar)) seen.set(event.calendar, event.color);
   }
   return Array.from(seen, ([name, color]) => ({ name, color }));
+}
+
+/** Dark or light text, whichever reads on a solid pill of `hex`. */
+export function textOn(hex: string): 'dark' | 'light' {
+  const value = hex.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(value)) return 'light';
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16) / 255);
+  // Perceived brightness; gold (#d4a843) lands above the line, blue below.
+  return 0.299 * r + 0.587 * g + 0.114 * b > 0.6 ? 'dark' : 'light';
 }

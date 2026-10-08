@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { configure, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import CalendarPage from './CalendarPage';
 import type { CalendarEvent } from '@/lib/api';
 import type { Entry } from '@/types';
+
+// The page draws a month on desktop and on mobile at once; the first render
+// in a cold worker can pass the default 1s wait, so allow a little longer.
+configure({ asyncUtilTimeout: 3000 });
 
 const { getMock } = vi.hoisted(() => ({ getMock: vi.fn() }));
 
@@ -21,6 +25,14 @@ vi.mock('@/lib/api', async (importOriginal) => {
 });
 
 const EVENTS: CalendarEvent[] = [
+  {
+    id: 'meeting',
+    summary: 'Supervisor meeting',
+    description: 'Thesis presentation & outline',
+    start: { dateTime: new Date(2026, 8, 12, 14, 0).toISOString() },
+    calendarSummary: 'Personal',
+    color: '#4178db',
+  },
   {
     id: 'lecture',
     summary: 'CS Theory Lecture',
@@ -46,6 +58,14 @@ const ENTRIES: Entry[] = [
     title: 'Register interference graph',
     content: {},
   },
+  {
+    id: 43,
+    projectId: 2,
+    date: '2026-09-12T00:00:00.000Z',
+    createdAt: new Date(2026, 8, 12, 9, 15).toISOString(),
+    title: 'Literature review notes',
+    content: {},
+  },
 ];
 
 function mockApi({ connected = true }: { connected?: boolean } = {}) {
@@ -54,6 +74,9 @@ function mockApi({ connected = true }: { connected?: boolean } = {}) {
       return Promise.resolve(
         connected ? { connected: true, events: EVENTS } : { connected: false },
       );
+    }
+    if (path.startsWith('/api/projects')) {
+      return Promise.resolve([{ id: 2, name: 'Computer Architecture', archived: false }]);
     }
     if (path.startsWith('/api/entries')) {
       return Promise.resolve({ entries: ENTRIES, total: ENTRIES.length, page: 1, limit: 100 });
@@ -71,6 +94,11 @@ function renderPage() {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+// Desktop and mobile toolbars each show the range as a heading.
+function rangeHeading(name: string) {
+  return screen.getAllByRole('heading', { name })[0];
 }
 
 function calls(prefix: string) {
@@ -144,16 +172,19 @@ describe('CalendarPage', () => {
   it('moves between months and into week view', async () => {
     mockApi();
     renderPage();
-    expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeInTheDocument();
+    expect(
+      (await screen.findAllByRole('heading', { name: 'September 2026' }))[0],
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Next month' }));
-    expect(screen.getByRole('heading', { name: 'October 2026' })).toBeInTheDocument();
+    expect(rangeHeading('October 2026')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Previous month' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Week' }));
+    // Desktop and mobile each have a view switch; they share state.
+    await userEvent.click(screen.getAllByRole('button', { name: 'Week' })[0]);
 
-    expect(screen.getByRole('heading', { name: 'September 7–13, 2026' })).toBeInTheDocument();
+    expect(rangeHeading('September 7–13, 2026')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Next week' }));
-    expect(screen.getByRole('heading', { name: 'September 14–20, 2026' })).toBeInTheDocument();
+    expect(rangeHeading('September 14–20, 2026')).toBeInTheDocument();
   });
 
   it('points to Settings when Google Calendar is not connected', async () => {
@@ -164,5 +195,49 @@ describe('CalendarPage', () => {
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
     // Entries still show without a calendar.
     expect(screen.getByRole('link', { name: /Register interference graph/ })).toBeInTheDocument();
+  });
+
+  it('places events and entries on their hour in the week view', async () => {
+    mockApi();
+    renderPage();
+    await screen.findAllByRole('heading', { name: 'September 2026' });
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Week' })[0]);
+
+    const hours = screen.getByTestId('week-hours');
+    // Saturday is the sixth day column; each column has 24 hour rows.
+    const saturday = hours.children[6];
+    expect(
+      within(saturday.children[14] as HTMLElement).getByText('Supervisor meeting'),
+    ).toBeInTheDocument();
+    expect(
+      within(saturday.children[9] as HTMLElement).getByText('Literature review notes'),
+    ).toBeInTheDocument();
+  });
+
+  it('lists the chosen day on mobile, with event details and logged entries', async () => {
+    mockApi();
+    renderPage();
+
+    const panel = (await screen.findByRole('heading', { name: 'Saturday, 12 September' }))
+      .parentElement!.parentElement!;
+    expect(await within(panel).findByText('Thesis presentation & outline')).toBeInTheDocument();
+    expect(within(panel).getByText('Logged Entry')).toBeInTheDocument();
+    expect(within(panel).getByText('Computer Architecture')).toBeInTheDocument();
+    expect(within(panel).getByText('LOGGED')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /^Thursday, 10 September/ }));
+    expect(screen.getByRole('heading', { name: 'Thursday, 10 September' })).toBeInTheDocument();
+  });
+
+  it('jumps to a month picked from the mobile month label', async () => {
+    mockApi();
+    renderPage();
+    await screen.findAllByRole('heading', { name: 'September 2026' });
+
+    fireEvent.change(screen.getByLabelText('Choose month'), { target: { value: '2026-11' } });
+
+    expect(rangeHeading('November 2026')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sunday, 1 November' })).toBeInTheDocument();
   });
 });
