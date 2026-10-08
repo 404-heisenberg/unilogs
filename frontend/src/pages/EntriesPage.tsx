@@ -230,14 +230,6 @@ export default function EntriesPage() {
           >
             <SlidersHorizontal className="size-4 md:size-3.5" strokeWidth={2} />
           </button>
-          {/* Mobile has no header row, so History sits beside the filters. */}
-          <Link
-            to="/entries/as-at"
-            aria-label="History"
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-clay md:hidden"
-          >
-            <Clock className="size-4" strokeWidth={2} aria-hidden />
-          </Link>
         </div>
       )}
 

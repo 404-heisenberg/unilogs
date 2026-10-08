@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, CornerUpLeft, Plus } from 'lucide-react';
+import { ChevronLeft, Clock, CornerUpLeft, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
 
@@ -116,7 +116,22 @@ export default function AppHeader() {
       ) : (
         <p className="truncate text-lg font-bold text-espresso">{titleFor(pathname)}</p>
       )}
-      <HeaderAction pathname={pathname} projectId={projectId} />
+      {pathname === '/entries' ? (
+        // The page's own History button is desktop-only, so the timeline's
+        // way into the as-at view lives up here on mobile.
+        <div className="flex items-center gap-2">
+          <Link
+            to="/entries/as-at"
+            aria-label="History"
+            className="flex size-11 items-center justify-center rounded-full border border-line text-clay"
+          >
+            <Clock size={16} strokeWidth={2} aria-hidden />
+          </Link>
+          <HeaderAction pathname={pathname} projectId={projectId} />
+        </div>
+      ) : (
+        <HeaderAction pathname={pathname} projectId={projectId} />
+      )}
     </header>
   );
 }

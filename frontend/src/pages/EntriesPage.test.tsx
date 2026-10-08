@@ -126,10 +126,7 @@ describe('EntriesPage', () => {
     renderPage();
 
     await screen.findByText('Literature review notes');
-    // Desktop header button and the mobile chip-row icon both lead there.
-    const links = screen.getAllByRole('link', { name: 'History' });
-    expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(link).toHaveAttribute('href', '/entries/as-at');
+    expect(screen.getByRole('link', { name: 'History' })).toHaveAttribute('href', '/entries/as-at');
   });
 
   it('shows the time each entry was logged, not the midnight of its date', async () => {
