@@ -120,6 +120,15 @@ describe('EntriesPage', () => {
     expect(screen.getByRole('link', { name: /Gym Log/ })).toBeInTheDocument();
   });
 
+  it('links to the as-at history view', async () => {
+    mockEntries(ENTRIES);
+
+    renderPage();
+
+    await screen.findByText('Literature review notes');
+    expect(screen.getByRole('link', { name: 'History' })).toHaveAttribute('href', '/entries/as-at');
+  });
+
   it('shows the time each entry was logged, not the midnight of its date', async () => {
     // `date` is stored as midnight UTC, so formatting it gave every card the
     // same time (#270). `createdAt` holds the real logging time.

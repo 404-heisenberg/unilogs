@@ -24,6 +24,7 @@ const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
 const ProjectCreatePage = lazy(() => import('./pages/ProjectCreatePage'));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
 const EntriesPage = lazy(() => import('./pages/EntriesPage'));
+const EntriesAsAtPage = lazy(() => import('./pages/EntriesAsAtPage'));
 const EntryCreatePage = lazy(() => import('./pages/EntryCreatePage'));
 const EntryDetailPage = lazy(() => import('./pages/EntryDetailPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -99,6 +100,7 @@ const router = createBrowserRouter([
           { path: '/projects/:projectId', element: <ProjectDetailPage /> },
           { path: '/entries', element: <EntriesPage /> },
           { path: '/entries/new', element: <EntryCreatePage /> },
+          { path: '/entries/as-at', element: <EntriesAsAtPage /> },
           { path: '/entries/:entryId', element: <EntryDetailPage /> },
           { path: '/entries/:id/edit', element: <EntryCreatePage /> },
           { path: '/suggestions', element: <SuggestionsPage /> },
