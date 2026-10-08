@@ -93,7 +93,7 @@ export default function CalendarSourcesSettings() {
         </p>
       </div>
 
-      <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
+      <div className="w-full overflow-hidden rounded-xl border border-line bg-white">
         {sourcesQuery.isPending && (
           <Skeleton rows={3} barClassName="h-8 rounded-md bg-sand" className="p-4" />
         )}

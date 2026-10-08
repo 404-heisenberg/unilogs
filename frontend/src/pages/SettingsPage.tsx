@@ -18,7 +18,7 @@ function GoogleCalendarSection() {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-[13px] font-bold text-espresso uppercase">Integrations</h2>
-      <div className="rounded-xl border border-line bg-paper p-4">
+      <div className="rounded-xl border border-line bg-white p-4">
         <div className="flex items-center gap-3">
           <Calendar className="size-5 shrink-0 text-cocoa" strokeWidth={1.75} aria-hidden />
           <div className="min-w-0 flex-1">
@@ -188,7 +188,7 @@ export default function SettingsPage() {
           {data?.user && (
             <section className="flex flex-col gap-3">
               <h2 className="text-[13px] font-bold text-espresso uppercase">Profile</h2>
-              <div className="flex items-center gap-3 rounded-xl border border-line bg-paper p-4">
+              <div className="flex items-center gap-3 rounded-xl border border-line bg-white p-4">
                 <span
                   className="flex size-12 shrink-0 items-center justify-center rounded-full bg-caramel text-base font-semibold text-white"
                   aria-hidden
@@ -207,7 +207,7 @@ export default function SettingsPage() {
 
           <section className="flex flex-col gap-3">
             <h2 className="text-[13px] font-bold text-espresso uppercase">Session</h2>
-            <div className="rounded-xl border border-line bg-paper p-4">
+            <div className="rounded-xl border border-line bg-white p-4">
               <p className="text-sm text-clay">Sign out of UniLogs on this device.</p>
               <Button
                 type="button"
