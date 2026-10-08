@@ -6,16 +6,45 @@ import { MemoryRouter } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import SettingsPage from './SettingsPage';
 
-const { getMock, postMock, deleteMock } = vi.hoisted(() => ({
+const { getMock, postMock, deleteMock, patchMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   deleteMock: vi.fn(),
+  patchMock: vi.fn(),
 }));
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
-  return { ...actual, api: { ...actual.api, get: getMock, post: postMock, delete: deleteMock } };
+  return {
+    ...actual,
+    api: { ...actual.api, get: getMock, post: postMock, delete: deleteMock, patch: patchMock },
+    // The real helpers close over the unmocked `api`, so route them here.
+    listCalendarSources: () => getMock('/api/calendar/sources'),
+    updateCalendarSource: (id: number, input: unknown) =>
+      patchMock(`/api/calendar/sources/${id}`, input),
+  };
 });
+
+const SOURCES = [
+  {
+    id: 1,
+    calendarId: 'lectures@group.calendar.google.com',
+    summary: 'Lectures',
+    description: '',
+    color: '#d4a843',
+    enabled: true,
+    order: 0,
+  },
+  {
+    id: 2,
+    calendarId: 'tutorials@group.calendar.google.com',
+    summary: 'Tutorials',
+    description: '',
+    color: '#3e7a52',
+    enabled: false,
+    order: 1,
+  },
+];
 
 const SESSION = { session: {}, user: { id: 'u1', name: 'Ada', email: 'ada@example.test' } };
 
@@ -38,6 +67,7 @@ function otherSettingsSectionsDefault(path: string): unknown {
   if (path === '/api/settings') return { remindersEnabled: true };
   if (path.startsWith('/api/projects')) return [];
   if (path === '/api/tags') return [];
+  if (path === '/api/calendar/sources') return { connected: true, sources: SOURCES };
   return undefined;
 }
 
@@ -201,5 +231,52 @@ describe('Google Calendar settings', () => {
     await userEvent.click(await screen.findByRole('button', { name: /connect google calendar/i }));
 
     expect(await screen.findByText('Failed to connect Google Calendar')).toBeInTheDocument();
+  });
+});
+
+describe('Calendar sources', () => {
+  it('lists each Google calendar with its on/off switch once connected', async () => {
+    mockCalendarStatus(true);
+    renderPage();
+
+    const lectures = await screen.findByRole('switch', { name: 'Use the Lectures calendar' });
+    const tutorials = screen.getByRole('switch', { name: 'Use the Tutorials calendar' });
+    expect(lectures).toBeChecked();
+    expect(tutorials).not.toBeChecked();
+    expect(screen.getByText('Lectures')).toBeInTheDocument();
+    expect(screen.getAllByText('Google')).toHaveLength(2);
+  });
+
+  it('is hidden, and asks Google for nothing, while disconnected', async () => {
+    mockCalendarStatus(false);
+    renderPage();
+
+    expect(await screen.findByText('Not connected')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Calendars' })).not.toBeInTheDocument();
+    expect(getMock).not.toHaveBeenCalledWith('/api/calendar/sources');
+  });
+
+  it('turns a calendar off with a PATCH', async () => {
+    mockCalendarStatus(true);
+    patchMock.mockResolvedValue({ ...SOURCES[0], enabled: false });
+    renderPage();
+
+    const lectures = await screen.findByRole('switch', { name: 'Use the Lectures calendar' });
+    await userEvent.click(lectures);
+
+    expect(patchMock).toHaveBeenCalledWith('/api/calendar/sources/1', { enabled: false });
+    await waitFor(() => expect(lectures).not.toBeChecked());
+  });
+
+  it('puts the switch back if the change fails', async () => {
+    mockCalendarStatus(true);
+    patchMock.mockRejectedValue(new Error('Failed to update calendar sources'));
+    renderPage();
+
+    const tutorials = await screen.findByRole('switch', { name: 'Use the Tutorials calendar' });
+    await userEvent.click(tutorials);
+
+    expect(await screen.findByText('Failed to update calendar sources')).toBeInTheDocument();
+    expect(tutorials).not.toBeChecked();
   });
 });
