@@ -1,4 +1,4 @@
-import { LayoutDashboard, Folder, FileText } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, Folder, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export type NavItem = {
@@ -13,6 +13,7 @@ export const primaryNavItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/projects', label: 'Projects', icon: Folder },
   { to: '/entries', label: 'Entries', icon: FileText },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
 ];
 
 export function isNavActive(pathname: string, to: string) {

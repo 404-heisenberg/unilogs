@@ -80,6 +80,27 @@ export type CalendarSuggestion = {
   projectId?: number;
 };
 
+// A Google event as GET /api/calendar/events returns it: Google's own shape,
+// tagged with the calendar it came from.
+export type CalendarEvent = {
+  id?: string;
+  summary?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+  calendarId?: string;
+  calendarSummary?: string;
+  color?: string | null;
+};
+
+export type CalendarEventsResponse =
+  { connected: true; events: CalendarEvent[] } | { connected: false; message?: string };
+
+/** Every event from the enabled calendars between two ISO instants. */
+export function getCalendarEvents(range: { from: string; to: string }) {
+  const params = new URLSearchParams(range);
+  return api.get<CalendarEventsResponse>(`/api/calendar/events?${params.toString()}`);
+}
+
 export type CalendarSuggestionsResponse = {
   connected: boolean;
   suggestions: CalendarSuggestion[];
