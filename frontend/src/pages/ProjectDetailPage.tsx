@@ -181,6 +181,8 @@ export default function ProjectDetailPage() {
           <TabPanel tab={tab}>
             {tab === 'overview' && (
               <OverviewTab
+                projectId={projectId}
+                fields={fieldList}
                 today={today}
                 summary={summary.data}
                 insights={insights}

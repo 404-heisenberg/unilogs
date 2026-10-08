@@ -35,8 +35,10 @@ import {
   type UnfinishedStats,
   type WeekBar,
 } from '@/lib/project-workspace';
-import type { Entry, FieldDefinition, Project, TrashEntry } from '@/types';
+import type { Entry, FieldDefinition, Project, StatPanel, TrashEntry } from '@/types';
 import { projectColor } from '@/lib/colors';
+import StatPanelBuilderDialog from '@/components/project/StatPanelBuilderDialog';
+import { SavedStatPanels } from '@/components/project/StatPanelCard';
 
 const CARD = 'rounded-xl border border-cream bg-paper';
 const LABEL = 'text-[11px] font-bold uppercase text-clay';
@@ -454,6 +456,8 @@ function RecentlyDeleted({
 }
 
 type OverviewProps = {
+  projectId: string;
+  fields: FieldDefinition[];
   today: string;
   summary: ProjectSummary | undefined;
   insights: FieldInsight[];
@@ -480,6 +484,8 @@ type OverviewProps = {
 };
 
 export function OverviewTab({
+  projectId,
+  fields,
   today,
   summary,
   insights,
@@ -496,14 +502,28 @@ export function OverviewTab({
   restoringId,
   onRestore,
 }: OverviewProps) {
+  const [builder, setBuilder] = useState<{ open: boolean; panel: StatPanel | null }>({
+    open: false,
+    panel: null,
+  });
+
   return (
     <div className="flex flex-col gap-8">
       <SummaryCards summary={summary} today={today} />
 
       <section aria-labelledby="insights-heading">
-        <h2 id="insights-heading" className={`mb-3 ${SECTION_HEADING}`}>
-          Field insights
-        </h2>
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <h2 id="insights-heading" className={SECTION_HEADING}>
+            Field insights
+          </h2>
+          <button
+            type="button"
+            onClick={() => setBuilder({ open: true, panel: null })}
+            className={LINK_BUTTON}
+          >
+            Add stat panel
+          </button>
+        </div>
         {insightsLoading && <Skeleton rows={1} />}
         {insightsError && (
           <ErrorNote>Failed to load field insights. Try refreshing the page.</ErrorNote>
@@ -519,6 +539,12 @@ export function OverviewTab({
           </ul>
         )}
       </section>
+
+      <SavedStatPanels
+        projectId={projectId}
+        fields={fields}
+        onEdit={(panel) => setBuilder({ open: true, panel })}
+      />
 
       <StillOpen
         stats={unfinished.stats}
@@ -536,6 +562,14 @@ export function OverviewTab({
           <RecentEntries entries={recent} today={today} />
         </div>
       )}
+
+      <StatPanelBuilderDialog
+        open={builder.open}
+        onOpenChange={(open) => setBuilder((prev) => ({ ...prev, open }))}
+        projectId={projectId}
+        fields={fields}
+        panel={builder.panel}
+      />
 
       <RecentlyDeleted
         entries={trash.entries}
