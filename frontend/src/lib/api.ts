@@ -190,3 +190,35 @@ export function getEntriesAsAt(date: string) {
 export function restoreEntry(entryId: number) {
   return api.post<Entry>(`/api/entries/${entryId}/restore`);
 }
+
+// Offline capture. The client hands us entries captured while offline, each
+// carrying a `clientId` it generated before the save; the endpoint upserts on
+// that id, so replaying the same queue after a dropped connection cannot
+// duplicate anything. Create-only - it never updates an existing entry.
+export type SyncQueuedEntry = {
+  clientId: string;
+  projectId: number;
+  content: Record<string, unknown>;
+  date?: string;
+  // Carried for parity with POST /api/entries. The Entry model has no dueDate
+  // column yet, so both routes ignore it - the queue matching the online path
+  // is the point, not the field itself.
+  dueDate?: string;
+  title?: string;
+  body?: string;
+  tagIds?: number[];
+};
+
+export type SyncEntryResult = {
+  clientId: string;
+  // `created` - written now. `duplicate` - a row already carries this clientId,
+  // so it is safe to drop from the queue. `failed` - rejected, and `reason` says
+  // why; one failure never rejects the rest of the batch.
+  status: 'created' | 'duplicate' | 'failed';
+  entryId?: number;
+  reason?: string;
+};
+
+export function syncEntries(entries: SyncQueuedEntry[]) {
+  return api.post<{ results: SyncEntryResult[] }>('/api/entries/sync', { entries });
+}

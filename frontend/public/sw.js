@@ -1,7 +1,7 @@
 // Minimal app-shell cache, stale-while-revalidate. Deliberately never
 // touches /api/* — API data belongs to TanStack Query, not this cache; a
 // service worker silently serving stale API responses would be a real bug.
-const CACHE_VERSION = 'unilogs-v1';
+const CACHE_VERSION = 'unilogs-v2';
 const PRECACHE_URLS = ['/', '/manifest.json', '/favicon.svg'];
 
 self.addEventListener('install', (event) => {
