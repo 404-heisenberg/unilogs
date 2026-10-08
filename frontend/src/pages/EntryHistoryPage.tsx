@@ -5,10 +5,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ArrowLeft, RotateCcw, History } from 'lucide-react';
 import Skeleton from '@/components/Skeleton';
-import { api } from '@/lib/api';
+import { api, getEntryHistory, restoreEntryVersion } from '@/lib/api';
 import { tagStyle } from '@/lib/colors';
 import { entryDurationHours, formatDurationHours } from '@/lib/project-workspace';
-import type { Entry, EntryVersion, FieldDefinition } from '@/types';
+import type { Entry, EntryContent, EntryVersion, FieldDefinition } from '@/types';
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return '';
@@ -39,105 +39,54 @@ function formatFieldValue(value: unknown, fieldType: string | undefined): string
   return String(value);
 }
 
-function getVersionId(
-  version: EntryVersion | Record<string, unknown>,
-): number | string | undefined {
-  const v = version as Record<string, unknown>;
-  return (
-    (v.id as number | string) ??
-    (v.auditId as number | string) ??
-    (v.versionId as number | string) ??
-    (v.version_id as number | string)
-  );
+// A snapshot is the entry as it stood after that write. It is nullable — a row
+// recorded before snapshots existed has nothing to show — so every read falls
+// back to the entry's current state rather than rendering an empty page.
+function versionTitle(version: EntryVersion | undefined, fallback: Entry | null): string {
+  return version?.snapshot?.title ?? fallback?.title ?? 'Untitled entry';
 }
 
-function getVersionTitle(
-  version: EntryVersion | Record<string, unknown>,
-  fallbackEntry: Entry | null,
-): string {
-  const v = version as Record<string, unknown>;
-  const content = v.content as Record<string, unknown> | undefined;
-  return (
-    (v.title as string) ??
-    (v.snapshot as Record<string, unknown>)?.title ??
-    (v.data as Record<string, unknown>)?.title ??
-    (typeof content === 'object' && content !== null && !Array.isArray(content)
-      ? (content.title as string)
-      : undefined) ??
-    fallbackEntry?.title ??
-    'Untitled entry'
-  );
+function versionBody(version: EntryVersion | undefined, fallback: Entry | null): string {
+  return version?.snapshot?.body ?? fallback?.body ?? '';
 }
 
-function getVersionBody(
-  version: EntryVersion | Record<string, unknown>,
-  fallbackEntry: Entry | null,
-): string {
-  const v = version as Record<string, unknown>;
-  const content = v.content as Record<string, unknown> | undefined;
-  return (
-    (v.body as string) ??
-    (v.snapshot as Record<string, unknown>)?.body ??
-    (v.data as Record<string, unknown>)?.body ??
-    (typeof content === 'object' && content !== null && !Array.isArray(content)
-      ? (content.body as string)
-      : undefined) ??
-    fallbackEntry?.body ??
-    ''
-  );
+function versionFields(version: EntryVersion | undefined, fallback: Entry | null): EntryContent {
+  const raw = version?.snapshot?.content ?? fallback?.content ?? {};
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+  const fields = { ...raw };
+  delete fields.title;
+  delete fields.body;
+  return fields;
 }
 
-function getVersionFields(
-  version: EntryVersion | Record<string, unknown>,
-  fallbackEntry: Entry | null,
-): Record<string, unknown> {
-  const v = version as Record<string, unknown>;
-  const rawContent =
-    v.content ??
-    (v.snapshot as Record<string, unknown>)?.content ??
-    (v.data as Record<string, unknown>)?.content ??
-    fallbackEntry?.content ??
-    {};
-
-  if (typeof rawContent === 'object' && rawContent !== null && !Array.isArray(rawContent)) {
-    const fields = { ...(rawContent as Record<string, unknown>) };
-    delete fields.title;
-    delete fields.body;
-    return fields;
-  }
-  return {};
+// Snapshots store tag ids, not tag objects, so a historical tag renders only
+// while it still exists on the entry. Ids with no match are dropped rather than
+// shown as an unnamed pill.
+function versionTags(
+  version: EntryVersion | undefined,
+  fallback: Entry | null,
+): Array<{ tag: { id: number; name: string } }> {
+  const ids = version?.snapshot?.tagIds;
+  if (!ids) return fallback?.tags ?? [];
+  const known = new Map((fallback?.tags ?? []).map(({ tag }) => [tag.id, tag]));
+  return ids
+    .map((id) => known.get(id))
+    .filter((tag): tag is { id: number; name: string } => tag !== undefined)
+    .map((tag) => ({ tag }));
 }
 
-function getVersionTags(
-  version: EntryVersion | Record<string, unknown>,
-  fallbackEntry: Entry | null,
-): Array<{ tag: { id: number; name: string; userId?: string } }> {
-  const v = version as Record<string, unknown>;
-  const snapshot = (v.snapshot ?? v.data ?? v) as Record<string, unknown>;
-  const rawTags = v.tags ?? snapshot.tags;
-  if (Array.isArray(rawTags)) {
-    return rawTags.map((t: unknown) => {
-      const item = t as Record<string, unknown>;
-      if (item && typeof item === 'object') {
-        if ('tag' in item && item.tag) {
-          return item as { tag: { id: number; name: string; userId?: string } };
-        }
-        if ('id' in item && 'name' in item) {
-          return { tag: item as unknown as { id: number; name: string; userId?: string } };
-        }
-      }
-      return { tag: { id: 0, name: '' } };
-    });
-  }
-  return fallbackEntry?.tags ?? [];
-}
+const ACTION_LABEL = {
+  CREATE: 'CREATED',
+  UPDATE: 'EDITED',
+  DELETE: 'DELETED',
+} as const;
 
 export default function EntryHistoryPage() {
   const { entryId } = useParams<{ entryId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [selectedVersionKey, setSelectedVersionKey] = useState<string | number | null>(null);
+  const [selectedVersionKey, setSelectedVersionKey] = useState<number | null>(null);
 
   const { data: entry } = useQuery({
     queryKey: ['entry', entryId],
@@ -153,37 +102,29 @@ export default function EntryHistoryPage() {
   });
 
   const {
-    data: rawVersions,
+    data: rawVersions = [],
     isPending,
     isError,
   } = useQuery({
     queryKey: ['entry-history', entryId],
-    queryFn: () =>
-      api.get<EntryVersion[] | { versions?: EntryVersion[]; data?: EntryVersion[] }>(
-        `/api/entries/${entryId}/history`,
-      ),
+    queryFn: () => getEntryHistory(entryId ?? ''),
     enabled: !!entryId,
   });
 
-  // Deduplicate history versions chronologically (oldest to newest)
+  // Deduplicate identical content chronologically (oldest to newest). Saving an
+  // entry writes an UPDATE audit row even when nothing changed, so two no-op
+  // saves would otherwise read back as two identical versions.
   const versions: EntryVersion[] = useMemo(() => {
-    const raw = Array.isArray(rawVersions)
-      ? rawVersions
-      : Array.isArray((rawVersions as { versions?: EntryVersion[] })?.versions)
-        ? (rawVersions as { versions: EntryVersion[] }).versions
-        : Array.isArray((rawVersions as { data?: EntryVersion[] })?.data)
-          ? (rawVersions as { data: EntryVersion[] }).data
-          : [];
-
     const seenSignatures = new Set<string>();
     const uniqueOldestFirst: EntryVersion[] = [];
-    const chronological = [...raw].reverse();
+    const chronological = [...rawVersions].reverse();
 
     for (const v of chronological) {
-      const title = getVersionTitle(v, null);
-      const body = getVersionBody(v, null);
-      const fieldsObj = getVersionFields(v, null);
-      const signature = JSON.stringify({ title, body, fields: fieldsObj });
+      const signature = JSON.stringify({
+        title: versionTitle(v, null),
+        body: versionBody(v, null),
+        fields: versionFields(v, null),
+      });
 
       if (!seenSignatures.has(signature)) {
         seenSignatures.add(signature);
@@ -195,24 +136,16 @@ export default function EntryHistoryPage() {
   }, [rawVersions]);
 
   const activeVersionKey = useMemo(() => {
-    if (
-      selectedVersionKey !== null &&
-      versions.some((v, idx) => (getVersionId(v) ?? v.createdAt ?? idx) === selectedVersionKey)
-    ) {
+    if (selectedVersionKey !== null && versions.some((v) => v.auditId === selectedVersionKey)) {
       return selectedVersionKey;
     }
-    return versions.length > 0 ? (getVersionId(versions[0]) ?? versions[0].createdAt ?? 0) : null;
+    return versions.length > 0 ? versions[0].auditId : null;
   }, [versions, selectedVersionKey]);
 
-  const selectedVersion =
-    versions.find((v, idx) => {
-      const vId = getVersionId(v) ?? v.createdAt ?? idx;
-      return vId === activeVersionKey;
-    }) ?? versions[0];
+  const selectedVersion = versions.find((v) => v.auditId === activeVersionKey) ?? versions[0];
 
   const restoreMutation = useMutation({
-    mutationFn: (versionId: number | string) =>
-      api.post<Entry>(`/api/entries/${entryId}/history/${versionId}/restore`),
+    mutationFn: (auditId: number) => restoreEntryVersion(entryId ?? '', auditId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entry', entryId] });
       queryClient.invalidateQueries({ queryKey: ['entries'] });
@@ -239,17 +172,17 @@ export default function EntryHistoryPage() {
   }
 
   const fieldTypes = new Map(fields.map((field) => [field.name, field.fieldType]));
-  const contentRecord = getVersionFields(selectedVersion, entry);
+  const contentRecord = versionFields(selectedVersion, entry);
   const contentEntries = Object.entries(contentRecord);
-  const tags = getVersionTags(selectedVersion, entry);
+  const tags = versionTags(selectedVersion, entry);
   const projectName = entry.project?.name;
-  const formattedDate = formatDate(selectedVersion?.createdAt ?? entry.date);
-  const formattedTime = formatTime(selectedVersion?.createdAt ?? entry.createdAt);
+  const formattedDate = formatDate(selectedVersion?.modifiedAt ?? entry.date);
+  const formattedTime = formatTime(selectedVersion?.modifiedAt ?? entry.createdAt);
   const hours =
     fields.length > 0 ? entryDurationHours({ ...entry, content: contentRecord }, fields) : null;
 
-  const currentVersionTitle = getVersionTitle(selectedVersion, entry);
-  const currentVersionBody = getVersionBody(selectedVersion, entry);
+  const currentVersionTitle = versionTitle(selectedVersion, entry);
+  const currentVersionBody = versionBody(selectedVersion, entry);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col lg:flex-row overflow-hidden bg-paper">
@@ -279,23 +212,16 @@ export default function EntryHistoryPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {versions.map((version, index) => {
-              const vId = getVersionId(version);
-              const vKey = vId ?? version.createdAt ?? index;
-              const isSelected = vKey === activeVersionKey;
-              const actionLabel =
-                index === 0 && versions.length > 1
-                  ? 'EDITED'
-                  : index === versions.length - 1
-                    ? 'CREATED'
-                    : 'EDITED';
-              const itemTitle = getVersionTitle(version, entry);
+            {versions.map((version) => {
+              const isSelected = version.auditId === activeVersionKey;
+              const actionLabel = ACTION_LABEL[version.action];
+              const itemTitle = versionTitle(version, entry);
 
               return (
                 <button
-                  key={vKey}
+                  key={version.auditId}
                   type="button"
-                  onClick={() => setSelectedVersionKey(vKey)}
+                  onClick={() => setSelectedVersionKey(version.auditId)}
                   className={`flex flex-col gap-1 rounded-lg p-3 text-left transition-colors border cursor-pointer ${
                     isSelected
                       ? 'bg-sand border-line shadow-xs'
@@ -305,7 +231,7 @@ export default function EntryHistoryPage() {
                   <div className="flex items-center justify-between text-[10px] font-bold text-clay tracking-wider">
                     <span>{actionLabel}</span>
                     <span>
-                      {formatDate(version.createdAt)} {formatTime(version.createdAt)}
+                      {formatDate(version.modifiedAt)} {formatTime(version.modifiedAt)}
                     </span>
                   </div>
                   <span className="text-[13px] font-semibold text-espresso truncate">
@@ -349,7 +275,7 @@ export default function EntryHistoryPage() {
             >
               Back to current entry
             </Link>
-            {activeVersionKey !== null && activeVersionKey !== undefined && (
+            {activeVersionKey !== null && (
               <button
                 type="button"
                 onClick={() => restoreMutation.mutate(activeVersionKey)}

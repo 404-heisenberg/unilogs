@@ -152,13 +152,31 @@ export function deleteStatPanel(projectId: number | string, panelId: number) {
   return api.delete<void>(`${statPanelsPath(projectId)}/${panelId}`);
 }
 
-// Entry history endpoints
-export function getEntryHistory(entryId: string | number) {
-  return api.get<EntryVersion[]>(`/api/entries/${entryId}/history`);
+// Entry history endpoints.
+//
+// The history route answers 404 both for an entry that does not exist and for
+// one that has no audit rows yet. Which of the two it is is the entry query's
+// job to report, so here "no history yet" is an empty list rather than an
+// error — otherwise a freshly created entry would show a failure instead of
+// its empty state.
+export async function getEntryHistory(entryId: string | number): Promise<EntryVersion[]> {
+  try {
+    const { versions } = await api.get<{ versions: EntryVersion[] | null }>(
+      `/api/entries/${entryId}/history`,
+    );
+    return versions ?? [];
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return [];
+    throw err;
+  }
 }
 
-export function restoreEntryVersion(entryId: string | number, versionId: number) {
-  return api.post<Entry>(`/api/entries/${entryId}/history/${versionId}/restore`);
+// Restore is append-only: it writes a new UPDATE row that reuses an old one's
+// values, so the caller passes the audit row to replay, not an entry id.
+export function restoreEntryVersion(entryId: string | number, auditId: number) {
+  return api.post<{ entry: Entry; tagsChanged: boolean }>(
+    `/api/entries/${entryId}/history/${auditId}/restore`,
+  );
 }
 export function getProjectTrash(projectId: number | string) {
   return api.get<ProjectTrash>(`/api/projects/${projectId}/trash`);
