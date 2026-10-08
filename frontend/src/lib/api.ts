@@ -1,4 +1,4 @@
-import type { Entry, ProjectTrash } from '@/types';
+import type { EntriesAsAt, Entry, ProjectTrash } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -88,6 +88,11 @@ export function getFrequencyStats() {
 
 export function getProjectTrash(projectId: number | string) {
   return api.get<ProjectTrash>(`/api/projects/${projectId}/trash`);
+}
+
+/** The logbook as it stood at the end of `date` (YYYY-MM-DD). */
+export function getEntriesAsAt(date: string) {
+  return api.get<EntriesAsAt>(`/api/entries/as-at?date=${encodeURIComponent(date)}`);
 }
 
 export function restoreEntry(entryId: number) {

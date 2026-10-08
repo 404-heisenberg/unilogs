@@ -49,6 +49,26 @@ export type PagedEntries = {
   limit: number;
 };
 
+// An entry as it stood on a past date, rebuilt from its history. No
+// `createdAt`, due date or completion state: only what history recorded.
+export type AsAtEntry = {
+  id: number;
+  projectId: number;
+  title: string | null;
+  body: string | null;
+  content: EntryContent;
+  date: string;
+  project: { id: number; name: string };
+  tags: EntryTag[];
+};
+
+export type EntriesAsAt = {
+  entries: AsAtEntry[];
+  total: number;
+  /** The YYYY-MM-DD day asked for, echoed back. */
+  date: string;
+};
+
 export type TrashTag = { id: number; name: string };
 
 export type TrashEntry = {

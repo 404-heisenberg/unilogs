@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Plus } from 'lucide-react';
+import { ChevronLeft, CornerUpLeft, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
 
@@ -69,6 +69,32 @@ export default function AppHeader() {
     queryFn: () => api.get<Project>(`/api/projects/${projectId}`),
     enabled: projectId !== null,
   });
+
+  // The as-at view replaces the whole bar: back arrow, its own title, and a
+  // way back to the live timeline instead of the log-entry action.
+  if (pathname === '/entries/as-at') {
+    return (
+      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-cream bg-white px-4 md:hidden">
+        <div className="flex min-w-0 items-center">
+          <Link
+            to="/entries"
+            aria-label="Back to entries"
+            className="-ml-3 flex size-11 shrink-0 items-center justify-center text-espresso"
+          >
+            <ChevronLeft size={20} strokeWidth={2} />
+          </Link>
+          <p className="truncate text-lg font-bold text-espresso">As at</p>
+        </div>
+        {/* 44px tap target around the 30px pill. */}
+        <Link to="/entries" className="-mr-1 flex min-h-11 items-center px-1">
+          <span className="flex items-center gap-1.5 rounded-full border-[1.5px] border-clay px-2.5 py-1.5 text-[13px] font-bold text-clay">
+            <CornerUpLeft size={12} strokeWidth={2} aria-hidden />
+            Back to current
+          </span>
+        </Link>
+      </header>
+    );
+  }
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-rule bg-canvas px-4 md:hidden">
