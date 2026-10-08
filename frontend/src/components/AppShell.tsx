@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Suspense, useEffect, useState } from 'react';
 import Skeleton from '@/components/Skeleton';
 import NavRail from './app-shell/NavRail';
@@ -10,6 +10,7 @@ import MoreSheet from './app-shell/MoreSheet';
 
 export default function AppShell() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [explorerCollapsed, setExplorerCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -47,7 +48,11 @@ export default function AppShell() {
             <Outlet />
           </Suspense>
         </main>
-        <MobileBottomNav moreOpen={moreOpen} onMoreClick={() => setMoreOpen(true)} />
+        {/* The as-at view is full screen on mobile, as in Figma: its header
+            back arrow is the way out. */}
+        {pathname !== '/entries/as-at' && (
+          <MobileBottomNav moreOpen={moreOpen} onMoreClick={() => setMoreOpen(true)} />
+        )}
       </div>
 
       <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} />

@@ -137,7 +137,7 @@ export default function TagsSettings() {
         Deleting a tag removes it from entries — entries are never deleted.
       </p>
 
-      <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
+      <div className="w-full overflow-hidden rounded-xl border border-line bg-white">
         {tagsQuery.isPending && (
           <div className="flex flex-col gap-2 p-4" aria-hidden>
             {[1, 2, 3].map((i) => (

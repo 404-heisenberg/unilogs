@@ -103,9 +103,17 @@ export async function computePanelValue(
   return { value, sampleCount, series };
 }
 
-export async function listPanelsForProject(userId: string, projectId: number) {
+export async function listPanelsForProject(
+  userId: string,
+  projectId: number,
+  opts: { includeHidden?: boolean } = {},
+) {
   const panels = await prisma.statPanel.findMany({
-    where: { userId, projectId },
+    where: {
+      userId,
+      projectId,
+      ...(opts.includeHidden ? {} : { hidden: false }),
+    },
     orderBy: { position: 'asc' },
   });
 
@@ -141,6 +149,7 @@ export async function createPanel(
     expression: string;
     aggregation?: Aggregation;
     rangeDays?: number;
+    hidden?: boolean;
   },
 ) {
   const aggregation: Aggregation = input.aggregation ?? 'sum';
@@ -161,6 +170,7 @@ export async function createPanel(
       expression: input.expression,
       aggregation,
       rangeDays,
+      hidden: input.hidden ?? false,
       position: (maxPosition._max.position ?? -1) + 1,
     },
   });

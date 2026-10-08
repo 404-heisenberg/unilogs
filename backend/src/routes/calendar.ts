@@ -57,7 +57,7 @@ async function getGoogleCalendars(req: Request) {
     body: {
       accountId: account.id,
     },
-    headers: req.headers as unknown as Record<string, string>,
+    headers: req.headers,
   });
 
   const url = new URL('https://www.googleapis.com/calendar/v3/users/me/calendarList');
@@ -375,7 +375,7 @@ router.post('/connect', authenticate, async (req, res) => {
         callbackURL: SETTINGS_URL,
         errorCallbackURL: SETTINGS_URL,
       },
-      headers: req.headers as unknown as Record<string, string>,
+      headers: req.headers,
       asResponse: true,
     });
 
@@ -416,7 +416,7 @@ router.delete('/disconnect', authenticate, async (req, res) => {
       body: {
         accountId: account.id,
       },
-      headers: req.headers as unknown as Record<string, string>,
+      headers: req.headers,
     });
 
     return res.status(200).json({

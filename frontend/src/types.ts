@@ -58,6 +58,26 @@ export type PagedEntries = {
   limit: number;
 };
 
+// An entry as it stood on a past date, rebuilt from its history. No
+// `createdAt`, due date or completion state: only what history recorded.
+export type AsAtEntry = {
+  id: number;
+  projectId: number;
+  title: string | null;
+  body: string | null;
+  content: EntryContent;
+  date: string;
+  project: { id: number; name: string };
+  tags: EntryTag[];
+};
+
+export type EntriesAsAt = {
+  entries: AsAtEntry[];
+  total: number;
+  /** The YYYY-MM-DD day asked for, echoed back. */
+  date: string;
+};
+
 export type TrashTag = { id: number; name: string };
 
 export type TrashEntry = {
@@ -95,4 +115,38 @@ export type Tag = {
   id: number;
   name: string;
   usageCount: number;
+};
+
+export type StatPanelAggregation = 'sum' | 'average';
+
+export type StatPanelPoint = { date: string; value: number };
+
+export type StatPanel = {
+  id: number;
+  projectId: number;
+  name: string;
+  expression: string;
+  aggregation: StatPanelAggregation;
+  rangeDays: number;
+  position: number;
+  hidden: boolean;
+  createdAt: string;
+  // The list endpoint computes these. `value` is null when evaluation failed,
+  // and `error` then carries the reason.
+  value: number | null;
+  sampleCount: number;
+  series: StatPanelPoint[];
+  error?: string;
+};
+
+export type StatPanelInput = {
+  expression: string;
+  aggregation: StatPanelAggregation;
+  rangeDays: number;
+};
+
+export type StatPanelPreview = {
+  value: number;
+  sampleCount: number;
+  series: StatPanelPoint[];
 };

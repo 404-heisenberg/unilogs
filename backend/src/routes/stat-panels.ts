@@ -36,7 +36,6 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     const project = await getOwnedProject(projectId, userId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
-    const panels = await listPanelsForProject(userId, projectId);
     const includeHidden = req.query.includeHidden === 'true';
     const panels = await listPanelsForProject(userId, projectId, { includeHidden });
     return res.status(200).json(panels);
@@ -156,6 +155,9 @@ router.patch('/:panelId', authenticate, async (req: Request, res: Response) => {
     if (rangeDays !== undefined && (typeof rangeDays !== 'number' || rangeDays < 1)) {
       return res.status(400).json({ error: 'rangeDays must be a positive integer' });
     }
+    if (hidden !== undefined && typeof hidden !== 'boolean') {
+      return res.status(400).json({ error: 'hidden must be a boolean' });
+    }
 
     const updated = await prisma.statPanel.update({
       where: { id: panelId },
@@ -165,6 +167,7 @@ router.patch('/:panelId', authenticate, async (req: Request, res: Response) => {
         rangeDays: typeof rangeDays === 'number' ? rangeDays : undefined,
         aggregation: isAggregation(aggregation) ? aggregation : undefined,
         expression: typeof expression === 'string' ? expression : undefined,
+        hidden: typeof hidden === 'boolean' ? hidden : undefined,
       },
     });
 

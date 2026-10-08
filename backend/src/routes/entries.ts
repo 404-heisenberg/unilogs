@@ -5,7 +5,6 @@ import { authenticate } from '../middleware/authenticate.js';
 import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
 import { parseEntryListQuery } from '../lib/entryFilters.js';
 import { toAuditData, toEntrySnapshot } from '../lib/audit-snapshot.js';
-import { listEntryVersions, undeleteEntry } from '../services/entry-history-service.js';
 import {
   listEntryVersions,
   restoreEntryVersion,
@@ -454,94 +453,18 @@ router.post('/:id/history/:auditId/restore', authenticate, async (req: Request, 
       return res.status(400).json({ error: 'id and auditId must be valid integers' });
     }
 
-    // 1. Verify entry and project ownership, include project fields for validation
-    const entry = await prisma.entry.findFirst({
-      where: { id, project: { userId } },
-      include: { project: { include: { fields: true } }, tags: true },
-    });
+    const result = await restoreEntryVersion(userId, id, auditId);
 
-    if (!entry) {
-      return res.status(404).json({ error: 'Entry not found' });
+    if (!result.ok) {
+      if (result.status === 400 && result.errors) {
+        return res.status(400).json({ errors: result.errors });
+      }
+      return res.status(result.status).json({ error: 'Version not found' });
     }
-
-    // 2. Fetch the specific audit log record acting as the version snapshot
-    const auditLog = await prisma.auditLog.findFirst({
-      where: { id: auditId, entryId: id },
-    });
-
-    if (!auditLog) {
-      return res.status(404).json({ error: 'Version not found' });
-    }
-
-    interface EntrySnapshotData {
-      title?: string | null;
-      body?: string | null;
-      content?: Record<string, unknown>;
-      tagIds?: number[];
-      tags?: Array<{ tagId?: number; id?: number }>;
-    }
-
-    const snapshot = (auditLog.newData || auditLog.oldData) as EntrySnapshotData;
-    if (!snapshot) {
-      return res.status(400).json({ error: 'Version snapshot data is missing' });
-    }
-
-    const targetTitle = snapshot.title ?? null;
-    const targetBody = snapshot.body ?? null;
-    const targetContent = snapshot.content ?? {};
-    const targetTagIds =
-      snapshot.tagIds ??
-      (snapshot.tags
-        ? snapshot.tags
-            .map((t) => t.tagId ?? t.id)
-            .filter((tagId): tagId is number => typeof tagId === 'number')
-        : undefined);
-
-    // 3. Validate historical custom fields against current project field definitions
-    const contentErrors = validateEntryContent(targetContent, entry.project.fields);
-    if (contentErrors.length > 0) {
-      return res.status(400).json({ errors: contentErrors });
-    }
-
-    const currentTagIds = entry.tags.map((t) => t.tagId).sort();
-    const newTagIds = targetTagIds !== undefined ? [...targetTagIds].sort() : currentTagIds;
-    const tagsChanged = JSON.stringify(currentTagIds) !== JSON.stringify(newTagIds);
-
-    // 4. Update the entry, explicitly restoring title, body, custom fields content, and tags
-    const updatedEntry = await prisma.entry.update({
-      where: { id },
-      data: {
-        title: targetTitle,
-        body: targetBody,
-        content: targetContent as NonNullable<
-          Parameters<typeof prisma.entry.update>[0]['data']
-        >['content'],
-        tags:
-          targetTagIds !== undefined
-            ? {
-                deleteMany: {},
-                create: targetTagIds.map((tagId: number) => ({ tag: { connect: { id: tagId } } })),
-              }
-            : undefined,
-      },
-      include: {
-        tags: { include: { tag: true } },
-      },
-    });
-
-    // 5. Record an audit log for the restoration action
-    await prisma.auditLog.create({
-      data: {
-        entryId: id,
-        action: 'UPDATE',
-        oldData: toAuditData(toEntrySnapshot(entry)),
-        newData: toAuditData(toEntrySnapshot(updatedEntry)),
-      },
-    });
 
     return res.status(200).json({
-      entry: updatedEntry,
-      tagsChanged,
+      entry: result.entry,
+      tagsChanged: result.tagsChanged,
     });
   } catch (err) {
     console.error('POST /api/entries/:id/history/:auditId/restore error:', err);
