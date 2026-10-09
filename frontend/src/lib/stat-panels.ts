@@ -95,7 +95,11 @@ type Token = Dimension | '+' | '-' | '*' | '/' | '(' | ')';
 //   time / time = a plain number, pages / time = a rate (not time),
 //   time + pages = nonsense (not time).
 // Returns null when the formula can't be read or isn't a plain number or time.
-function formulaDimension(expression: string, fields: FieldDefinition[]): Dimension | null {
+// Only a field's name and type matter here, so the dashboard can pass the
+// slim field list /api/stat-panels returns.
+type FieldShape = Pick<FieldDefinition, 'name' | 'fieldType'>;
+
+function formulaDimension(expression: string, fields: FieldShape[]): Dimension | null {
   const names = fields
     .map((f) => ({
       name: f.name,
@@ -178,11 +182,7 @@ function formulaDimension(expression: string, fields: FieldDefinition[]): Dimens
 
 // Shows the answer as hours/minutes when the formula works out to a length of
 // time; anything else is a plain number.
-export function formatStatValue(
-  value: number,
-  expression: string,
-  fields: FieldDefinition[],
-): string {
+export function formatStatValue(value: number, expression: string, fields: FieldShape[]): string {
   return formulaDimension(expression, fields) === 'time'
     ? formatDurationHours(value)
     : formatNumber(value);

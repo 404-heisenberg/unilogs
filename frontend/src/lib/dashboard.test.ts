@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   DEFAULT_LAYOUT,
   HEATMAP_DAYS,
@@ -12,12 +14,24 @@ import {
   loadLayout,
   mondayOf,
   moveWidget,
+  normalizeLayout,
   saveLayout,
   shiftWidget,
   toBlocks,
   useDashboardLayout,
   type WidgetState,
 } from './dashboard';
+
+const layoutApi = vi.hoisted(() => ({
+  get: vi.fn(),
+  put: vi.fn(),
+}));
+
+vi.mock('@/lib/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/api')>()),
+  getDashboardLayout: layoutApi.get,
+  putDashboardLayout: layoutApi.put,
+}));
 
 describe('heatLevel', () => {
   it('returns 0 for empty days and scales 1 to 4 by ratio of the max', () => {
@@ -196,9 +210,38 @@ describe('toBlocks', () => {
   });
 });
 
+describe('normalizeLayout', () => {
+  it('keeps saved panel widgets alongside the built-ins', () => {
+    const layout = normalizeLayout([
+      { id: 'statPanel:7', visible: true, size: 'wide' },
+      { id: 'statPanel:x', visible: true, size: 'wide' },
+      { id: 'summary', visible: false, size: 'wide' },
+    ]);
+
+    expect(layout[0]).toEqual({ id: 'statPanel:7', visible: true, size: 'wide' });
+    expect(layout[1]).toEqual({ id: 'summary', visible: false, size: 'wide' });
+    expect(layout).toHaveLength(DEFAULT_LAYOUT.length + 1);
+  });
+
+  it('falls back to the default for anything that is not a list', () => {
+    expect(normalizeLayout(null)).toBe(DEFAULT_LAYOUT);
+    expect(normalizeLayout({ summary: true })).toBe(DEFAULT_LAYOUT);
+  });
+});
+
+function wrapper({ children }: { children: ReactNode }) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return createElement(QueryClientProvider, { client }, children);
+}
+
+// Lets the layout query settle under fake timers.
+const settle = () => act(() => vi.advanceTimersByTimeAsync(0));
+
 describe('useDashboardLayout', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    layoutApi.get.mockReset().mockResolvedValue({ layout: null });
+    layoutApi.put.mockReset().mockImplementation(async (layout: unknown) => ({ layout }));
   });
 
   afterEach(() => {
@@ -206,7 +249,7 @@ describe('useDashboardLayout', () => {
   });
 
   it('starts from the default layout with only the extra tray widgets hidden', () => {
-    const { result } = renderHook(() => useDashboardLayout('u1'));
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
     expect(result.current.layout).toBe(DEFAULT_LAYOUT);
     expect(result.current.visible.map((widget) => widget.id)).toEqual([
       'summary',
@@ -225,7 +268,7 @@ describe('useDashboardLayout', () => {
   });
 
   it('writes to localStorage on a 300ms trailing debounce', () => {
-    const { result } = renderHook(() => useDashboardLayout('u1'));
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
 
     act(() => result.current.toggle('recent'));
     act(() => result.current.resize('insight'));
@@ -239,7 +282,7 @@ describe('useDashboardLayout', () => {
   });
 
   it('resets to the default layout and clears the saved one', () => {
-    const { result } = renderHook(() => useDashboardLayout('u1'));
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
     act(() => result.current.toggle('recent'));
     act(() => vi.advanceTimersByTime(300));
     expect(localStorage.getItem(layoutKey('u1'))).not.toBeNull();
@@ -257,6 +300,7 @@ describe('useDashboardLayout', () => {
     );
     const { result, rerender } = renderHook(({ id }) => useDashboardLayout(id), {
       initialProps: { id: null as string | null },
+      wrapper,
     });
 
     act(() => result.current.toggle('recent'));
@@ -268,11 +312,117 @@ describe('useDashboardLayout', () => {
   });
 
   it('reorders by id and by keyboard-style shifts', () => {
-    const { result } = renderHook(() => useDashboardLayout('u1'));
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
     act(() => result.current.move('insight', 'summary'));
     expect(result.current.visible[0].id).toBe('insight');
 
     act(() => result.current.moveBy('insight', 1));
     expect(result.current.visible[1].id).toBe('insight');
+  });
+
+  it('takes the server layout over the copy in this browser', async () => {
+    localStorage.setItem(
+      layoutKey('u1'),
+      JSON.stringify([{ id: 'insight', visible: true, size: 'wide' }]),
+    );
+    layoutApi.get.mockResolvedValue({
+      layout: [{ id: 'recent', visible: true, size: 'wide' }],
+    });
+
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
+    await settle();
+
+    expect(result.current.layout[0]).toEqual({ id: 'recent', visible: true, size: 'wide' });
+    act(() => vi.advanceTimersByTime(1000));
+    expect(layoutApi.put).not.toHaveBeenCalled();
+  });
+
+  it('promotes the browser copy once when the server has none', async () => {
+    const custom = [{ id: 'insight', visible: true, size: 'wide' }];
+    localStorage.setItem(layoutKey('u1'), JSON.stringify(custom));
+
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
+    await settle();
+    await act(() => vi.advanceTimersByTimeAsync(300));
+
+    expect(layoutApi.put).toHaveBeenCalledTimes(1);
+    expect(layoutApi.put.mock.calls[0][0][0]).toEqual(custom[0]);
+    // Nothing lost: the promoted layout is the one on screen.
+    expect(result.current.layout[0]).toEqual(custom[0]);
+  });
+
+  it('sends nothing when neither the server nor the browser has a layout', async () => {
+    renderHook(() => useDashboardLayout('u1'), { wrapper });
+    await settle();
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+
+    expect(layoutApi.put).not.toHaveBeenCalled();
+  });
+
+  it('sends one PUT per burst of changes, 300ms after the last', async () => {
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
+    await settle();
+
+    act(() => result.current.toggle('recent'));
+    act(() => vi.advanceTimersByTime(200));
+    act(() => result.current.resize('insight'));
+    await act(() => vi.advanceTimersByTimeAsync(299));
+    expect(layoutApi.put).not.toHaveBeenCalled();
+
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    expect(layoutApi.put).toHaveBeenCalledTimes(1);
+    const sent = layoutApi.put.mock.calls[0][0] as WidgetState[];
+    expect(sent.find((widget) => widget.id === 'recent')?.visible).toBe(false);
+    expect(sent.find((widget) => widget.id === 'insight')?.size).toBe('wide');
+  });
+
+  it('keeps working from the browser copy when the server is unreachable', async () => {
+    layoutApi.get.mockRejectedValue(new Error('offline'));
+    layoutApi.put.mockRejectedValue(new Error('offline'));
+    const { result } = renderHook(() => useDashboardLayout('u1'), { wrapper });
+    await settle();
+
+    act(() => result.current.toggle('recent'));
+    await act(() => vi.advanceTimersByTimeAsync(300));
+
+    const saved = JSON.parse(localStorage.getItem(layoutKey('u1')) ?? '[]');
+    expect(saved.find((widget: { id: string }) => widget.id === 'recent').visible).toBe(false);
+  });
+
+  it('adds a panel at the end, and brings a hidden one back where it was', async () => {
+    const { result } = renderHook(() => useDashboardLayout('u1', new Set([7, 9])), { wrapper });
+    await settle();
+
+    act(() => result.current.addPanel(7));
+    expect(result.current.visible.at(-1)).toEqual({
+      id: 'statPanel:7',
+      visible: true,
+      size: 'standard',
+    });
+
+    act(() => result.current.resize('statPanel:7'));
+    act(() => result.current.move('statPanel:7', 'summary'));
+    act(() => result.current.toggle('statPanel:7'));
+    expect(result.current.visible.some((widget) => widget.id === 'statPanel:7')).toBe(false);
+    // Panels live in the tray's own "Your panels" entry, not with the built-ins.
+    expect(result.current.hidden.some((widget) => widget.id === 'statPanel:7')).toBe(false);
+
+    act(() => result.current.addPanel(7));
+    expect(result.current.visible[0]).toEqual({ id: 'statPanel:7', visible: true, size: 'wide' });
+  });
+
+  it('does not draw a panel widget whose panel has been deleted', async () => {
+    layoutApi.get.mockResolvedValue({
+      layout: [
+        { id: 'statPanel:7', visible: true, size: 'standard' },
+        { id: 'statPanel:8', visible: true, size: 'standard' },
+      ],
+    });
+    const { result } = renderHook(() => useDashboardLayout('u1', new Set([7])), { wrapper });
+    await settle();
+
+    const ids = result.current.visible.map((widget) => widget.id);
+    expect(ids).toContain('statPanel:7');
+    expect(ids).not.toContain('statPanel:8');
   });
 });

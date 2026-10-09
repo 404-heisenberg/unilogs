@@ -23,10 +23,12 @@ import {
   Pin,
   Plus,
   Sparkles,
+  Star,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import type { FrequencyStats, StatsSummary } from '@/lib/api';
+import { entryWord, formatStatValue } from '@/lib/stat-panels';
 import {
   CARD,
   DARK_BUTTON,
@@ -44,6 +46,8 @@ import {
   logEventPath,
   formatMonthDay,
   formatShortDate,
+  isPanelWidget,
+  panelIdOf,
   relativeTime,
   toBlocks,
   type ActivityStats,
@@ -57,14 +61,22 @@ import {
   type UnfinishedStats,
   type UpcomingData,
   type UpcomingEvent,
+  type BuiltinWidgetId,
   type WidgetId,
   type WidgetSize,
   type WidgetState,
 } from '@/lib/dashboard';
-import type { Entry } from '@/types';
+import type { DashboardStatPanel, Entry, StatPanelPoint } from '@/types';
 
 export type DashboardCtx = {
   today: string;
+  // Every saved panel, from the one /api/stat-panels request. Panel widgets
+  // read their value from here rather than fetching their own.
+  panels: {
+    byId: ReadonlyMap<number, DashboardStatPanel>;
+    isLoading: boolean;
+    isError: boolean;
+  };
   isDesktop: boolean;
   summary: StatsSummary;
   counts: { streak: number; totalHours: number };
@@ -896,8 +908,117 @@ function WidgetThumbnail({ kind }: { kind: ThumbnailKind }) {
   );
 }
 
+function widgetTitle(id: WidgetId, ctx: DashboardCtx): string {
+  if (!isPanelWidget(id)) return WIDGET_META[id].title;
+  return ctx.panels.byId.get(panelIdOf(id))?.name ?? 'Stat panel';
+}
+
+function panelValue(panel: DashboardStatPanel): string {
+  return panel.value === null ? '' : formatStatValue(panel.value, panel.expression, panel.fields);
+}
+
+// Figma's sparkline: a gold line over a fading gold fill, in a 48px well.
+function PanelSparkline({ series }: { series: StatPanelPoint[] }) {
+  if (series.length < 2) return null;
+  const values = series.map((point) => point.value);
+  const min = Math.min(...values);
+  const span = Math.max(...values) - min || 1;
+  const width = 100;
+  const height = 48;
+  const points = values.map((value, index) => {
+    const x = (index / (values.length - 1)) * width;
+    const y = height - 4 - ((value - min) / span) * (height - 8);
+    return `${x},${y}`;
+  });
+
+  return (
+    <div className="h-12 w-full overflow-hidden rounded-lg border border-line bg-cream">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label="Daily trend over the panel's range"
+        className="size-full text-gold"
+      >
+        <defs>
+          <linearGradient id="panel-fill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="currentColor" stopOpacity={0.2} />
+            <stop offset="100%" stopColor="currentColor" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <polygon
+          points={`0,${height} ${points.join(' ')} ${width},${height}`}
+          fill="url(#panel-fill)"
+        />
+        <polyline
+          points={points.join(' ')}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </div>
+  );
+}
+
+type StatPanelWidgetProps = {
+  panel: DashboardStatPanel | undefined;
+  isLoading: boolean;
+  isError: boolean;
+};
+
+// A saved stat panel on the dashboard (Figma "stat-panel-card"). The whole
+// card opens the panel's project.
+export function StatPanelWidget({ panel, isLoading, isError }: StatPanelWidgetProps) {
+  if (!panel) {
+    return (
+      <div className="rounded-xl border border-line bg-cream p-5">
+        {isLoading ? (
+          <Skeleton rows={3} />
+        ) : (
+          <p className={`text-sm ${MUTED}`}>
+            {isError ? 'Couldn’t load this panel.' : 'This panel no longer exists.'}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Figma's footer uses the short form: "18 entries · Last 30 days · Avg".
+  const aggregation = panel.aggregation === 'average' ? 'Avg' : 'Sum';
+  const hasValue = panel.value !== null && panel.sampleCount > 0;
+
+  return (
+    <Link
+      to={`/projects/${panel.projectId}`}
+      aria-label={`${panel.name}, ${panel.project.name}: open project`}
+      className="flex flex-col gap-4 rounded-xl border border-line bg-cream p-5 transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+    >
+      <div className="flex items-center gap-2.5">
+        <Star className="size-4.5 shrink-0 text-rail" strokeWidth={1.75} aria-hidden />
+        <p className="truncate text-sm font-semibold text-rail">{panel.name}</p>
+      </div>
+      {panel.error ? (
+        <p className="text-sm text-error">Couldn’t calculate this panel: {panel.error}</p>
+      ) : hasValue ? (
+        <div className="flex flex-col gap-3">
+          <p className="truncate text-4xl font-bold text-rail">{panelValue(panel)}</p>
+          <PanelSparkline series={panel.series} />
+          <p className={`text-xs ${MUTED}`}>
+            {entryWord(panel.sampleCount)} · Last {panel.rangeDays} days · {aggregation}
+          </p>
+        </div>
+      ) : (
+        <p className={`text-sm ${MUTED}`}>No data yet</p>
+      )}
+    </Link>
+  );
+}
+
 type FrameProps = {
   widget: WidgetState;
+  title: string;
   customising: boolean;
   isDragging: boolean;
   onDragStart: (id: WidgetId) => void;
@@ -914,6 +1035,7 @@ const CHIP =
 
 function WidgetFrameBase({
   widget,
+  title,
   customising,
   isDragging,
   onDragStart,
@@ -927,7 +1049,6 @@ function WidgetFrameBase({
   if (!customising) return <div>{children}</div>;
 
   const { id, size } = widget;
-  const title = WIDGET_META[id].title;
   const wide = size === 'wide';
 
   const handleDragStart = (event: DragEvent<HTMLButtonElement>) => {
@@ -1003,6 +1124,15 @@ const WidgetFrame = memo(WidgetFrameBase);
 type ContentProps = { id: WidgetId; size: WidgetSize; ctx: DashboardCtx };
 
 function WidgetContent({ id, size, ctx }: ContentProps) {
+  if (isPanelWidget(id)) {
+    return (
+      <StatPanelWidget
+        panel={ctx.panels.byId.get(panelIdOf(id))}
+        isLoading={ctx.panels.isLoading}
+        isError={ctx.panels.isError}
+      />
+    );
+  }
   switch (id) {
     case 'summary':
       return (
@@ -1087,9 +1217,84 @@ function WidgetContent({ id, size, ctx }: ContentProps) {
 type TrayProps = {
   hidden: WidgetState[];
   onAdd: (id: WidgetId) => void;
+  /** Saved panels not on the dashboard right now. */
+  panels: DashboardStatPanel[];
+  panelsLoading: boolean;
+  onAddPanel: (panelId: number) => void;
 };
 
-export function AddWidgetTray({ hidden, onAdd }: TrayProps) {
+const TRAY_TILE =
+  'flex w-full flex-col items-center gap-2 rounded-lg bg-cream px-3 py-3 text-xs font-medium text-espresso transition-colors hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
+
+// Figma's "Your panels" tile: a star over the first panel's value. It opens a
+// list of the saved panels that aren't on the dashboard yet.
+function YourPanelsTile({
+  panels,
+  isLoading,
+  onAddPanel,
+}: {
+  panels: DashboardStatPanel[];
+  isLoading: boolean;
+  onAddPanel: (panelId: number) => void;
+}) {
+  const preview = panels.find((panel) => panel.value !== null);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label="Add from your panels" className={TRAY_TILE}>
+          <span className="flex h-12 flex-col items-center justify-center gap-1" aria-hidden>
+            <Star className="size-4.5 text-espresso" strokeWidth={1.75} />
+            <span className="max-w-full truncate text-sm font-bold text-rail">
+              {preview ? panelValue(preview) : '—'}
+            </span>
+          </span>
+          Your panels
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 gap-1 bg-paper p-2">
+        <p className="px-2 pt-1 text-xs font-bold text-espresso">Your panels</p>
+        {isLoading && <p className={`px-2 py-1.5 text-xs ${MUTED}`}>Loading your panels…</p>}
+        {!isLoading && panels.length === 0 && (
+          <p className={`px-2 py-1.5 text-xs ${MUTED}`}>
+            Every saved panel is on your dashboard. Build more from a project&apos;s Overview.
+          </p>
+        )}
+        <ul className="flex flex-col">
+          {panels.map((panel) => (
+            <li key={panel.id}>
+              <button
+                type="button"
+                onClick={() => onAddPanel(panel.id)}
+                aria-label={`Add ${panel.name}`}
+                className="flex min-h-11 w-full items-center gap-3 rounded-md px-2 text-left hover:bg-cream focus-visible:outline-2 focus-visible:outline-gold"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-espresso">
+                    {panel.name}
+                  </span>
+                  <span className={`block truncate text-[11px] ${MUTED}`}>
+                    {panel.project.name}
+                  </span>
+                </span>
+                <span className="shrink-0 text-sm font-bold text-espresso">
+                  {panel.value === null ? '—' : panelValue(panel)}
+                </span>
+                <Plus className="size-4 shrink-0 text-clay" strokeWidth={2} aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function AddWidgetTray({ hidden, onAdd, panels, panelsLoading, onAddPanel }: TrayProps) {
+  const builtins = hidden.filter(
+    (widget): widget is WidgetState & { id: BuiltinWidgetId } => !isPanelWidget(widget.id),
+  );
+
   return (
     <section
       aria-label="Add widget"
@@ -1099,28 +1304,27 @@ export function AddWidgetTray({ hidden, onAdd }: TrayProps) {
         <Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden />
         Add widget
       </h2>
-      {hidden.length === 0 ? (
-        <p className={`text-xs ${MUTED}`}>Every widget is already on your dashboard.</p>
-      ) : (
-        <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {hidden.map((widget) => {
-            const meta = WIDGET_META[widget.id];
-            return (
-              <li key={widget.id}>
-                <button
-                  type="button"
-                  onClick={() => onAdd(widget.id)}
-                  aria-label={`Add ${meta.title}`}
-                  className="flex w-full flex-col items-center gap-2 rounded-lg bg-cream px-3 py-3 text-xs font-medium text-espresso transition-colors hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-                >
-                  <WidgetThumbnail kind={meta.thumbnail} />
-                  {meta.title}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {builtins.map((widget) => {
+          const meta = WIDGET_META[widget.id];
+          return (
+            <li key={widget.id}>
+              <button
+                type="button"
+                onClick={() => onAdd(widget.id)}
+                aria-label={`Add ${meta.title}`}
+                className={TRAY_TILE}
+              >
+                <WidgetThumbnail kind={meta.thumbnail} />
+                {meta.title}
+              </button>
+            </li>
+          );
+        })}
+        <li>
+          <YourPanelsTile panels={panels} isLoading={panelsLoading} onAddPanel={onAddPanel} />
+        </li>
+      </ul>
     </section>
   );
 }
@@ -1175,6 +1379,7 @@ export function DashboardGrid({
     <WidgetFrame
       key={widget.id}
       widget={widget}
+      title={widgetTitle(widget.id, ctx)}
       customising={customising}
       isDragging={draggingId === widget.id}
       onDragStart={handleDragStart}

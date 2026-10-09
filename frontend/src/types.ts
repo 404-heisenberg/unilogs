@@ -149,6 +149,13 @@ export type StatPanel = {
   error?: string;
 };
 
+// A panel from GET /api/stat-panels: every project's panels in one list, each
+// with its project and the field types formatStatValue needs.
+export type DashboardStatPanel = StatPanel & {
+  project: { id: number; name: string };
+  fields: Pick<FieldDefinition, 'name' | 'fieldType'>[];
+};
+
 export type StatPanelInput = {
   expression: string;
   aggregation: StatPanelAggregation;
