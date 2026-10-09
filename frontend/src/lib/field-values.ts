@@ -1,3 +1,4 @@
+import { parseDurationHours } from './time';
 import type { FieldDefinition } from '@/types';
 
 export type FieldValue = string | number | boolean;
@@ -7,10 +8,16 @@ export function defaultValueForType(fieldType: string): FieldValue {
 }
 
 export function toContentValue(fieldType: string, raw: FieldValue): unknown {
-  if (fieldType === 'number' || fieldType === 'duration') {
+  if (fieldType === 'number') {
     if (raw === '') return raw;
     const num = Number(raw);
     return Number.isNaN(num) ? raw : num;
+  }
+  if (fieldType === 'duration') {
+    // Durations are stored as hours; "2:30" must arrive as 2.5 for the
+    // backend to sum them.
+    if (raw === '') return raw;
+    return parseDurationHours(String(raw)) ?? raw;
   }
   if (fieldType === 'boolean') return Boolean(raw);
   return raw;
