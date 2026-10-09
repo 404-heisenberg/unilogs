@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { configure, render, screen, waitFor, within } from '@testing-library/react';
+import { configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -330,6 +330,35 @@ describe('DashboardPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+  });
+
+  it('lets a tray tile be dropped onto a grid widget instead of appended', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Customise' }));
+    expect(
+      screen.getByText(/Drag a widget's grip onto another widget to swap them/),
+    ).toBeInTheDocument();
+
+    const tray = screen.getByRole('region', { name: 'Add widget' });
+    const tile = within(tray).getByRole('button', { name: 'Add Time by project' });
+    const summaryGrip = screen.getByRole('button', { name: 'Reorder Summary' });
+    const frame = summaryGrip.closest('[data-widget-frame]') as HTMLElement;
+
+    const dataTransfer = {
+      effectAllowed: 'move',
+      dropEffect: 'none',
+      setData: vi.fn(),
+      getData: vi.fn((type: string) =>
+        type === 'application/x-unilogs-widget' ? 'timeByProject' : '',
+      ),
+    } as unknown as DataTransfer;
+
+    fireEvent.dragStart(tile, { dataTransfer });
+    fireEvent.drop(frame, { dataTransfer });
+
+    expect(await screen.findByText('75%')).toBeInTheDocument();
   });
 
   it('remembers the layout for the signed-in user', async () => {

@@ -343,6 +343,17 @@ export function moveWidget(layout: WidgetState[], activeId: WidgetId, overId: Wi
   return next;
 }
 
+/**
+ * Reveals a hidden widget and puts it where the drop landed instead of always
+ * appending it to the end - used when a tile is dragged from the add tray onto
+ * an existing widget, so a new widget can go straight to the top.
+ */
+export function revealWidgetAt(layout: WidgetState[], id: WidgetId, overId: WidgetId) {
+  if (layout.findIndex((widget) => widget.id === overId) < 0) return layout;
+  const next = layout.map((widget) => (widget.id === id ? { ...widget, visible: true } : widget));
+  return moveWidget(next, id, overId);
+}
+
 /** Whether a widget can be drawn: a built-in that's available, or a panel that still exists. */
 export function isAvailable(id: WidgetId, panelIds: ReadonlySet<number> | null): boolean {
   if (isPanelWidget(id)) return panelIds === null || panelIds.has(panelIdOf(id));
@@ -774,6 +785,11 @@ export function useDashboardLayout(
     [update],
   );
 
+  const addAt = useCallback(
+    (id: WidgetId, overId: WidgetId) => update((prev) => revealWidgetAt(prev, id, overId)),
+    [update],
+  );
+
   const moveBy = useCallback(
     (id: WidgetId, delta: -1 | 1) => update((prev) => shiftWidget(prev, id, delta, panelIds)),
     [update, panelIds],
@@ -825,7 +841,7 @@ export function useDashboardLayout(
     [layout],
   );
 
-  return { layout, visible, hidden, move, moveBy, toggle, resize, addPanel, reset };
+  return { layout, visible, hidden, move, addAt, moveBy, toggle, resize, addPanel, reset };
 }
 
 export function useDashboardData(today: string, layout: WidgetState[]) {
