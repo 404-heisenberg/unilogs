@@ -22,6 +22,7 @@ import {
 import { api, ApiError, type SyncQueuedEntry } from '@/lib/api';
 import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
+import { parseDurationHours } from '@/lib/time';
 import { enqueue, newClientId } from '@/lib/offline-queue';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { toast } from '@/lib/toast';
@@ -147,7 +148,7 @@ function InlineTagInput({
           onFocus={() => setIsOpen(true)}
           onBlur={() => setTimeout(() => setIsOpen(false), 200)}
           onKeyDown={handleKeyDown}
-          placeholder={selectedIds.length === 0 ? '+ Add tag' : '+'}
+          placeholder="+ Add tag"
           aria-label="Add tag"
           className="min-w-[80px] flex-1 bg-transparent px-1 text-[13px] text-espresso outline-none placeholder:text-clay"
         />
@@ -434,6 +435,19 @@ export default function EntryCreatePage() {
         }
       }
     }
+    // A typed-but-invalid duration is never okay, whether or not the entry
+    // has a title or notes.
+    for (const field of fields) {
+      if (field.fieldType !== 'duration') continue;
+      const raw = values[field.name];
+      if (
+        raw !== undefined &&
+        String(raw).trim() !== '' &&
+        parseDurationHours(String(raw)) === null
+      ) {
+        nextFieldErrors[field.name] = 'Enter hours like 1.5 or 2:30';
+      }
+    }
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
       return;
@@ -679,6 +693,13 @@ export default function EntryCreatePage() {
       <div className="flex flex-col gap-4 border-t border-cream pt-5">
         <span className={PANE_LABEL}>Custom fields</span>
 
+        {fields.length > 0 && (
+          <p className="-mt-2 text-[11px] leading-relaxed text-taupe">
+            These are the fields defined for this project — fill in the ones that apply to this
+            entry.
+          </p>
+        )}
+
         {projectId && fieldsQuery.isPending && (
           <p className="text-[13px] text-clay italic">Loading fields…</p>
         )}
@@ -727,13 +748,11 @@ export default function EntryCreatePage() {
                   <label htmlFor={fieldId} className={paneFieldLabel}>
                     {field.name}
                   </label>
-                  {field.fieldType === 'number' || field.fieldType === 'duration' ? (
+                  {field.fieldType === 'number' ? (
                     <input
                       id={fieldId}
                       type="number"
                       step="any"
-                      // Durations are stored in hours (the backend sums them as hours).
-                      placeholder={field.fieldType === 'duration' ? 'Hours, e.g. 1.5' : undefined}
                       value={
                         typeof value === 'boolean'
                           ? ''
@@ -744,6 +763,21 @@ export default function EntryCreatePage() {
                       onChange={(e) => {
                         const val = e.target.value === '' ? '' : Number(e.target.value);
                         setValues((prev) => ({ ...prev, [field.name]: val }));
+                        setIsDirty(true);
+                      }}
+                      className={inputClassName}
+                    />
+                  ) : field.fieldType === 'duration' ? (
+                    <input
+                      id={fieldId}
+                      type="text"
+                      inputMode="decimal"
+                      // Durations are stored in hours, but people type times
+                      // like 2:30, so accept text and parse it at save time.
+                      placeholder="Hours, e.g. 1.5 or 2:30"
+                      value={typeof value === 'boolean' ? '' : String(value)}
+                      onChange={(e) => {
+                        setValues((prev) => ({ ...prev, [field.name]: e.target.value }));
                         setIsDirty(true);
                       }}
                       className={inputClassName}
@@ -817,6 +851,9 @@ export default function EntryCreatePage() {
 
       <div className="flex flex-col gap-3 border-t border-cream pt-5">
         <span className={PANE_LABEL}>Tags</span>
+        <p className="-mt-2 text-[11px] leading-relaxed text-taupe">
+          Add as many as you like — each tag groups this entry.
+        </p>
         <InlineTagInput selectedIds={tagIds} onChange={setTagIds} setIsDirty={setIsDirty} />
       </div>
 
