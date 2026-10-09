@@ -15,12 +15,12 @@ const PROJECTS = [
   { id: 2, name: 'Sunrise Study', description: null, userId: 'u1' },
 ];
 
-function renderExplorer(path = '/projects/1') {
+function renderExplorer(path = '/projects/1', onTakeTour?: () => void) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[path]}>
-        <ProjectExplorer />
+        <ProjectExplorer onTakeTour={onTakeTour} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -75,5 +75,18 @@ describe('ProjectExplorer', () => {
       'aria-expanded',
       'false',
     );
+  });
+
+  it('offers to take the tour when there are no projects', async () => {
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/api/projects') return Promise.resolve([]);
+      return Promise.reject(new Error(`unexpected GET ${url}`));
+    });
+    const onTakeTour = vi.fn();
+
+    renderExplorer('/projects/1', onTakeTour);
+    await userEvent.click(await screen.findByRole('button', { name: 'Take the tour' }));
+
+    expect(onTakeTour).toHaveBeenCalledTimes(1);
   });
 });
