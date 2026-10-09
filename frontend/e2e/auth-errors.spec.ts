@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { test, expect } from '@playwright/test';
-import { verifyEmail } from './helpers';
+import { dismissWalkthrough, verifyEmail } from './helpers';
 
 // Error paths that only exist once a real backend is in the loop — a
 // duplicate email rejected by the database, a login rejected by the real
@@ -26,6 +26,7 @@ test('signing up twice with the same email does not reveal the account exists', 
   await expect(page).toHaveURL(/\/verify-email/);
   await verifyEmail(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
+  await dismissWalkthrough(page);
 
   // Sign out lives in the Account section of the Settings page, and the page
   // opens on the App section, so the tab has to be clicked first.
@@ -58,6 +59,7 @@ test('logging in with the wrong password is rejected', async ({ page }) => {
   await expect(page).toHaveURL(/\/verify-email/);
   await verifyEmail(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
+  await dismissWalkthrough(page);
 
   // Sign out lives in the Account section of the Settings page, and the page
   // opens on the App section, so the tab has to be clicked first.

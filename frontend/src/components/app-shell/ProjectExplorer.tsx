@@ -114,7 +114,7 @@ const ProjectRow = memo(function ProjectRow({
   );
 });
 
-export default function ProjectExplorer() {
+export default function ProjectExplorer({ onTakeTour }: { onTakeTour?: () => void }) {
   const {
     data: projects,
     isPending,
@@ -149,7 +149,20 @@ export default function ProjectExplorer() {
 
       {isError && <p className="text-xs text-error">Failed to load projects.</p>}
 
-      {projects?.length === 0 && <p className="text-xs text-clay italic">No projects yet</p>}
+      {projects?.length === 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-clay italic">No projects yet</p>
+          {onTakeTour && (
+            <button
+              type="button"
+              onClick={onTakeTour}
+              className="self-start text-xs font-medium text-gold hover:underline"
+            >
+              Take the tour
+            </button>
+          )}
+        </div>
+      )}
 
       <ul className="flex flex-col gap-1.5">
         {(projects ?? []).map((project) => {

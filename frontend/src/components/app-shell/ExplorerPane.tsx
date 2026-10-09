@@ -3,7 +3,13 @@ import ProjectExplorer from './ProjectExplorer';
 // Figma's explorer is just the project tree; sign-out lives in Settings.
 // The pane stays mounted and animates its width and opacity so collapsing
 // doesn't pop (Round 2: "the pop in and out is jarring").
-export default function ExplorerPane({ collapsed }: { collapsed: boolean }) {
+export default function ExplorerPane({
+  collapsed,
+  onTakeTour,
+}: {
+  collapsed: boolean;
+  onTakeTour?: () => void;
+}) {
   return (
     <aside
       aria-hidden={collapsed}
@@ -12,7 +18,7 @@ export default function ExplorerPane({ collapsed }: { collapsed: boolean }) {
       }`}
     >
       <div className="min-h-0 flex-1 overflow-y-auto bg-explorer p-4">
-        <ProjectExplorer />
+        <ProjectExplorer onTakeTour={onTakeTour} />
       </div>
     </aside>
   );
