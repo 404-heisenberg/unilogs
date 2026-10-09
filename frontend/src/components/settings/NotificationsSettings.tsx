@@ -129,7 +129,7 @@ export default function NotificationsSettings() {
         <p className="text-sm text-error">Couldn&apos;t load notification settings.</p>
       )}
 
-      <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
+      <div className="w-full overflow-hidden rounded-xl border border-line bg-white">
         <div className="flex items-center justify-between gap-4 px-5 py-4">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-espresso">All notifications</p>
@@ -167,7 +167,7 @@ export default function NotificationsSettings() {
         above.
       </p>
 
-      <div className="w-full overflow-hidden rounded-xl border border-line bg-paper">
+      <div className="w-full overflow-hidden rounded-xl border border-line bg-white">
         {projectsQuery.isPending && (
           <Skeleton rows={2} barClassName="h-10 rounded-md bg-sand" className="p-4" />
         )}

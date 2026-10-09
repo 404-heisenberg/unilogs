@@ -1,6 +1,7 @@
 import type {
   EntriesAsAt,
   Entry,
+  EntryVersion,
   ProjectTrash,
   StatPanel,
   StatPanelInput,
@@ -71,6 +72,23 @@ export type CalendarStatus = { connected: boolean };
 
 export type CalendarConnectResult = { url?: string; connected?: boolean };
 
+// One of the user's Google calendars. `enabled` decides whether its events
+// feed suggestions and the upcoming list.
+export type CalendarSource = {
+  id: number;
+  calendarId: string;
+  summary: string;
+  description: string;
+  color: string;
+  enabled: boolean;
+  order: number;
+};
+
+export type CalendarSourcesResponse = {
+  connected: boolean;
+  sources: CalendarSource[];
+};
+
 export type CalendarSuggestion = {
   id: string;
   title: string;
@@ -106,6 +124,17 @@ export type CalendarSuggestionsResponse = {
   connected: boolean;
   suggestions: CalendarSuggestion[];
 };
+
+export function listCalendarSources() {
+  return api.get<CalendarSourcesResponse>('/api/calendar/sources');
+}
+
+export function updateCalendarSource(
+  id: number,
+  input: Partial<Pick<CalendarSource, 'enabled' | 'color' | 'order'>>,
+) {
+  return api.patch<CalendarSource>(`/api/calendar/sources/${id}`, input);
+}
 
 export function getStatsSummary() {
   return api.get<StatsSummary>('/api/stats');
@@ -145,6 +174,32 @@ export function deleteStatPanel(projectId: number | string, panelId: number) {
   return api.delete<void>(`${statPanelsPath(projectId)}/${panelId}`);
 }
 
+// Entry history endpoints.
+//
+// The history route answers 404 both for an entry that does not exist and for
+// one that has no audit rows yet. Which of the two it is is the entry query's
+// job to report, so here "no history yet" is an empty list rather than an
+// error — otherwise a freshly created entry would show a failure instead of
+// its empty state.
+export async function getEntryHistory(entryId: string | number): Promise<EntryVersion[]> {
+  try {
+    const { versions } = await api.get<{ versions: EntryVersion[] | null }>(
+      `/api/entries/${entryId}/history`,
+    );
+    return versions ?? [];
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return [];
+    throw err;
+  }
+}
+
+// Restore is append-only: it writes a new UPDATE row that reuses an old one's
+// values, so the caller passes the audit row to replay, not an entry id.
+export function restoreEntryVersion(entryId: string | number, auditId: number) {
+  return api.post<{ entry: Entry; tagsChanged: boolean }>(
+    `/api/entries/${entryId}/history/${auditId}/restore`,
+  );
+}
 export function getProjectTrash(projectId: number | string) {
   return api.get<ProjectTrash>(`/api/projects/${projectId}/trash`);
 }

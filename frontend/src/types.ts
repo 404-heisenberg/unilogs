@@ -42,6 +42,25 @@ export type Entry = {
   isCompleted?: boolean;
 };
 
+// One row of an entry's audit trail, as returned by GET /api/entries/:id/history.
+// `snapshot` is the entry as it stood after that write; a DELETE row carries the
+// state it removed. Mirrors EntryVersion in
+// backend/src/services/entry-history-service.ts.
+export type EntryVersionSnapshot = {
+  title: string | null;
+  body: string | null;
+  content: EntryContent;
+  date: string;
+  tagIds?: number[];
+};
+
+export type EntryVersion = {
+  auditId: number;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  modifiedAt: string;
+  snapshot: EntryVersionSnapshot | null;
+};
+
 export type PagedEntries = {
   entries: Entry[];
   total: number;
