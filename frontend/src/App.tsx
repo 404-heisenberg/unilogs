@@ -29,6 +29,7 @@ const EntryCreatePage = lazy(() => import('./pages/EntryCreatePage'));
 const EntryDetailPage = lazy(() => import('./pages/EntryDetailPage'));
 const EntryHistoryPage = lazy(() => import('./pages/EntryHistoryPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const SuggestionsPage = lazy(() => import('./pages/SuggestionsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 // Public share page: no app/auth code ships with it.
@@ -105,6 +106,7 @@ const router = createBrowserRouter([
           { path: '/entries/:entryId', element: <EntryDetailPage /> },
           { path: '/entries/:entryId/history', element: <EntryHistoryPage /> },
           { path: '/entries/:id/edit', element: <EntryCreatePage /> },
+          { path: '/calendar', element: <CalendarPage /> },
           { path: '/suggestions', element: <SuggestionsPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],

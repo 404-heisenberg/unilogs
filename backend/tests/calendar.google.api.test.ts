@@ -502,6 +502,66 @@ describe('GET /api/calendar/events', () => {
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
   });
+
+  it('asks Google for the next 30 days, 20 per calendar, when no range is given', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+    const userId = await getUserId(email);
+    await prisma.calendarSource.create({
+      data: { userId, calendarId: 'calendar-1', summary: 'Tutorials', enabled: true, order: 0 },
+    });
+    getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ items: [] })));
+
+    const before = Date.now();
+    await agent.get('/api/calendar/events');
+
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]));
+    const timeMin = new Date(url.searchParams.get('timeMin')!).getTime();
+    const timeMax = new Date(url.searchParams.get('timeMax')!).getTime();
+    expect(timeMin).toBeGreaterThanOrEqual(before - 1000);
+    expect(Math.round((timeMax - timeMin) / (24 * 60 * 60 * 1000))).toBe(30);
+    expect(url.searchParams.get('maxResults')).toBe('20');
+  });
+
+  it('asks Google for exactly the requested window when from and to are given', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+    const userId = await getUserId(email);
+    await prisma.calendarSource.create({
+      data: { userId, calendarId: 'calendar-1', summary: 'Tutorials', enabled: true, order: 0 },
+    });
+    getAccessToken.mockResolvedValue({ accessToken: 'test-access-token' });
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ items: [] })));
+
+    const response = await agent
+      .get('/api/calendar/events')
+      .query({ from: '2026-08-31T22:00:00.000Z', to: '2026-09-30T22:00:00.000Z' });
+
+    expect(response.status).toBe(200);
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]));
+    expect(url.searchParams.get('timeMin')).toBe('2026-08-31T22:00:00.000Z');
+    expect(url.searchParams.get('timeMax')).toBe('2026-09-30T22:00:00.000Z');
+    expect(url.searchParams.get('maxResults')).toBe('250');
+  });
+
+  it.each([
+    [{ from: '2026-09-01T00:00:00.000Z' }, 'from and to must be given together'],
+    [{ from: 'soon', to: '2026-09-30T00:00:00.000Z' }, 'from and to must be ISO dates'],
+    [{ from: '2026-09-30T00:00:00.000Z', to: '2026-09-01T00:00:00.000Z' }, 'to must be after from'],
+    [
+      { from: '2026-01-01T00:00:00.000Z', to: '2026-06-01T00:00:00.000Z' },
+      'The range can be at most 62 days',
+    ],
+  ])('rejects the range %o', async (query, error) => {
+    const { agent } = await createAuthenticatedUser();
+
+    const response = await agent.get('/api/calendar/events').query(query);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error });
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });
 
 describe('GET /api/calendar/events/suggestions', () => {
