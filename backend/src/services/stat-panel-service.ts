@@ -141,6 +141,46 @@ export async function listPanelsForProject(
   );
 }
 
+/**
+ * Every panel the user has saved, across all their active projects, with its
+ * value computed - for the global dashboard, which shows panels from any
+ * project. Each panel carries its project's name and field types so the
+ * dashboard can label and format it without a request per project.
+ */
+export async function listPanelsForUser(userId: string) {
+  const panels = await prisma.statPanel.findMany({
+    where: { userId, project: { userId, archived: false } },
+    include: {
+      project: {
+        select: { id: true, name: true, fields: { select: { name: true, fieldType: true } } },
+      },
+    },
+    orderBy: [{ projectId: 'asc' }, { position: 'asc' }],
+  });
+
+  return Promise.all(
+    panels.map(async ({ project, ...panel }) => {
+      const base = {
+        ...panel,
+        project: { id: project.id, name: project.name },
+        fields: project.fields,
+      };
+      try {
+        const computed = await computePanelValue(
+          panel.projectId,
+          panel.expression,
+          panel.aggregation as Aggregation,
+          panel.rangeDays,
+        );
+        return { ...base, ...computed };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Evaluation failed';
+        return { ...base, value: null, sampleCount: 0, series: [], error: message };
+      }
+    }),
+  );
+}
+
 export async function createPanel(
   userId: string,
   projectId: number,
