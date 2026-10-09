@@ -16,11 +16,14 @@ import {
   Plus,
   Trash2,
   CalendarCheck,
+  CloudOff,
 } from 'lucide-react';
 
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, type SyncQueuedEntry } from '@/lib/api';
 import { buildContent, defaultValueForType } from '@/lib/field-values';
 import type { FieldValue } from '@/lib/field-values';
+import { enqueue, newClientId } from '@/lib/offline-queue';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { toast } from '@/lib/toast';
 import type { Entry, FieldDefinition, Project } from '@/types';
 import { tagStyle } from '@/lib/colors';
@@ -208,6 +211,7 @@ export default function EntryCreatePage() {
   const queryClient = useQueryClient();
   const firstFieldRef = useRef<HTMLSelectElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { isOffline, queuedCount, refresh: refreshQueue } = useOfflineQueue();
 
   const { data: entry, isLoading: isLoadingEntry } = useQuery({
     queryKey: ['entry', id],
@@ -295,6 +299,37 @@ export default function EntryCreatePage() {
     }
   }, [isEditing, entry]);
 
+  /**
+   * Puts a new entry on the offline queue instead of the network.
+   *
+   * The queue is create-only: `POST /api/entries/sync` upserts new rows and
+   * never edits an existing one, so the callers guard this behind `!isEditing`.
+   */
+  const queueOffline = (entry: Omit<SyncQueuedEntry, 'clientId'>): boolean => {
+    if (!enqueue({ ...entry, clientId: newClientId() })) {
+      toast.error("Couldn't queue this entry offline.", {
+        description: 'Device storage is full. Nothing was saved — reconnect and try again.',
+        fallback: "Couldn't queue this entry offline.",
+      });
+      return false;
+    }
+
+    refreshQueue();
+    toast.info('Saved offline — will sync later.');
+
+    // Clear the editor rather than navigate. The entry is not in the timeline
+    // yet, so landing there would look like the save was lost; staying put
+    // keeps the queued-count badge on screen and leaves a clean form for the
+    // next capture. Clearing also stops the same content being queued twice.
+    setTitle('');
+    setBody('');
+    setValues({});
+    setTagIds([]);
+    setDueDate('');
+    setIsDirty(false);
+    return true;
+  };
+
   const saveEntry = useMutation({
     mutationFn: (input: {
       projectId: number;
@@ -333,7 +368,18 @@ export default function EntryCreatePage() {
       }
       allowNavigationRef.current = false;
     },
-    onError: (error) => {
+    onError: (error, variables) => {
+      // `navigator.onLine` only reports whether the machine has a network. A
+      // request that never got an HTTP response rejects with something other
+      // than ApiError, and that is a connectivity failure — the entry belongs
+      // on the queue, not in an error toast.
+      if (!(error instanceof ApiError) && !isEditing) {
+        const { isKeyboardSave: keyboardSaveFlag, ...payload } = variables;
+        void keyboardSaveFlag;
+        queueOffline(payload);
+        return;
+      }
+
       const body = error instanceof ApiError ? (error.body as { errors?: string[] } | null) : null;
       const messages = Array.isArray(body?.errors) ? body.errors : [error.message];
 
@@ -394,9 +440,7 @@ export default function EntryCreatePage() {
     }
 
     const content = buildContent(fields, values);
-
-    setFieldErrors({});
-    saveEntry.mutate({
+    const payload = {
       projectId: Number(projectId),
       date,
       dueDate: dueDate ? dueDate : undefined,
@@ -404,8 +448,26 @@ export default function EntryCreatePage() {
       body: body.trim() || undefined,
       tagIds: tagIds.length > 0 ? tagIds : undefined,
       content,
-      isKeyboardSave,
-    });
+    };
+
+    setFieldErrors({});
+
+    if (!navigator.onLine) {
+      // The queue replays through the sync endpoint, which only ever creates
+      // rows. Queueing an edit here would come back as a second entry with the
+      // same content, so refuse it and leave the work on screen instead.
+      if (isEditing) {
+        toast.error("You're offline — an existing entry can't be edited yet.", {
+          description: 'Your changes are still here. Reconnect, then save again.',
+          fallback: "You're offline — edits can't be saved yet.",
+        });
+        return;
+      }
+      queueOffline(payload);
+      return;
+    }
+
+    saveEntry.mutate({ ...payload, isKeyboardSave });
   };
 
   const applyFormatting = (type: FormatOption) => {
@@ -826,6 +888,28 @@ export default function EntryCreatePage() {
             )}
           </div>
         </div>
+
+        {/* Figma prompt 8. Both halves are independent: the banner explains what
+            will happen, the badge counts what is actually waiting. The badge
+            survives a reconnect while the flush is still in flight. */}
+        {(isOffline || queuedCount > 0) && (
+          <div
+            role="status"
+            className="-mx-4 mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-cream bg-clay/10 px-4 py-3 text-sm text-espresso md:-mx-12 md:px-12"
+          >
+            {isOffline && (
+              <span className="flex items-center gap-2">
+                <CloudOff className="size-4 shrink-0 text-clay" aria-hidden />
+                You&apos;re offline — entries will sync when you reconnect.
+              </span>
+            )}
+            {queuedCount > 0 && (
+              <span className="inline-flex items-center rounded-full bg-clay/15 px-2.5 py-0.5 text-xs font-semibold text-clay">
+                {queuedCount} {queuedCount === 1 ? 'entry' : 'entries'} queued
+              </span>
+            )}
+          </div>
+        )}
 
         <label htmlFor="entry-title" className="sr-only">
           Title

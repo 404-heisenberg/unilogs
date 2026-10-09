@@ -7,12 +7,18 @@ import AppHeader from './app-shell/AppHeader';
 import InstallPrompt from './app-shell/InstallPrompt';
 import MobileBottomNav from './app-shell/MobileBottomNav';
 import MoreSheet from './app-shell/MoreSheet';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 
 export default function AppShell() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [explorerCollapsed, setExplorerCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // Replays anything still in the offline queue on every app load, not just
+  // when the entry editor happens to be open. Returns are ignored on purpose:
+  // this call exists for its listeners and its first flush.
+  useOfflineQueue();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
