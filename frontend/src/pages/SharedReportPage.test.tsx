@@ -71,11 +71,24 @@ describe('SharedReportPage', () => {
     expect(screen.getByText('research')).toBeInTheDocument();
     expect(screen.getByText('1h 30m hours')).toBeInTheDocument();
     expect(screen.getAllByText('1h 30m').length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("This report includes every entry's notes (bodies)."),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Download CSV/ })).toHaveAttribute(
       'href',
       expect.stringMatching(/\/share\/abc123\/export\?format=csv$/),
     );
     await waitFor(() => expect(document.title).toBe('Thesis — UniLogs report'));
+  });
+
+  it('tells the viewer when entry notes were left out', async () => {
+    mockFetch({
+      json: () => Promise.resolve({ ...REPORT, includeBodies: false, entries: [] }),
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/Entry notes \(bodies\) aren't included/)).toBeInTheDocument();
   });
 
   it('explains when the link has been revoked or expired', async () => {

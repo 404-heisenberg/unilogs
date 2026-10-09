@@ -48,7 +48,7 @@ export default function DashboardPage() {
     [allPanels],
   );
 
-  const { layout, visible, hidden, move, moveBy, toggle, resize, addPanel, reset } =
+  const { layout, visible, hidden, move, addAt, moveBy, toggle, resize, addPanel, reset } =
     useDashboardLayout(userId, panelIds);
   const [customising, setCustomising] = useState(false);
   const [today] = useState(() => toDayKey(new Date()));
@@ -268,12 +268,20 @@ export default function DashboardPage() {
 
         {/* Figma insets the cards 32px inside the header's width. */}
         <div className="md:px-8">
+          {customising && (
+            <p className="mb-4 text-sm text-cocoa">
+              Drag a widget&apos;s grip onto another widget to swap them, or use the arrow keys on a
+              grip. Tiles dragged from the Add widget tray below land where you drop them — the page
+              scrolls while you drag.
+            </p>
+          )}
           <DashboardGrid
             widgets={visible}
             customising={customising}
             isDesktop={isDesktop}
             ctx={ctx}
             onMove={move}
+            onAddAt={addAt}
             onMoveBy={moveBy}
             onToggle={toggle}
             onResize={resize}

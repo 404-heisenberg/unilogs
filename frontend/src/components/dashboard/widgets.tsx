@@ -1023,7 +1023,7 @@ type FrameProps = {
   isDragging: boolean;
   onDragStart: (id: WidgetId) => void;
   onDragEnd: () => void;
-  onDropOn: (id: WidgetId) => void;
+  onDropOn: (id: WidgetId, event: DragEvent<HTMLDivElement>) => void;
   onMoveBy: (id: WidgetId, delta: -1 | 1) => void;
   onToggle: (id: WidgetId) => void;
   onResize: (id: WidgetId) => void;
@@ -1072,10 +1072,13 @@ function WidgetFrameBase({
   return (
     <div
       data-widget-frame
-      onDragOver={(event) => event.preventDefault()}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
       onDrop={(event) => {
         event.preventDefault();
-        onDropOn(id);
+        onDropOn(id, event);
       }}
       className={`relative rounded-xl border border-dashed border-line-strong p-1.5 transition-opacity ${
         isDragging ? 'opacity-40' : ''
@@ -1300,10 +1303,14 @@ export function AddWidgetTray({ hidden, onAdd, panels, panelsLoading, onAddPanel
       aria-label="Add widget"
       className="rounded-xl border border-dashed border-line-strong p-4"
     >
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-espresso">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-espresso">
         <Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden />
         Add widget
       </h2>
+      <p className={`mb-3 mt-1 text-xs ${MUTED}`}>
+        Drag a tile onto the dashboard to put the widget where you want it, or click to add it at
+        the end.
+      </p>
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {builtins.map((widget) => {
           const meta = WIDGET_META[widget.id];
@@ -1311,9 +1318,14 @@ export function AddWidgetTray({ hidden, onAdd, panels, panelsLoading, onAddPanel
             <li key={widget.id}>
               <button
                 type="button"
+                draggable
                 onClick={() => onAdd(widget.id)}
+                onDragStart={(event) => {
+                  event.dataTransfer.setData(ADD_WIDGET_MIME, widget.id);
+                  event.dataTransfer.effectAllowed = 'move';
+                }}
                 aria-label={`Add ${meta.title}`}
-                className={TRAY_TILE}
+                className={`${TRAY_TILE} cursor-grab active:cursor-grabbing`}
               >
                 <WidgetThumbnail kind={meta.thumbnail} />
                 {meta.title}
@@ -1329,12 +1341,26 @@ export function AddWidgetTray({ hidden, onAdd, panels, panelsLoading, onAddPanel
   );
 }
 
+/** Drag payload type for tiles dragged out of the add tray onto the grid. */
+const ADD_WIDGET_MIME = 'application/x-unilogs-widget';
+
+/** The nearest ancestor that scrolls, or null. Used to keep a drag reachable. */
+function findScrollParent(from: HTMLElement | null): HTMLElement | null {
+  let node: HTMLElement | null = from;
+  while (node) {
+    if (node.scrollHeight > node.clientHeight) return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
 type DashboardGridProps = {
   widgets: WidgetState[];
   customising: boolean;
   isDesktop: boolean;
   ctx: DashboardCtx;
   onMove: (activeId: WidgetId, overId: WidgetId) => void;
+  onAddAt: (id: WidgetId, overId: WidgetId) => void;
   onMoveBy: (id: WidgetId, delta: -1 | 1) => void;
   onToggle: (id: WidgetId) => void;
   onResize: (id: WidgetId) => void;
@@ -1346,6 +1372,7 @@ export function DashboardGrid({
   isDesktop,
   ctx,
   onMove,
+  onAddAt,
   onMoveBy,
   onToggle,
   onResize,
@@ -1366,14 +1393,34 @@ export function DashboardGrid({
   }, []);
 
   const handleDrop = useCallback(
-    (overId: WidgetId) => {
+    (overId: WidgetId, event: DragEvent<HTMLDivElement>) => {
+      // A tile dragged from the tray carries the widget it's adding, so a new
+      // widget can land on a specific spot instead of always going to the end.
+      const addId = event.dataTransfer.getData(ADD_WIDGET_MIME);
+      if (addId) {
+        onAddAt(addId as WidgetId, overId);
+        dragRef.current = null;
+        setDraggingId(null);
+        return;
+      }
       const activeId = dragRef.current;
       if (activeId) onMove(activeId, overId);
       dragRef.current = null;
       setDraggingId(null);
     },
-    [onMove],
+    [onMove, onAddAt],
   );
+
+  // Native drags suspend page scrolling, so nudge the nearest scroller near
+  // the top/bottom edge to keep a drag to a far widget reachable.
+  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    const scroller = findScrollParent(event.currentTarget);
+    if (!scroller) return;
+    const rect = scroller.getBoundingClientRect();
+    const EDGE = 48;
+    if (event.clientY < rect.top + EDGE) scroller.scrollTop -= 20;
+    else if (event.clientY > rect.bottom - EDGE) scroller.scrollTop += 20;
+  }, []);
 
   const renderFrame = (widget: WidgetState) => (
     <WidgetFrame
@@ -1394,7 +1441,7 @@ export function DashboardGrid({
   );
 
   return (
-    <div className={`flex flex-col ${customising ? 'gap-6' : 'gap-4'}`}>
+    <div className={`flex flex-col ${customising ? 'gap-6' : 'gap-4'}`} onDragOver={handleDragOver}>
       {blocks.map((block) =>
         block.kind === 'row' ? (
           renderFrame(block.widget)

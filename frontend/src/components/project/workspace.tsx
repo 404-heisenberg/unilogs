@@ -266,6 +266,9 @@ function StillOpen({
     : [];
   const overdueCount = stats?.overdue.length ?? 0;
 
+  // Only take up space when there's something to do (or we're still asking).
+  if (!isLoading && !isError && stats && rows.length === 0) return null;
+
   return (
     <section aria-labelledby="still-open-heading">
       <div className="mb-3 flex items-baseline justify-between gap-3">
@@ -280,11 +283,6 @@ function StillOpen({
       </div>
       {isLoading && <Skeleton rows={2} />}
       {isError && <p className={`text-sm ${MUTED}`}>Couldn't load open items.</p>}
-      {stats && rows.length === 0 && (
-        <p className={`text-sm ${MUTED}`}>
-          Nothing outstanding — every tracked item in this project has been marked done.
-        </p>
-      )}
       {rows.length > 0 && (
         <ul className="flex flex-col gap-3">
           {rows.map(({ item, group }) => (

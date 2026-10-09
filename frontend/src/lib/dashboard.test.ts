@@ -15,10 +15,12 @@ import {
   mondayOf,
   moveWidget,
   normalizeLayout,
+  revealWidgetAt,
   saveLayout,
   shiftWidget,
   toBlocks,
   useDashboardLayout,
+  type WidgetId,
   type WidgetState,
 } from './dashboard';
 
@@ -188,6 +190,26 @@ describe('moveWidget and shiftWidget', () => {
 
   it('does nothing at the ends of the list', () => {
     expect(shiftWidget(DEFAULT_LAYOUT, 'summary', -1)).toBe(DEFAULT_LAYOUT);
+  });
+});
+
+describe('revealWidgetAt', () => {
+  it('reveals a hidden widget at the drop target instead of the end', () => {
+    const hidden = DEFAULT_LAYOUT.map((widget) =>
+      widget.id === 'timeByProject' ? { ...widget, visible: false } : widget,
+    );
+    const placed = revealWidgetAt(hidden, 'timeByProject', 'insight');
+    const overIndex = hidden.findIndex((widget) => widget.id === 'insight');
+    expect(placed[overIndex].id).toBe('timeByProject');
+    expect(placed[overIndex + 1].id).toBe('insight');
+    expect(placed.find((widget) => widget.id === 'timeByProject')?.visible).toBe(true);
+  });
+
+  it('returns the layout unchanged when the over target is missing', () => {
+    const hidden = DEFAULT_LAYOUT.map((widget) =>
+      widget.id === 'timeByProject' ? { ...widget, visible: false } : widget,
+    );
+    expect(revealWidgetAt(hidden, 'timeByProject', 'nope' as WidgetId)).toBe(hidden);
   });
 });
 
