@@ -3695,7 +3695,25 @@ export const openapiSpec = {
 
     '/api/calendar/events': {
       get: {
-        summary: 'Get upcoming Google Calendar events',
+        summary: 'Get Google Calendar events',
+        description:
+          'Without from/to, returns the next 30 days (up to 20 events per calendar). With both, returns every event in that window, which may span at most 62 days.',
+        parameters: [
+          {
+            name: 'from',
+            in: 'query',
+            required: false,
+            description: 'Start of the window, as an ISO date-time. Requires to.',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'to',
+            in: 'query',
+            required: false,
+            description: 'End of the window (exclusive), as an ISO date-time. Requires from.',
+            schema: { type: 'string', format: 'date-time' },
+          },
+        ],
         responses: {
           '200': {
             description: 'Upcoming calendar events returned.',
@@ -3719,6 +3737,10 @@ export const openapiSpec = {
                 },
               },
             },
+          },
+
+          '400': {
+            description: 'from and to are not both valid, in order, and at most 62 days apart.',
           },
 
           '401': {
