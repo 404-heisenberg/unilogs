@@ -10,6 +10,7 @@ import {
 import { Toaster } from '@/components/ui/sonner';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 // The landing page is the only route bundled up front: it's where most
 // visitors arrive. Every other page, and the signed-in app shell, is split
@@ -85,6 +86,7 @@ function AppToaster() {
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
+  { path: '/privacy', element: <PrivacyPolicyPage /> },
   { path: '/login', element: page(<LoginPage />) },
   { path: '/signup', element: page(<SignupPage />) },
   { path: '/reset-password', element: page(<ResetPasswordPage />) },
