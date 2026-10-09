@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, FileText, Plus } from 'lucide-react';
 import { AddWidgetTray, DashboardGrid, type DashboardCtx } from '@/components/dashboard/widgets';
 import { useSession } from '@/hooks/useSession';
-import { api } from '@/lib/api';
+import { api, listAllStatPanels } from '@/lib/api';
 import type { Project } from '@/types';
 import {
   DARK_BUTTON,
@@ -15,6 +15,7 @@ import {
   buildHeatmap,
   findDormantProjects,
   formatLongDate,
+  panelWidgetId,
   toDayKey,
   useCountUp,
   useDashboardData,
@@ -34,8 +35,21 @@ export default function DashboardPage() {
   const session = useSession();
   const userId = session.data?.user.id ?? null;
 
-  const { layout, visible, hidden, move, moveBy, toggle, resize, reset } =
-    useDashboardLayout(userId);
+  // Every saved panel in one request; panel widgets and the tray both read
+  // from it, so no widget fetches its own value.
+  const panelsQuery = useQuery({
+    queryKey: ['stat-panels', 'all'],
+    queryFn: listAllStatPanels,
+    enabled: userId !== null,
+  });
+  const allPanels = panelsQuery.data;
+  const panelIds = useMemo(
+    () => (allPanels ? new Set(allPanels.map((panel) => panel.id)) : null),
+    [allPanels],
+  );
+
+  const { layout, visible, hidden, move, moveBy, toggle, resize, addPanel, reset } =
+    useDashboardLayout(userId, panelIds);
   const [customising, setCustomising] = useState(false);
   const [today] = useState(() => toDayKey(new Date()));
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -90,6 +104,16 @@ export default function DashboardPage() {
   const upcomingData = data.upcoming.data;
   const upcomingLoading = data.upcoming.isLoading;
   const upcomingError = data.upcoming.isError;
+  const panelsById = useMemo(
+    () => new Map((allPanels ?? []).map((panel) => [panel.id, panel])),
+    [allPanels],
+  );
+  const panelsLoading = panelsQuery.isLoading;
+  const panelsError = panelsQuery.isError;
+  const trayPanels = useMemo(() => {
+    const shown = new Set(visible.map((widget) => widget.id));
+    return (allPanels ?? []).filter((panel) => !shown.has(panelWidgetId(panel.id)));
+  }, [allPanels, visible]);
   const markFailed = data.markDone.isError;
   const onMarkDone = data.markDone.mutate;
 
@@ -98,6 +122,7 @@ export default function DashboardPage() {
     const top = [...summary.perProject].sort((a, b) => b.totalHours - a.totalHours)[0];
     return {
       today,
+      panels: { byId: panelsById, isLoading: panelsLoading, isError: panelsError },
       isDesktop,
       summary,
       counts: { streak: streakCount, totalHours: totalHoursCount },
@@ -130,6 +155,9 @@ export default function DashboardPage() {
     };
   }, [
     today,
+    panelsById,
+    panelsLoading,
+    panelsError,
     isDesktop,
     summary,
     streakCount,
@@ -253,7 +281,13 @@ export default function DashboardPage() {
 
           {customising && (
             <div className="mt-6">
-              <AddWidgetTray hidden={hidden} onAdd={toggle} />
+              <AddWidgetTray
+                hidden={hidden}
+                onAdd={toggle}
+                panels={trayPanels}
+                panelsLoading={panelsLoading}
+                onAddPanel={addPanel}
+              />
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
 import type {
+  DashboardStatPanel,
   EntriesAsAt,
   Entry,
   EntryVersion,
@@ -243,4 +244,21 @@ export type SyncEntryResult = {
 
 export function syncEntries(entries: SyncQueuedEntry[]) {
   return api.post<{ results: SyncEntryResult[] }>('/api/entries/sync', { entries });
+}
+
+/** Every saved stat panel across the user's projects, with values. */
+export function listAllStatPanels() {
+  return api.get<DashboardStatPanel[]>('/api/stat-panels');
+}
+
+// The dashboard layout is typed loosely here on purpose: lib/dashboard.ts
+// owns the widget shape and validates whatever comes back.
+export type DashboardLayoutResponse = { layout: unknown[] | null };
+
+export function getDashboardLayout() {
+  return api.get<DashboardLayoutResponse>('/api/dashboard/layout');
+}
+
+export function putDashboardLayout(layout: unknown[]) {
+  return api.put<DashboardLayoutResponse>('/api/dashboard/layout', { layout });
 }
