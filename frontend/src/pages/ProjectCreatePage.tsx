@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, X } from 'lucide-react';
+import { Check, ChevronLeft, Info, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FIELD_TYPE_LABELS, FIELD_TYPES, type FieldType } from '@/lib/field-types';
 import { api } from '@/lib/api';
@@ -70,6 +70,7 @@ export default function ProjectCreatePage() {
   const [newFieldType, setNewFieldType] = useState<FieldType>(FIELD_TYPES[0]);
   const [isAddingField, setIsAddingField] = useState(false);
   const [reminder, setReminder] = useState<'off' | 'daily' | 'weekly'>('weekly');
+  const fieldNameRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -187,8 +188,10 @@ export default function ProjectCreatePage() {
     setFields((f) => [...f, { name: trimmed, fieldType: newFieldType }]);
     setNewFieldName('');
     setNewFieldType(FIELD_TYPES[0]);
-    setIsAddingField(false);
     setTemplate(null);
+    // "Add" saves this field and keeps the box open for the next one, so N
+    // fields cost N clicks (Luthando's complaint). The X above closes it.
+    fieldNameRef.current?.focus();
   };
 
   const removeField = (index: number) => {
@@ -270,13 +273,18 @@ export default function ProjectCreatePage() {
 
             {/* Step Indicators */}
             <div className="flex flex-col gap-1.5">
-              <div className="flex gap-2">
-                {STEPS.map((s, i) => (
-                  <span
-                    key={s.key}
-                    className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-gold' : 'bg-cream'}`}
-                  />
-                ))}
+              <div className="flex items-center gap-2">
+                <div className="flex flex-1 gap-2">
+                  {STEPS.map((s, i) => (
+                    <span
+                      key={s.key}
+                      className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-gold' : 'bg-cream'}`}
+                    />
+                  ))}
+                </div>
+                <span className="shrink-0 text-[11px] font-semibold text-cocoa">
+                  Step {stepIndex + 1} of {STEPS.length}
+                </span>
               </div>
               <div className="flex gap-2">
                 {STEPS.map((s, i) => (
@@ -325,7 +333,7 @@ export default function ProjectCreatePage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-cocoa mb-2">Colour</label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     {COLOR_OPTIONS.map((c) => {
                       const isSelected = color === c.hex;
                       return (
@@ -334,17 +342,34 @@ export default function ProjectCreatePage() {
                           type="button"
                           onClick={() => setColor(c.hex)}
                           style={{ backgroundColor: c.hex }}
-                          className={`relative size-8 rounded-full transition-transform ${
+                          className={`relative size-11 rounded-full transition-transform ${
                             isSelected ? 'ring-2 ring-espresso ring-offset-2 scale-105' : ''
                           }`}
                           aria-label={`Select ${c.label}`}
+                          aria-pressed={isSelected}
                         >
                           {isSelected && (
-                            <Check size={14} className="text-white mx-auto" strokeWidth={3} />
+                            <Check size={16} className="text-white mx-auto" strokeWidth={3} />
                           )}
                         </button>
                       );
                     })}
+                  </div>
+                  {/* The colour is otherwise easy to miss — show it doing the job. */}
+                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2.5">
+                    <span
+                      className="size-9 shrink-0 rounded-lg"
+                      style={{ backgroundColor: color }}
+                      aria-hidden
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold" style={{ color }}>
+                        {name.trim() || 'Your project'}
+                      </p>
+                      <p className="text-[10px] text-clay">
+                        This colour appears across your dashboard, entries and reports.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -353,6 +378,21 @@ export default function ProjectCreatePage() {
             {/* STEP 2: FIELDS */}
             {step === 'fields' && (
               <div className="flex flex-col gap-6">
+                {/* The #1 confusion from user testing: what a field is for. */}
+                <div className="flex items-start gap-2.5 rounded-xl border border-gold/40 bg-gold/5 px-3 py-2.5">
+                  <Info
+                    className="mt-0.5 size-4 shrink-0 text-clay"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                  <p className="text-xs leading-relaxed text-cocoa">
+                    <span className="font-semibold text-espresso">What are fields?</span> Fields are
+                    the things every entry in this project records — like &apos;Hours spent&apos; or
+                    &apos;Pages read&apos;. When you log an entry later, these are the boxes you
+                    fill in, so pick what you want to track.
+                  </p>
+                </div>
+
                 {/* Template Section Header & Cards */}
                 <div className="flex flex-col gap-3">
                   <p className="text-xs font-semibold text-espresso">Start from a template</p>
@@ -396,7 +436,14 @@ export default function ProjectCreatePage() {
                 {/* Custom Fields Section */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-espresso">Custom fields</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-semibold text-espresso">Custom fields</p>
+                      {fields.length > 0 && (
+                        <span className="rounded-full bg-cream px-2 py-0.5 text-[10px] font-semibold text-clay">
+                          {fields.length} added
+                        </span>
+                      )}
+                    </div>
                     {!isAddingField && (
                       <Button
                         type="button"
@@ -433,9 +480,10 @@ export default function ProjectCreatePage() {
                           <button
                             type="button"
                             onClick={() => removeField(i)}
+                            aria-label={`Remove ${field.name}`}
                             className="text-clay hover:text-error p-1"
                           >
-                            <X size={16} />
+                            <Trash2 size={16} aria-hidden />
                           </button>
                         </div>
                       </div>
@@ -449,6 +497,7 @@ export default function ProjectCreatePage() {
                       >
                         <input
                           type="text"
+                          ref={fieldNameRef}
                           value={newFieldName}
                           onChange={(e) => setNewFieldName(e.target.value)}
                           placeholder="Field name"
@@ -477,11 +526,15 @@ export default function ProjectCreatePage() {
                           <button
                             type="button"
                             onClick={() => setIsAddingField(false)}
+                            aria-label="Stop adding fields"
                             className="p-1 text-clay hover:text-espresso"
                           >
                             <X size={16} />
                           </button>
                         </div>
+                        <p className="w-full text-center text-[10px] text-clay">
+                          Add saves this field and keeps the box open for the next one.
+                        </p>
                       </form>
                     )}
                   </div>
@@ -494,13 +547,22 @@ export default function ProjectCreatePage() {
               <div className="flex flex-col gap-5">
                 {/* Summary */}
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="size-3 rounded-full" style={{ backgroundColor: color }} />
-                    <h3 className="text-base font-bold text-espresso">
-                      {name || 'Untitled project'}
-                    </h3>
+                  <div className="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-3">
+                    <span
+                      className="size-10 shrink-0 rounded-xl"
+                      style={{ backgroundColor: color }}
+                      aria-hidden
+                    />
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-bold" style={{ color }}>
+                        {name || 'Untitled project'}
+                      </h3>
+                      <p className="text-[10px] text-clay">
+                        Project colour — used across your dashboard, entries and reports
+                      </p>
+                    </div>
                   </div>
-                  {description && <p className="text-xs text-clay ml-5">{description}</p>}
+                  {description && <p className="text-xs text-clay">{description}</p>}
                 </div>
 
                 {/* Defined Fields Summary Table */}
