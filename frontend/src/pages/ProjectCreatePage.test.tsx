@@ -112,6 +112,54 @@ describe('ProjectCreatePage', () => {
     expect(await screen.findByText('Project detail')).toBeInTheDocument();
   });
 
+  it('keeps the add-field box open so N fields cost N clicks, and shows the new guidance', async () => {
+    const user = userEvent.setup();
+
+    postMock.mockImplementation((path: string) => {
+      if (path === '/api/projects') {
+        return Promise.resolve({ id: 4, name: 'Reading', archived: false, userId: 'u1' });
+      }
+      if (path === '/api/field-definitions') {
+        return Promise.resolve({ id: 1, projectId: 4, name: 'Notes', fieldType: 'text' });
+      }
+      return Promise.reject(new Error(`unexpected POST ${path}`));
+    });
+
+    renderPage();
+
+    // Step 1: Details
+    await user.type(screen.getByPlaceholderText('e.g. Data Structures Revision'), 'Reading');
+    expect(
+      screen.getByText('This colour appears across your dashboard, entries and reports.'),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    // The step asks for fields, and now answers what they're for.
+    expect(await screen.findByText(/What are fields\?/)).toBeInTheDocument();
+    expect(screen.getByText('Step 2 of 3')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Add field' }));
+    await user.type(screen.getByPlaceholderText('Field name'), 'Notes');
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+
+    // Still in the same box: the next field can be typed straight away.
+    expect(await screen.findByText('1 added')).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText('Field name'), 'Rating');
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+    expect(screen.getByText('2 added')).toBeInTheDocument();
+
+    // A bin icon, not an X, removes a custom field.
+    expect(screen.getByRole('button', { name: 'Remove Notes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Rating' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Reminders')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(postMock).toHaveBeenCalledTimes(3); // the project plus both fields
+    expect(await screen.findByText('Project detail')).toBeInTheDocument();
+  });
+
   it('allows adding custom fields and saving the project', async () => {
     const user = userEvent.setup();
 

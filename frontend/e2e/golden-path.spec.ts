@@ -45,7 +45,9 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await page.getByPlaceholder('Field name').fill('Hours');
   await page.locator('form select').selectOption('duration');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
-  await expect(page.getByText('Hours')).toBeVisible();
+  // The step's "what are fields?" explainer mentions 'Hours spent', so pin the
+  // newly added row with an exact match.
+  await expect(page.getByText('Hours', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
