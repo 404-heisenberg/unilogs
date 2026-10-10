@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Clock, CornerUpLeft, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Project } from '@/types';
@@ -46,6 +46,9 @@ function HeaderAction({ pathname, projectId }: { pathname: string; projectId: st
     );
   }
 
+  // Figma's mobile Settings (26:381) puts Sign out in the top bar.
+  if (pathname === '/settings') return <SignOutButton />;
+
   // The calendar's Figma frame spells the action out as a gold button.
   if (pathname === '/calendar') {
     return (
@@ -66,6 +69,24 @@ function HeaderAction({ pathname, projectId }: { pathname: string; projectId: st
     >
       <Plus size={16} strokeWidth={2} />
     </Link>
+  );
+}
+
+function SignOutButton() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const signOut = async () => {
+    await api.post('/api/auth/sign-out');
+    queryClient.removeQueries({ queryKey: ['session'] });
+    navigate('/login');
+  };
+  return (
+    // 44px tap target around the 32px button.
+    <button type="button" onClick={signOut} className="-mr-1 flex min-h-11 items-center px-1">
+      <span className="flex h-8 items-center rounded-lg border border-line-strong px-3 text-[13px] font-medium text-espresso">
+        Sign out
+      </span>
+    </button>
   );
 }
 

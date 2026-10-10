@@ -30,11 +30,9 @@ import type { FrequencyStats, StatsSummary } from '@/lib/api';
 import { entryWord, formatStatValue } from '@/lib/stat-panels';
 import {
   CARD,
-  DARK_BUTTON,
   GOLD_BUTTON,
   LABEL,
   MUTED,
-  TEXT_BUTTON,
   WIDGET_META,
   entryDateLabel,
   entryTitle,
@@ -434,23 +432,34 @@ type EventDetailsProps = {
 
 function EventDetails({ event, today, heading, stacked, onDismiss }: EventDetailsProps) {
   const when = formatEventWhen(event, today);
+  // Figma 37:386 (popover) and 37:563 (sheet): the sheet's text and buttons
+  // are a size up, and its buttons go full width.
+  const button = `inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
+    stacked ? 'min-h-11 w-full py-3 text-[15px]' : 'min-h-9 px-3.5 py-2 text-[13px]'
+  }`;
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`flex flex-col ${stacked ? 'gap-3.5' : 'gap-3'}`}>
       {heading}
-      {when && <p className={`text-xs ${MUTED}`}>{when}</p>}
-      <span className="w-fit rounded bg-cream px-2 py-0.5 text-[10px] font-medium text-clay">
+      {when && <p className={`${stacked ? 'text-sm' : 'text-[13px]'} ${MUTED}`}>{when}</p>}
+      <span
+        className={`w-fit rounded bg-caramel/15 px-2 font-medium text-[#8c6133] ${
+          stacked ? 'py-1 text-xs' : 'py-[3px] text-[11px]'
+        }`}
+      >
         From Google Calendar
       </span>
-      {event.description && <p className="text-xs text-cocoa">{event.description}</p>}
-      <div
-        className={
-          stacked ? 'mt-3 flex flex-col items-stretch gap-1' : 'mt-2 flex items-center gap-3'
-        }
-      >
-        <Link to={logEventPath(event)} className={`${DARK_BUTTON} ${stacked ? 'w-full' : ''}`}>
+      {event.description && (
+        <p className={`text-sm leading-normal ${MUTED}`}>{event.description}</p>
+      )}
+      <div className={`flex pt-1 ${stacked ? 'flex-col gap-2.5' : 'items-center gap-2.5'}`}>
+        <Link to={logEventPath(event)} className={`${button} bg-espresso text-cream hover:bg-deep`}>
           Create UniLogs entry
         </Link>
-        <button type="button" onClick={onDismiss} className={TEXT_BUTTON}>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className={`${button} text-clay hover:text-espresso`}
+        >
           Dismiss
         </button>
       </div>
@@ -505,14 +514,14 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
                   </PopoverTrigger>
                   <PopoverContent
                     align="start"
-                    className="w-72 gap-0 bg-paper p-3 text-espresso ring-caramel/40"
+                    className="w-80 gap-0 rounded-xl border border-line bg-paper px-6 py-5 text-espresso shadow-[0px_4px_16px_0px_rgba(0,0,0,0.15)] ring-0"
                   >
                     <EventDetails
                       event={event}
                       today={today}
                       stacked={false}
                       onDismiss={close}
-                      heading={<p className="text-sm font-semibold">{event.title}</p>}
+                      heading={<p className="text-base font-bold">{event.title}</p>}
                     />
                   </PopoverContent>
                 </Popover>
@@ -544,7 +553,7 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
             side="bottom"
             showCloseButton={false}
             aria-describedby={undefined}
-            className="rounded-t-3xl bg-paper px-5 pb-8 pt-5 text-espresso"
+            className="rounded-t-[20px] bg-paper px-5 pt-3 pb-8 text-espresso shadow-[0px_-4px_16px_0px_rgba(0,0,0,0.1)]"
           >
             {selected && (
               <EventDetails
@@ -553,9 +562,12 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
                 stacked
                 onDismiss={close}
                 heading={
-                  <SheetTitle className="text-base font-semibold text-espresso">
-                    {selected.title}
-                  </SheetTitle>
+                  <>
+                    <span className="mx-auto h-1 w-10 rounded-sm bg-line" aria-hidden />
+                    <SheetTitle className="text-lg font-bold text-espresso">
+                      {selected.title}
+                    </SheetTitle>
+                  </>
                 }
               />
             )}
