@@ -5,12 +5,15 @@ import { ChevronDown, Clock, Plus, Search, SlidersHorizontal, SquareCheck } from
 import EntryCard, { type DueInfo } from '@/components/entries/EntryCard';
 import FiltersSheet from '@/components/entries/FiltersSheet';
 import Skeleton from '@/components/Skeleton';
+import { useTags } from '@/hooks/useTags';
 import { api } from '@/lib/api';
 import { QUERY_KEYS, loadUnfinished } from '@/lib/dashboard';
+import { filterSummary } from '@/lib/entryFields';
 import {
   DATE_RANGE_LABELS,
   DEFAULT_FILTERS,
   buildEntriesQuery,
+  describeFilters,
   isFiltering,
   statusEntryIds,
   type DateRangeKey,
@@ -105,6 +108,16 @@ export default function EntriesPage() {
   }, [entries]);
 
   const filtering = isFiltering(filters);
+  const { tagsQuery } = useTags();
+  const summary = useMemo(() => {
+    const tagNames = new Map((tagsQuery.data ?? []).map((tag) => [tag.id, tag.name]));
+    return filterSummary(
+      describeFilters(filters, {
+        project: (id) => projectNames.get(id),
+        tag: (id) => tagNames.get(id),
+      }),
+    );
+  }, [filters, projectNames, tagsQuery.data]);
   const hasAnyEntries = entries.length > 0 || filtering;
   const statusCounts: Record<EntryStatus, number> = {
     unfinished: statusIds.unfinished.size,
@@ -169,6 +182,8 @@ export default function EntriesPage() {
                 setFilters((f) => ({
                   ...f,
                   projectId: e.target.value === '' ? null : Number(e.target.value),
+                  // A field filter belongs to the project it was set in.
+                  field: null,
                 }))
               }
               aria-label="Project"
@@ -233,6 +248,12 @@ export default function EntriesPage() {
         </div>
       )}
 
+      {summary && (
+        <p role="status" className="-mt-1 text-xs text-clay md:-mt-4">
+          {summary}
+        </p>
+      )}
+
       {isPending && (
         <div className="grid gap-3 md:grid-cols-2 md:gap-4">
           {[1, 2, 3, 4].map((i) => (
@@ -279,6 +300,7 @@ export default function EntriesPage() {
             <ul className="grid gap-3 md:grid-cols-2 md:gap-4">
               {groupEntries.map((entry, index) => (
                 <EntryCard
+                  fields={entry.project?.fields}
                   key={entry.id}
                   entry={entry}
                   projectName={projectNames.get(entry.projectId) ?? 'Unknown project'}
