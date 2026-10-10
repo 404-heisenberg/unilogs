@@ -24,7 +24,7 @@ async function getUserId(email: string) {
   return user.id;
 }
 
-async function linkGoogleAccount(userId: string, scope: string) {
+async function linkGoogleAccount(userId: string, scope: string, refreshTokenExpiresAt?: Date) {
   await prisma.account.create({
     data: {
       id: randomUUID(),
@@ -32,6 +32,7 @@ async function linkGoogleAccount(userId: string, scope: string) {
       providerId: 'google',
       userId,
       scope,
+      refreshTokenExpiresAt,
     },
   });
 }
@@ -49,7 +50,7 @@ describe('GET /api/calendar/status', () => {
     const response = await agent.get('/api/calendar/status');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ connected: false });
+    expect(response.body).toEqual({ connected: false, needsReauth: false });
   });
 
   it('reports disconnected when a linked Google account lacks the Calendar scope', async () => {
@@ -59,7 +60,7 @@ describe('GET /api/calendar/status', () => {
     const response = await agent.get('/api/calendar/status');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ connected: false });
+    expect(response.body).toEqual({ connected: false, needsReauth: false });
   });
 
   it('reports connected when a linked Google account has the Calendar scope', async () => {
@@ -72,7 +73,21 @@ describe('GET /api/calendar/status', () => {
     const response = await agent.get('/api/calendar/status');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ connected: true });
+    expect(response.body).toEqual({ connected: true, needsReauth: false });
+  });
+
+  it('reports connected but needing re-authorization when the refresh token has expired', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await linkGoogleAccount(
+      await getUserId(email),
+      'https://www.googleapis.com/auth/calendar.readonly openid',
+      new Date(Date.now() - 60_000),
+    );
+
+    const response = await agent.get('/api/calendar/status');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ connected: true, needsReauth: true });
   });
 });
 

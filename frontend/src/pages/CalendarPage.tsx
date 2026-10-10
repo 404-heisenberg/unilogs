@@ -26,6 +26,7 @@ import {
 } from '@/lib/calendar';
 import { logEventPath } from '@/lib/dashboard';
 import { addDays } from '@/lib/project-workspace';
+import { useCalendarConnection } from '@/hooks/useCalendarConnection';
 import type { PagedEntries, Project } from '@/types';
 
 // How much a month cell shows before collapsing the rest into "+N more". An
@@ -473,6 +474,7 @@ function ViewToggle({
 
 export default function CalendarPage() {
   const today = localToday();
+  const { statusQuery, connect } = useCalendarConnection();
   const [anchor, setAnchor] = useState(today);
   const [view, setView] = useState<CalendarView>('month');
   const [selectedDay, setSelectedDay] = useState(today);
@@ -527,6 +529,11 @@ export default function CalendarPage() {
 
   const legend = legendCalendars(events);
   const notConnected = eventsQuery.data?.connected === false;
+  // Either the status check already knows the credentials died, or the events
+  // request itself came back tagged needsReauth — both mean "reconnect first".
+  const needsReauth =
+    statusQuery.data?.needsReauth === true ||
+    (eventsQuery.data?.connected === true && eventsQuery.data.needsReauth === true);
   const label = rangeLabel(anchor, view);
 
   const goTo = (nextAnchor: string, nextSelected: string) => {
@@ -625,6 +632,19 @@ export default function CalendarPage() {
         <ViewToggle view={view} onChange={changeView} />
       </div>
 
+      {needsReauth && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg bg-cream px-4 py-2.5 text-[13px] text-clay md:mb-0">
+          <span>Google Calendar needs reconnecting.</span>
+          <button
+            type="button"
+            className="font-semibold text-espresso underline"
+            onClick={() => connect.mutate()}
+            disabled={connect.isPending}
+          >
+            {connect.isPending ? 'Reconnecting…' : 'Reconnect Google Calendar'}
+          </button>
+        </div>
+      )}
       {notConnected && (
         <p className="mb-2 rounded-lg bg-cream px-4 py-2.5 text-[13px] text-clay md:mb-0">
           Connect Google Calendar in{' '}

@@ -32,5 +32,10 @@ export function useCalendarConnection() {
     onError: (error) => toast.error(error),
   });
 
-  return { statusQuery, connect, disconnect };
+  // The account is linked but its stored credentials no longer work (the
+  // refresh token expired or was revoked), so the UI should offer Reconnect
+  // instead of claiming the calendar is usable.
+  const needsReauth = statusQuery.data?.needsReauth === true;
+
+  return { statusQuery, needsReauth, connect, disconnect };
 }

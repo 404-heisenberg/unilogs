@@ -11,13 +11,13 @@ import type { Entry } from '@/types';
 // in a cold worker can pass the default 1s wait, so allow a little longer.
 configure({ asyncUtilTimeout: 3000 });
 
-const { getMock } = vi.hoisted(() => ({ getMock: vi.fn() }));
+const { getMock, postMock } = vi.hoisted(() => ({ getMock: vi.fn(), postMock: vi.fn() }));
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
   return {
     ...actual,
-    api: { ...actual.api, get: getMock },
+    api: { ...actual.api, get: getMock, post: postMock },
     // The real helper closes over the unmocked `api`, so route it here.
     getCalendarEvents: (range: { from: string; to: string }) =>
       getMock(`/api/calendar/events?${new URLSearchParams(range).toString()}`),
@@ -68,12 +68,18 @@ const ENTRIES: Entry[] = [
   },
 ];
 
-function mockApi({ connected = true }: { connected?: boolean } = {}) {
+function mockApi({
+  connected = true,
+  needsReauth = false,
+}: { connected?: boolean; needsReauth?: boolean } = {}) {
   getMock.mockImplementation((path: string) => {
+    if (path === '/api/calendar/status') {
+      return Promise.resolve({ connected, needsReauth });
+    }
     if (path.startsWith('/api/calendar/events')) {
-      return Promise.resolve(
-        connected ? { connected: true, events: EVENTS } : { connected: false },
-      );
+      if (connected && !needsReauth) return Promise.resolve({ connected: true, events: EVENTS });
+      if (needsReauth) return Promise.resolve({ connected: true, needsReauth: true, events: [] });
+      return Promise.resolve({ connected: false });
     }
     if (path.startsWith('/api/projects')) {
       return Promise.resolve([{ id: 2, name: 'Computer Architecture', archived: false }]);
@@ -195,6 +201,21 @@ describe('CalendarPage', () => {
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
     // Entries still show without a calendar.
     expect(screen.getByRole('link', { name: /Register interference graph/ })).toBeInTheDocument();
+  });
+
+  it('offers a Reconnect action when Google Calendar needs re-authentication', async () => {
+    mockApi({ connected: true, needsReauth: true });
+    postMock.mockResolvedValue({ connected: true });
+    renderPage();
+
+    expect(await screen.findByText('Google Calendar needs reconnecting.')).toBeInTheDocument();
+    // All our load-failure copy is gone; entries still render.
+    expect(screen.queryByText("Couldn't load your calendar events.")).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Register interference graph/ })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /reconnect google calendar/i }));
+
+    expect(postMock).toHaveBeenCalledWith('/api/calendar/connect');
   });
 
   it('places events and entries on their hour in the week view', async () => {

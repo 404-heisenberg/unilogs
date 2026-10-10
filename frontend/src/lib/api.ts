@@ -69,7 +69,11 @@ export type FrequencyStats = {
   terms: { termName: string; total: number }[];
 };
 
-export type CalendarStatus = { connected: boolean };
+// The calendar can be linked but unusable: "connected" means a Google account
+// with the Calendar scope exists, while `needsReauth` means its stored
+// credentials can no longer mint an access token (expired or revoked) and the
+// user must reconnect before any data can be fetched.
+export type CalendarStatus = { connected: boolean; needsReauth: boolean };
 
 export type CalendarConnectResult = { url?: string; connected?: boolean };
 
@@ -87,6 +91,7 @@ export type CalendarSource = {
 
 export type CalendarSourcesResponse = {
   connected: boolean;
+  needsReauth?: boolean;
   sources: CalendarSource[];
 };
 
@@ -113,7 +118,8 @@ export type CalendarEvent = {
 };
 
 export type CalendarEventsResponse =
-  { connected: true; events: CalendarEvent[] } | { connected: false; message?: string };
+  | { connected: true; needsReauth?: boolean; events: CalendarEvent[] }
+  | { connected: false; message?: string };
 
 /** Every event from the enabled calendars between two ISO instants. */
 export function getCalendarEvents(range: { from: string; to: string }) {
@@ -123,6 +129,7 @@ export function getCalendarEvents(range: { from: string; to: string }) {
 
 export type CalendarSuggestionsResponse = {
   connected: boolean;
+  needsReauth?: boolean;
   suggestions: CalendarSuggestion[];
 };
 
