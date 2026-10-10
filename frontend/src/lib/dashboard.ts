@@ -561,12 +561,15 @@ export type UpcomingEvent = {
   projectId: number | null;
 };
 
-export type UpcomingData = { connected: boolean; events: UpcomingEvent[] };
+export type UpcomingData = { connected: boolean; needsReauth?: boolean; events: UpcomingEvent[] };
 
 const UPCOMING_LIMIT = 5;
 
 export async function loadUpcoming(): Promise<UpcomingData> {
   const response = await api.get<CalendarSuggestionsResponse>('/api/calendar/events/suggestions');
+  // The backend returned a reauth marker instead of events: keep the widget on
+  // the dashboard and let it point at the reconnect flow, not at "no events".
+  if (response.needsReauth) return { connected: true, needsReauth: true, events: [] };
   if (!response.connected) return { connected: false, events: [] };
 
   const now = Date.now();

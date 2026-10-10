@@ -80,6 +80,23 @@ describe('SuggestionsPage', () => {
     expect(postMock).toHaveBeenCalledWith('/api/calendar/connect');
   });
 
+  it('offers a Reconnect action when the connection has expired', async () => {
+    mockGet({ '/api/calendar/status': { connected: true, needsReauth: true } });
+    postMock.mockResolvedValue({ connected: true });
+
+    renderPage();
+
+    expect(
+      await screen.findByRole('button', { name: 'Reconnect Google Calendar' }),
+    ).toBeInTheDocument();
+    // The suggestions list is not fetched and the empty state is not shown.
+    expect(getMock).not.toHaveBeenCalledWith(expect.stringContaining('/events/suggestions'));
+    expect(screen.queryByText(/No upcoming events to suggest/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reconnect Google Calendar' }));
+    expect(postMock).toHaveBeenCalledWith('/api/calendar/connect');
+  });
+
   it('lets the user retry when the connection check fails', async () => {
     mockGet({ '/api/calendar/status': new Error('offline') });
 

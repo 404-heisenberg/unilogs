@@ -111,7 +111,7 @@ function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
   );
 }
 
-function WidgetMessage({ title, message }: { title: string; message: string }) {
+function WidgetMessage({ title, message }: { title: string; message: ReactNode }) {
   return (
     <section className={CARD}>
       <h2 className="text-sm font-semibold text-espresso">{title}</h2>
@@ -464,6 +464,21 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
 
   if (isLoading) return <WidgetSkeleton rows={3} />;
   if (isError) return <WidgetMessage title="Upcoming" message="Couldn't load your calendar." />;
+  if (data?.needsReauth) {
+    return (
+      <WidgetMessage
+        title="Upcoming"
+        message={
+          <>
+            Google Calendar needs reconnecting.{' '}
+            <Link to="/settings" className="font-semibold text-espresso underline">
+              Reconnect
+            </Link>
+          </>
+        }
+      />
+    );
+  }
   if (!data || !data.connected || data.events.length === 0) {
     return <WidgetMessage title="Upcoming" message="No upcoming events." />;
   }

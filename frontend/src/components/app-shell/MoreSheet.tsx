@@ -84,9 +84,19 @@ function MoreContent({ onNavigate }: { onNavigate: () => void }) {
           meta={
             statusQuery.isSuccess && (
               <span
-                className={`text-[13px] ${statusQuery.data.connected ? 'text-success' : 'text-clay'}`}
+                className={`text-[13px] ${
+                  statusQuery.data.needsReauth
+                    ? 'text-error'
+                    : statusQuery.data.connected
+                      ? 'text-success'
+                      : 'text-clay'
+                }`}
               >
-                {statusQuery.data.connected ? 'Connected' : 'Not connected'}
+                {statusQuery.data.needsReauth
+                  ? 'Reconnect needed'
+                  : statusQuery.data.connected
+                    ? 'Connected'
+                    : 'Not connected'}
               </span>
             )
           }

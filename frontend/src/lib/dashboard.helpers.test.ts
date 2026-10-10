@@ -178,6 +178,15 @@ describe('loadUpcoming', () => {
     await expect(loadUpcoming()).resolves.toEqual({ connected: false, events: [] });
   });
 
+  it('reports needsReauth when the backend says the connection must be renewed', async () => {
+    getMock.mockResolvedValue({ connected: true, needsReauth: true, suggestions: [] });
+    await expect(loadUpcoming()).resolves.toEqual({
+      connected: true,
+      needsReauth: true,
+      events: [],
+    });
+  });
+
   it('keeps future and undated events, sorted, and at most five', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-28T12:00:00.000Z'));
