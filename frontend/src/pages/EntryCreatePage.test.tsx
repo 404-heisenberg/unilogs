@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -40,15 +40,33 @@ function renderPage(path = '/entries/new') {
     [
       { path: '/entries/new', element: <EntryCreatePage /> },
       { path: '/entries/:id', element: <EntryCreatePage /> },
+      { path: '/entries/:id/edit', element: <EntryCreatePage /> },
       { path: '*', element: <div /> },
     ],
     { initialEntries: [path] },
   );
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
-  );
+  return {
+    router,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    ),
+  };
+}
+
+// Below 1024px the properties move into a bottom sheet.
+function stubSmallScreen() {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }),
+  });
 }
 
 async function fillAllFields() {
@@ -296,5 +314,53 @@ describe('EntryCreatePage offline capture', () => {
     expect(screen.getByLabelText('Notes')).toHaveValue('Leg day');
 
     onLine.mockRestore();
+  });
+
+  describe('EntryCreatePage saving and layout (#206)', () => {
+    afterEach(() => {
+      // Back to "no matchMedia", which the editor treats as desktop.
+      Reflect.deleteProperty(window, 'matchMedia');
+    });
+
+    it('saves a new entry with Ctrl+S and stays in the editor', async () => {
+      // The shape POST /api/entries returns.
+      postMock.mockResolvedValue({
+        id: 99,
+        projectId: 1,
+        date: '2026-09-10T00:00:00.000Z',
+        createdAt: '2026-09-10T08:00:00.000Z',
+        dueDate: null,
+        title: null,
+        body: null,
+        content: { Notes: 'Chest day', Reps: 12, Day: '2026-09-10', Length: 45, Warmup: true },
+        tags: [],
+      });
+      const { router } = renderPage();
+
+      await fillAllFields();
+      await userEvent.keyboard('{Control>}s{/Control}');
+
+      await waitFor(() => expect(postMock).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(router.state.location.pathname).toBe('/entries/99/edit'));
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
+    });
+
+    it('puts the properties in a bottom sheet on small screens', async () => {
+      stubSmallScreen();
+      renderPage();
+
+      const open = await screen.findByRole('button', { name: 'Properties' });
+      // Not stacked under the editor any more.
+      expect(screen.queryByLabelText('Notes')).not.toBeInTheDocument();
+
+      await userEvent.click(open);
+      const sheet = await screen.findByRole('dialog', { name: 'Properties' });
+      expect(within(sheet).getByLabelText('Notes')).toBeInTheDocument();
+      expect(within(sheet).getByRole('switch', { name: 'Warmup' })).toBeInTheDocument();
+
+      await userEvent.click(within(sheet).getByRole('button', { name: 'Close properties' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
   });
 });
