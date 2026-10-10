@@ -68,8 +68,30 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Figma's mood bar: gold, green, then line-strong for the third answer.
+const MOOD_COLORS = ['bg-gold', 'bg-success', 'bg-line-strong'];
+
+function MoodBar({ shares }: { shares: { value: string; count: number }[] }) {
+  const total = shares.reduce((sum, share) => sum + share.count, 0);
+  return (
+    <div
+      className="flex h-1 w-[60px] overflow-hidden rounded-[2px] md:h-1.5 md:w-[120px] md:rounded-[3px]"
+      role="img"
+      aria-label={shares.map((share) => `${share.value}: ${share.count}`).join(', ')}
+    >
+      {shares.map((share, index) => (
+        <span
+          key={share.value}
+          className={`h-full ${MOOD_COLORS[index % MOOD_COLORS.length]}`}
+          style={{ width: `${(share.count / total) * 100}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function InsightCard({ insight }: { insight: Insight }) {
-  const { value, sub } = insightDisplay(insight);
+  const { value, sub, distribution } = insightDisplay(insight);
   const Icon = FIELD_ICONS[insight.fieldType] ?? Hash;
   // The trend arrow is green when rising: the whole line on mobile, only the
   // bold arrow on desktop.
@@ -81,17 +103,22 @@ function InsightCard({ insight }: { insight: Insight }) {
       <Icon className="size-3.5 text-cocoa md:size-4" strokeWidth={1.75} aria-hidden />
       <p className={`truncate ${CARD_LABEL}`}>{insight.name}</p>
       <p className="truncate text-[15px] font-bold md:text-lg">{value}</p>
-      <p
-        className={`text-[10px] md:text-[11px] ${up ? 'text-success md:text-cocoa' : 'text-cocoa'}`}
-      >
-        {text}
-        {arrow && (
-          <span className={`md:font-bold ${up ? 'md:text-success' : 'md:text-error'}`}>
-            {' '}
-            {arrow}
-          </span>
-        )}
-      </p>
+      {/* Figma shows the mood bar in place of the entry count. */}
+      {distribution ? (
+        <MoodBar shares={distribution} />
+      ) : (
+        <p
+          className={`text-[10px] md:text-[11px] ${up ? 'text-success md:text-cocoa' : 'text-cocoa'}`}
+        >
+          {text}
+          {arrow && (
+            <span className={`md:font-bold ${up ? 'md:text-success' : 'md:text-error'}`}>
+              {' '}
+              {arrow}
+            </span>
+          )}
+        </p>
+      )}
     </div>
   );
 }
@@ -120,7 +147,7 @@ function Report({ report, token }: { report: SharedReport; token: string }) {
 
   return (
     <div className="min-h-screen bg-paper leading-normal text-espresso">
-      <header className="border-b border-[#e8ddd0]">
+      <header className="border-b border-explorer">
         <div className="mx-auto flex h-14 max-w-[960px] items-center justify-between gap-2 px-4 md:px-0">
           <Logo />
           <div className="flex items-center gap-2">

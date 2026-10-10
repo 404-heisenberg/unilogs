@@ -87,6 +87,27 @@ describe('insightDisplay', () => {
     });
   });
 
+  it('reads the text, yes/no and date shapes the stats service sends', () => {
+    const top = [
+      { value: 'focused', count: 3 },
+      { value: 'tired', count: 1 },
+    ];
+    expect(insightDisplay(insight({ fieldType: 'text', value: { top } }))).toEqual({
+      value: 'Mostly focused',
+      sub: '3 entries',
+      distribution: top,
+    });
+    expect(
+      insightDisplay(insight({ fieldType: 'text', value: { top: [{ value: 'calm', count: 1 }] } })),
+    ).toEqual({ value: 'calm', sub: '3 entries' });
+    expect(
+      insightDisplay(insight({ fieldType: 'boolean', value: { pctTrue: 80 }, sampleCount: 5 })),
+    ).toEqual({ value: '80%', sub: '4 of 5 entries' });
+    expect(
+      insightDisplay(insight({ fieldType: 'date', value: { mostRecent: '2026-09-15T00:00:00Z' } })),
+    ).toEqual({ value: '15 Sep', sub: '3 entries' });
+  });
+
   it('formats aggregate objects', () => {
     expect(insightDisplay(insight({ value: { trueCount: 3, total: 4 } }))).toEqual({
       value: '75%',
