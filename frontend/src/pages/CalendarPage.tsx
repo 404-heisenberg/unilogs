@@ -714,7 +714,7 @@ export default function CalendarPage() {
       <div className="sticky -bottom-4 z-10 -mx-4 -mb-4 flex items-center justify-between gap-4 border-t border-cream bg-paper px-4 py-3 md:static md:mx-0 md:mb-0 md:bg-transparent md:px-0 md:pt-4 md:pb-0">
         <ul
           aria-label="Legend"
-          className="flex min-w-0 gap-4 overflow-x-auto text-[11px] font-semibold text-clay md:gap-6 md:text-[13px] md:font-medium"
+          className="scrollbar-none flex min-w-0 gap-4 overflow-x-auto text-[11px] font-semibold text-clay md:gap-6 md:text-[13px] md:font-medium"
         >
           {legend.map(({ name, color }) => (
             <li key={name} className="flex shrink-0 items-center gap-1.5 md:gap-2">
