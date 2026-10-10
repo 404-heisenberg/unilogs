@@ -41,7 +41,31 @@ function hasCalendarScope(account: { scope?: string | null } | null): boolean {
   return Boolean(account?.scope?.includes(GOOGLE_CALENDAR_SCOPE));
 }
 
-async function getGoogleCalendars(req: Request) {
+// Google refresh tokens stop working once they expire. For an OAuth app still
+// in Google's "Testing" publishing status that is about seven days after the
+// token was issued, so it is the expected end state rather than a fault. The
+// stored expiry lets the DB-only status check report it without calling Google
+// (see issue #342).
+function isRefreshTokenExpired(account: { refreshTokenExpiresAt?: Date | null } | null): boolean {
+  return Boolean(
+    account?.refreshTokenExpiresAt && account.refreshTokenExpiresAt.getTime() <= Date.now(),
+  );
+}
+
+/** A linked Google account whose stored credentials can no longer be used. */
+function needsCalendarReauth(
+  account: { scope?: string | null; refreshTokenExpiresAt?: Date | null } | null,
+): boolean {
+  return hasCalendarScope(account) && isRefreshTokenExpired(account);
+}
+
+type CalendarAuth =
+  { state: 'disconnected' } | { state: 'reauth' } | { state: 'ok'; accessToken: string };
+
+// The one place that decides whether calendar data can be fetched: no usable
+// Google link, a link that needs reconnecting, or a working access token. Every
+// data endpoint resolves auth through here so the failure mapping lives once.
+async function resolveCalendarAuth(req: Request): Promise<CalendarAuth> {
   const account = await prisma.account.findFirst({
     where: {
       userId: req.userId,
@@ -50,21 +74,31 @@ async function getGoogleCalendars(req: Request) {
   });
 
   if (!account || !hasCalendarScope(account)) {
-    return null;
+    return { state: 'disconnected' };
   }
 
-  const tokenResult = await auth.api.getAccessToken({
-    body: {
-      accountId: account.id,
-    },
-    headers: req.headers,
-  });
+  try {
+    const tokenResult = await auth.api.getAccessToken({
+      body: {
+        accountId: account.id,
+      },
+      headers: req.headers,
+    });
 
+    return { state: 'ok', accessToken: tokenResult.accessToken };
+  } catch {
+    // The refresh token is expired or revoked. Report it as needing a
+    // reconnect instead of letting it fall through to a generic 500.
+    return { state: 'reauth' };
+  }
+}
+
+async function fetchGoogleCalendars(accessToken: string) {
   const url = new URL('https://www.googleapis.com/calendar/v3/users/me/calendarList');
 
   const googleResponse = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${tokenResult.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 
@@ -108,25 +142,11 @@ function parseEventRange(query: Request['query']): EventRange | null | string {
   return { timeMin, timeMax };
 }
 
-async function getCalendarEvents(req: Request, range: EventRange | null = null) {
-  const account = await prisma.account.findFirst({
-    where: {
-      userId: req.userId,
-      providerId: 'google',
-    },
-  });
-
-  if (!account || !hasCalendarScope(account)) {
-    return null;
-  }
-
-  const tokenResult = await auth.api.getAccessToken({
-    body: {
-      accountId: account.id,
-    },
-    headers: req.headers,
-  });
-
+async function fetchCalendarEvents(
+  req: Request,
+  accessToken: string,
+  range: EventRange | null = null,
+) {
   const sources = await prisma.calendarSource.findMany({
     where: {
       userId: req.userId,
@@ -159,7 +179,7 @@ async function getCalendarEvents(req: Request, range: EventRange | null = null) 
 
     const googleResponse = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${tokenResult.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -199,6 +219,7 @@ router.get('/status', authenticate, async (req, res) => {
 
     return res.status(200).json({
       connected: hasCalendarScope(account),
+      needsReauth: needsCalendarReauth(account),
     });
   } catch (error) {
     console.error('Google Calendar status error:', error);
@@ -211,14 +232,24 @@ router.get('/status', authenticate, async (req, res) => {
 
 router.get('/sources', authenticate, async (req, res) => {
   try {
-    const calendars = await getGoogleCalendars(req);
+    const authState = await resolveCalendarAuth(req);
 
-    if (calendars === null) {
+    if (authState.state === 'disconnected') {
       return res.status(200).json({
         connected: false,
         sources: [],
       });
     }
+
+    if (authState.state === 'reauth') {
+      return res.status(200).json({
+        connected: true,
+        needsReauth: true,
+        sources: [],
+      });
+    }
+
+    const calendars = await fetchGoogleCalendars(authState.accessToken);
 
     for (const [index, calendar] of calendars.entries()) {
       await prisma.calendarSource.upsert({
@@ -393,8 +424,11 @@ router.post('/connect', authenticate, async (req, res) => {
     });
 
     // A plain Google sign-in links a 'google' account without the Calendar
-    // scope; only treat it as already connected once that scope is present.
-    if (hasCalendarScope(account)) {
+    // scope; only treat it as already connected once that scope is present and
+    // the stored credentials still work. When the refresh token has expired we
+    // fall through and run the consent flow again, which mints a fresh one — so
+    // "Reconnect" needs no separate endpoint (see issue #342).
+    if (hasCalendarScope(account) && !isRefreshTokenExpired(account)) {
       return res.status(200).json({
         connected: true,
         message: 'Google Calendar is already connected',
@@ -472,14 +506,24 @@ router.get('/events', authenticate, async (req, res) => {
       return res.status(400).json({ error: range });
     }
 
-    const events = await getCalendarEvents(req, range);
+    const authState = await resolveCalendarAuth(req);
 
-    if (events === null) {
+    if (authState.state === 'disconnected') {
       return res.status(200).json({
         connected: false,
         message: 'Google Calendar is not connected',
       });
     }
+
+    if (authState.state === 'reauth') {
+      return res.status(200).json({
+        connected: true,
+        needsReauth: true,
+        events: [],
+      });
+    }
+
+    const events = await fetchCalendarEvents(req, authState.accessToken, range);
 
     return res.status(200).json({
       connected: true,
@@ -496,7 +540,24 @@ router.get('/events', authenticate, async (req, res) => {
 
 router.get('/events/suggestions', authenticate, async (req, res) => {
   try {
-    const events = await getCalendarEvents(req);
+    const authState = await resolveCalendarAuth(req);
+
+    if (authState.state === 'disconnected') {
+      return res.status(200).json({
+        connected: false,
+        suggestions: [],
+      });
+    }
+
+    if (authState.state === 'reauth') {
+      return res.status(200).json({
+        connected: true,
+        needsReauth: true,
+        suggestions: [],
+      });
+    }
+
+    const events = await fetchCalendarEvents(req, authState.accessToken);
 
     const handledSuggestions = await prisma.calendarSuggestion.findMany({
       where: {
@@ -512,14 +573,7 @@ router.get('/events/suggestions', authenticate, async (req, res) => {
       handledSuggestions.map((suggestion) => `${suggestion.calendarId}:${suggestion.eventId}`),
     );
 
-    if (events === null) {
-      return res.status(200).json({
-        connected: false,
-        suggestions: [],
-      });
-    }
-
-    const suggestions = (events as GoogleCalendarEvent[])
+    const suggestions = events
       .filter(
         (event) =>
           event.id && event.calendarId && !handledEvents.has(`${event.calendarId}:${event.id}`),
