@@ -76,11 +76,11 @@ export default function LandingPage() {
   const streak = useStreak();
 
   return (
-    <main className="paper-ruled min-h-screen text-espresso">
+    <main className="paper-ruled-compact min-h-screen text-espresso md:paper-ruled">
       {/* One frame per Figma breakpoint. Desktop (1440): 72px sides, the
           double margin rule at x 91 / 95 runs behind the wordmark, content
           at x 137. Mobile (390): rule at x 35 / 39, content at x 47. */}
-      <div className="relative mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 md:px-[72px]">
+      <div className="relative mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pt-3.5 pb-2.5 md:px-[72px] md:pt-[22px] md:pb-3.5">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-y-0 left-[35px] w-px bg-clay/40 md:left-[91px] md:bg-clay/35"
@@ -91,8 +91,8 @@ export default function LandingPage() {
         />
 
         {/* Masthead */}
-        <header className="relative flex flex-col gap-1 pt-3.5 md:flex-row md:items-center md:justify-between md:gap-3 md:pt-[22px]">
-          <div className="flex items-center justify-between gap-2.5 pl-[31px] md:justify-start md:pl-0">
+        <header className="relative flex h-[74px] shrink-0 flex-col gap-1 md:h-[58px] md:flex-row md:items-center md:justify-between md:gap-3">
+          <div className="flex h-[30px] items-center justify-between gap-2.5 pl-[31px] md:h-auto md:justify-start md:pl-0">
             <span className="font-lora text-2xl font-bold tracking-[-0.03em] md:text-[30px]">
               UniLogs
             </span>
@@ -107,16 +107,16 @@ export default function LandingPage() {
             <span className="hidden md:inline">
               <MastheadDetails date={today.short} streak={streak} />
             </span>
-            <nav className="flex items-center gap-2">
+            <nav className="flex h-9 items-center gap-[7px] md:h-auto md:gap-2">
               <Link
                 to="/login"
-                className="inline-flex min-h-9 items-center rounded-xl px-3.5 text-[13px] font-medium text-cocoa hover:bg-gold-light/30 md:min-h-11 md:px-4"
+                className="inline-flex min-h-9 min-w-[68px] items-center justify-center rounded-xl px-4 text-[13px] font-medium whitespace-nowrap text-cocoa hover:bg-gold-light/30 md:min-h-11 md:min-w-[70px]"
               >
                 Sign in
               </Link>
               <Link
                 to="/signup"
-                className="inline-flex min-h-9 items-center rounded-xl bg-espresso px-4 text-[13px] font-medium text-paper hover:opacity-90 md:min-h-11"
+                className="inline-flex min-h-9 w-[104px] items-center justify-center rounded-xl bg-espresso px-4 text-[13px] font-medium text-paper hover:opacity-90 md:min-h-11 md:w-[112px]"
               >
                 Get started
               </Link>
@@ -125,7 +125,7 @@ export default function LandingPage() {
         </header>
 
         {/* Hero entry */}
-        <section className="relative pt-2 pl-[31px] md:pt-[43px] md:pr-20 md:pl-[65px]">
+        <section className="relative h-[236px] shrink-0 pt-[7px] pl-[31px] md:h-[424px] md:pt-[43px] md:pr-20 md:pl-[65px]">
           <div className="absolute top-[43px] right-20 hidden text-right md:block">
             <p className="text-[11px] font-semibold tracking-[0.13em] text-clay uppercase">
               Entry 001
@@ -133,22 +133,25 @@ export default function LandingPage() {
             <span className="mt-2 ml-auto block h-0.5 w-[52px] bg-gold" aria-hidden />
             <p className="mt-2 font-script text-lg text-cocoa">{today.long}</p>
           </div>
-          <div className="flex max-w-[870px] flex-col gap-2.5 md:gap-[18px]">
+          <div className="flex max-w-[870px] flex-col gap-2 md:gap-[18px]">
             <p className="font-script text-base text-clay md:text-[23px]">
               Every hour has a story. Start telling yours.
             </p>
-            <h1 className="font-lora text-[31px] leading-[1.1] font-semibold tracking-[-0.03em] md:max-w-[620px] md:text-[54px] md:leading-[54px]">
-              The logbook that <span className="text-gold">finally follows you everywhere</span>
+            <h1 className="font-lora text-[31px] leading-[1.05] font-semibold tracking-[-0.8px] md:max-w-[620px] md:text-[54px] md:leading-[54px] md:tracking-[-0.03em]">
+              The logbook that{' '}
+              {/* Figma's mobile frame breaks here; browsers would fit "finally". */}
+              <br className="md:hidden" />
+              <span className="text-gold">finally follows you everywhere</span>
             </h1>
-            <p className="max-w-[700px] text-xs leading-[1.5] text-cocoa md:text-[17px] md:leading-[1.55]">
+            <p className="max-w-[700px] text-[11.5px] leading-[1.42] text-cocoa md:text-[17px] md:leading-[1.55]">
               Paper forgets you the moment you close it. UniLogs is on your phone and your laptop,
               wherever the work actually happens.
             </p>
-            <div className="mt-1 flex flex-wrap gap-2 md:mt-0 md:gap-2.5">
-              <Link to="/signup" className={PRIMARY}>
+            <div className="flex flex-wrap gap-[7px] md:gap-2.5">
+              <Link to="/signup" className={`${PRIMARY} w-[165px] md:w-[188px]`}>
                 Start logging for free
               </Link>
-              <Link to="/login" className={SECONDARY}>
+              <Link to="/login" className={`${SECONDARY} w-[151px] md:w-[164px]`}>
                 I have an account
               </Link>
             </div>
@@ -158,38 +161,41 @@ export default function LandingPage() {
         {/* Journal entries */}
         <section
           aria-label="Why UniLogs"
-          className="relative mt-4 grid pl-[31px] md:mt-[80px] md:grid-cols-3 md:gap-[26px] md:pr-2 md:pl-16"
+          className="relative grid h-[348px] shrink-0 pl-[31px] md:h-[216px] md:grid-cols-3 md:gap-[26px] md:pt-1 md:pr-2 md:pl-16"
         >
           {ENTRIES.map((entry, index) => (
-            <article
-              key={entry.day}
-              className={`flex flex-col gap-1.5 p-3 ${
-                index < ENTRIES.length - 1 ? 'md:border-r md:border-line-strong/60' : ''
-              }`}
-            >
-              <p className="text-[13px] font-medium text-clay">{entry.day}</p>
-              <h2 className="font-lora text-[17px] text-espresso">{entry.title}</h2>
-              <p className="text-xs text-cocoa">{entry.body}</p>
+            <article key={entry.day} className="relative flex gap-6">
+              <div className="flex h-[116px] min-w-0 flex-1 flex-col gap-1.5 p-3 md:h-[156px]">
+                <p className="text-[13px] leading-[18px] font-medium text-clay">{entry.day}</p>
+                <h2 className="font-lora text-[17px] leading-5 text-espresso">{entry.title}</h2>
+                <p className="text-xs leading-[14px] text-cocoa">{entry.body}</p>
+              </div>
+              {index < ENTRIES.length - 1 && (
+                <span
+                  aria-hidden
+                  className="hidden h-[140px] w-px shrink-0 bg-[#b9a898]/55 md:block"
+                />
+              )}
             </article>
           ))}
         </section>
 
         {/* Closing note */}
-        <section className="relative mt-4 flex flex-col gap-3 pl-[31px] md:mt-[104px] md:flex-row md:items-start md:justify-between md:gap-4 md:pr-2 md:pl-16">
-          <div className="flex flex-col gap-0.5">
-            <p className="font-script text-lg leading-[1.2] text-clay md:text-[27px]">
+        <section className="relative flex h-[116px] shrink-0 flex-col gap-1 pt-0.5 pl-[31px] md:h-[214px] md:flex-row md:items-start md:justify-between md:gap-4 md:pt-[26px] md:pr-2 md:pl-16">
+          <div className="flex flex-col gap-1 md:gap-0.5">
+            <p className="font-script text-lg leading-[1.1] text-clay md:text-[27px] md:leading-[1.2]">
               The paper book failed because it wasn&apos;t there.
             </p>
             <p className="font-lora text-xl font-semibold italic md:text-[28px]">
               This one always is.
             </p>
           </div>
-          <Link to="/signup" className={`${PRIMARY} self-start`}>
+          <Link to="/signup" className={`${PRIMARY} w-[166px] self-start md:w-[178px]`}>
             Create your logbook
           </Link>
         </section>
 
-        <footer className="relative mt-auto flex flex-wrap items-center justify-between gap-3 pt-10 pb-6 pl-[31px] text-[9.5px] tracking-[0.02em] text-clay md:pt-16 md:pb-8 md:pl-16 md:text-[11px]">
+        <footer className="relative mt-auto flex h-[46px] flex-wrap items-end justify-between gap-3 pl-[31px] text-[9.5px] tracking-[0.02em] text-clay md:h-[76px] md:pl-16 md:text-[11px]">
           <span>© 2026 UniLogs, built by Code of Duty</span>
           <Link to="/privacy" className="underline underline-offset-2 hover:text-espresso">
             Privacy Policy
