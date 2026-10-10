@@ -941,7 +941,8 @@ export function useDashboardData(today: string, layout: WidgetState[]) {
 }
 
 export const CARD = 'rounded-xl bg-cream p-4';
-export const LABEL = 'text-[11px] font-medium uppercase tracking-[0.08em] text-clay';
+// Figma's card labels: Bold 11, clay, uppercase.
+export const LABEL = 'text-[11px] font-bold uppercase text-clay';
 export const MUTED = 'text-clay';
 export const GOLD_BUTTON =
   'inline-flex items-center justify-center rounded-full bg-gold px-4 py-1.5 text-sm font-semibold text-espresso transition-colors hover:bg-gold/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-espresso';

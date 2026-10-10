@@ -74,6 +74,14 @@ function HeaderAction({ pathname, projectId }: { pathname: string; projectId: st
 // own title row.
 export default function AppHeader() {
   const { pathname } = useLocation();
+  // Figma's empty dashboard (37:788) has no Log action: with no projects
+  // there's nothing to log into yet. Same query as the dashboard's.
+  const projects = useQuery({
+    queryKey: ['projects', { archived: false }],
+    queryFn: () => api.get<Project[]>('/api/projects'),
+    enabled: pathname === '/dashboard',
+  });
+  const noProjects = pathname === '/dashboard' && projects.data?.length === 0;
   // A project page shows Figma's back arrow + project name instead of a
   // section title. Same query as the workspace, so it's served from cache.
   const projectId = pathname.match(/^\/projects\/(\d+)$/)?.[1] ?? null;
@@ -142,7 +150,7 @@ export default function AppHeader() {
           </Link>
           <HeaderAction pathname={pathname} projectId={projectId} />
         </div>
-      ) : (
+      ) : noProjects ? null : (
         <HeaderAction pathname={pathname} projectId={projectId} />
       )}
     </header>

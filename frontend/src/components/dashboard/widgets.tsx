@@ -14,12 +14,11 @@ import Skeleton from '@/components/Skeleton';
 import {
   ArrowDownRight,
   ArrowUpRight,
+  CirclePlus,
   Clock,
   Eye,
   Flame,
   GripVertical,
-  Maximize2,
-  Minimize2,
   Pin,
   Plus,
   Sparkles,
@@ -134,14 +133,12 @@ function SummaryStripWidgetBase({
   topProject,
 }: SummaryStripProps) {
   return (
-    <section className="flex flex-col gap-1 rounded-xl bg-cream px-4 py-3 text-sm text-espresso md:flex-row md:items-center md:justify-between">
-      <p className="flex items-center gap-2">
-        <Flame className="h-4 w-4 text-gold" strokeWidth={1.75} aria-hidden />
-        <span className="font-semibold">{streak}-day streak</span>
-        <span className={MUTED}>·</span>
-        <span>{totalHours}h total</span>
+    <section className="flex flex-col gap-1.5 rounded-lg bg-cream px-4 py-3 text-[13px] text-espresso md:flex-row md:items-center md:justify-between">
+      <p className="flex items-center gap-2 font-semibold">
+        <Flame className="size-3.5 shrink-0 text-gold" strokeWidth={1.75} aria-hidden />
+        {streak}-day streak · {totalHours}h total
       </p>
-      <p className={`text-xs md:text-sm ${MUTED}`}>
+      <p className="text-cocoa">
         {topProject && (
           <>
             Top project:{' '}
@@ -232,12 +229,12 @@ function HeatmapWidgetBase({ cells, stats, isLoading, isError, size }: HeatmapPr
         <p className={`min-w-0 flex-1 truncate text-right text-[11px] ${MUTED}`}>
           {hovered ? `${formatDayLabel(hovered.date)} — ${entryCount(hovered.count)}` : ''}
         </p>
-        <div className={`flex shrink-0 items-center gap-1 text-[11px] ${MUTED}`} aria-hidden>
-          <span className="mr-0.5">Less</span>
+        <div className="flex shrink-0 items-center gap-1.5 text-[11px] text-cocoa" aria-hidden>
+          <span>Less</span>
           {LEGEND_LEVELS.map((level) => (
-            <span key={level} className={`size-2.5 rounded-[2px] ${LEVEL_CLASS[level]}`} />
+            <span key={level} className={`size-2.5 rounded-[1px] ${LEVEL_CLASS[level]}`} />
           ))}
-          <span className="ml-0.5">More</span>
+          <span>More</span>
         </div>
       </div>
 
@@ -246,7 +243,7 @@ function HeatmapWidgetBase({ cells, stats, isLoading, isError, size }: HeatmapPr
       >
         <HeatmapGrid cells={cells} onHover={setHovered} />
 
-        <dl className="hidden grid-cols-3 gap-6 text-center md:grid md:gap-12 md:pr-8">
+        <dl className="hidden grid-cols-3 gap-6 text-center md:grid md:gap-12">
           <Stat value={String(stats.activeDays)} label="Active days" />
           <Stat value={`${stats.daysThisWeek} of 7`} label="Days this week" />
           <Stat value={String(stats.avgDaysPerWeek)} label="Avg days per week" />
@@ -258,9 +255,9 @@ function HeatmapWidgetBase({ cells, stats, isLoading, isError, size }: HeatmapPr
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex flex-col-reverse gap-0.5">
-      <dt className={LABEL}>{label}</dt>
-      <dd className="text-2xl font-semibold text-espresso">{value}</dd>
+    <div className="flex flex-col-reverse gap-1">
+      <dt className="text-[10px] font-medium tracking-[1.2px] text-clay uppercase">{label}</dt>
+      <dd className="text-[28px] font-bold text-espresso">{value}</dd>
     </div>
   );
 }
@@ -280,18 +277,22 @@ function ContinueWidgetBase({ latest, isLoading, isDesktop }: ContinueProps) {
 
   return (
     <section
-      className={`${CARD} flex flex-col gap-3 md:flex-row md:items-center md:justify-between`}
+      className={`${CARD} flex flex-col gap-4 md:flex-row md:items-center md:justify-between`}
     >
-      <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-espresso">
-          <span className="size-2 shrink-0 rounded-full bg-data-orange" aria-hidden />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <h2 className="flex items-center gap-2 text-base font-bold text-espresso">
+          <span className="size-2.5 shrink-0 rounded-full bg-data-orange" aria-hidden />
           <span className="truncate">{projectName ?? 'Start logging'}</span>
         </h2>
-        <p className={`mt-1 text-xs ${MUTED}`}>
+        <p className={`text-xs ${MUTED}`}>
           {latest ? `Last logged ${relativeTime(latest.createdAt)}` : 'Nothing logged yet'}
         </p>
       </div>
-      <Link to="/entries/new" className={`${GOLD_BUTTON} ${isDesktop ? '' : 'w-full'}`}>
+      {/* Figma: a 13px pill on desktop, a full-width 8px-radius button on mobile. */}
+      <Link
+        to="/entries/new"
+        className={`${GOLD_BUTTON} text-[13px] ${isDesktop ? 'px-5 py-2' : 'w-full rounded-lg py-2.5'}`}
+      >
         {isDesktop ? 'Continue' : 'Continue Logging'}
       </Link>
     </section>
@@ -330,22 +331,23 @@ function RecentEntriesWidgetBase({
 
   return (
     <section className={CARD}>
-      <h2 className="mb-2 text-sm font-semibold text-espresso">Recent entries</h2>
-      <ul className="flex flex-col">
+      <h2 className="mb-3 text-sm font-bold text-espresso">Recent Entries</h2>
+      {/* Figma: the title, then project (left) and date · duration (right). */}
+      <ul className="flex flex-col gap-2.5">
         {entries.map((entry) => (
           <li key={entry.id}>
             <Link
               to={`/entries/${entry.id}`}
-              className="flex items-start justify-between gap-3 rounded-md py-2 focus-visible:outline-2 focus-visible:outline-gold"
+              className="flex flex-col gap-1 rounded-md pb-2 leading-normal focus-visible:outline-2 focus-visible:outline-gold"
             >
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-espresso">
-                  {entryTitle(entry)}
-                </span>
-                <span className={`block truncate text-xs ${MUTED}`}>{entry.project?.name}</span>
+              <span className="truncate text-sm font-semibold text-espresso">
+                {entryTitle(entry)}
               </span>
-              <span className={`shrink-0 text-xs ${MUTED}`}>
-                {entryMeta(entry, durations[entry.id], today)}
+              <span className="flex items-center justify-between gap-3 text-[11px]">
+                <span className={`min-w-0 truncate ${MUTED}`}>{entry.project?.name}</span>
+                <span className="shrink-0 text-cocoa">
+                  {entryMeta(entry, durations[entry.id], today)}
+                </span>
               </span>
             </Link>
           </li>
@@ -366,10 +368,12 @@ function Header() {
   return (
     <div className="flex items-center justify-between">
       <p className={`flex items-center gap-1.5 ${LABEL}`}>
-        <Sparkles className="h-3 w-3" strokeWidth={1.75} aria-hidden />
+        <Sparkles className="size-3.5" strokeWidth={1.75} aria-hidden />
         Insight
       </p>
-      <Pin className={`h-3 w-3 ${MUTED}`} strokeWidth={1.75} aria-hidden />
+      <span className="hidden size-6 items-center justify-center md:flex" aria-hidden>
+        <Pin className={`size-3.5 ${MUTED}`} strokeWidth={1.75} />
+      </span>
     </div>
   );
 }
@@ -397,7 +401,7 @@ function InsightWidgetBase({ stat, isLoading }: InsightProps) {
       <p className={`mt-2 inline-block rounded bg-paper px-2 py-0.5 text-[11px] ${MUTED}`}>
         {stat.projectName} · {stat.fieldName}
       </p>
-      <p className="mt-2 text-lg font-semibold text-espresso">
+      <p className="mt-3 text-lg font-bold text-espresso">
         {stat.current} {stat.fieldName.toLowerCase()} this week
       </p>
       <p
@@ -457,7 +461,7 @@ function EventDetails({ event, today, heading, stacked, onDismiss }: EventDetail
 const EVENT_ROW =
   'flex min-w-0 flex-1 items-center gap-3 rounded text-left text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const LOG_LINK =
-  'shrink-0 rounded px-1 py-1 text-[11px] font-medium text-cocoa transition-colors hover:text-espresso hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
+  'shrink-0 rounded px-2 py-1 text-[11px] font-semibold text-clay transition-colors hover:text-espresso hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: UpcomingProps) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -474,7 +478,7 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
   return (
     <section className={CARD}>
       <h2 className="mb-3 text-sm font-bold text-espresso">Upcoming</h2>
-      <ul className="flex flex-col gap-1">
+      <ul className="flex flex-col gap-2">
         {data.events.map((event) => {
           const label = (
             <>
@@ -485,7 +489,7 @@ function UpcomingWidgetBase({ data, isLoading, isError, isDesktop, today }: Upco
           return (
             <li
               key={event.id}
-              className={`-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-1.5 transition-colors ${
+              className={`-mx-2 flex items-center justify-between gap-3 rounded-md px-2 transition-colors ${
                 openId === event.id ? 'bg-gold-light/50' : ''
               }`}
             >
@@ -589,27 +593,29 @@ function Group({ heading, items, overdue = false, onMarkDone }: GroupProps) {
   const accent = overdue ? 'text-error' : MUTED;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <h3
-        className={`flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.08em] ${accent}`}
+        className={`flex items-center gap-1.5 text-[11px] font-bold tracking-[1px] uppercase ${accent}`}
       >
-        {overdue && <Clock className="h-3 w-3" strokeWidth={2} aria-hidden />}
+        {overdue && <Clock className="size-3.5" strokeWidth={2} aria-hidden />}
         {heading}
       </h3>
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-2">
         {items.map((item) => (
-          <li key={`${item.entryId}-${item.fieldName}`} className="flex items-center gap-2">
+          <li key={`${item.entryId}-${item.fieldName}`} className="flex items-center gap-2.5">
             <button
               type="button"
               role="checkbox"
               aria-checked="false"
               aria-label={`Mark ${item.label} done`}
               onClick={() => onMarkDone(item)}
-              className={`size-4 shrink-0 rounded-[3px] border-[1.5px] bg-paper transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
-                overdue ? 'border-error' : 'border-cocoa'
+              className={`size-3.5 shrink-0 rounded-[3px] border-[1.5px] transition-colors hover:bg-gold-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
+                overdue ? 'border-error' : 'border-espresso'
               }`}
             />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-espresso">
+            <span
+              className={`min-w-0 flex-1 truncate text-[13px] font-semibold ${overdue ? 'text-error' : 'text-espresso'}`}
+            >
               {item.label}
             </span>
             <span className={`shrink-0 text-[11px] ${overdue ? 'text-error' : MUTED}`}>
@@ -641,10 +647,12 @@ function WhatsLeftWidgetBase({
 
   return (
     <section className={`${CARD} flex flex-col gap-3`}>
-      <h2 className={LABEL}>What's left</h2>
-      <Group heading="Overdue" items={stats.overdue} overdue onMarkDone={onMarkDone} />
-      <Group heading="Due this week" items={stats.dueThisWeek} onMarkDone={onMarkDone} />
-      <Group heading="No due date" items={stats.noDueDate} onMarkDone={onMarkDone} />
+      <h2 className={`tracking-[1px] ${LABEL}`}>What's left</h2>
+      <div className="flex flex-col gap-4">
+        <Group heading="Overdue" items={stats.overdue} overdue onMarkDone={onMarkDone} />
+        <Group heading="Due this week" items={stats.dueThisWeek} onMarkDone={onMarkDone} />
+        <Group heading="No due date" items={stats.noDueDate} onMarkDone={onMarkDone} />
+      </div>
       {markFailed && (
         <p role="alert" className="text-xs text-error">
           Couldn't mark that done. Try again.
@@ -656,7 +664,11 @@ function WhatsLeftWidgetBase({
 
 const WhatsLeftWidget = memo(WhatsLeftWidgetBase);
 
-const COLORS = ['#D4A843', '#7a9e6b', '#8c709c', '#ef8a4b'];
+// Figma "Addable Widgets — Full States" (164:2): caramel, gold, sage, lavender.
+const COLORS = ['#D4A373', '#D4A843', '#6B9E78', '#9B7EB3'];
+// Those cards use 20px padding and 16px between the label and the body.
+const ADDABLE_CARD = 'flex flex-col gap-4 rounded-xl bg-cream p-5';
+const ADDABLE_LABEL = `tracking-[1px] ${LABEL}`;
 const RADIUS = 38;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const MAX_LEGEND = 4;
@@ -684,10 +696,10 @@ function TimeByProjectWidgetBase({ projects }: TimeByProjectProps) {
   });
 
   return (
-    <section className={CARD}>
-      <h2 className={`mb-3 ${LABEL}`}>Time by project</h2>
-      <div className="flex items-center gap-5">
-        <div className="relative size-[104px] shrink-0">
+    <section className={ADDABLE_CARD}>
+      <h2 className={ADDABLE_LABEL}>Time by project</h2>
+      <div className="flex items-center gap-6">
+        <div className="relative size-[140px] shrink-0">
           <svg
             viewBox="0 0 100 100"
             className="size-full -rotate-90"
@@ -709,11 +721,11 @@ function TimeByProjectWidgetBase({ projects }: TimeByProjectProps) {
               />
             ))}
           </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-base font-semibold text-espresso">
+          <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-espresso">
             {topPercent}%
           </span>
         </div>
-        <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <ul className="flex min-w-0 flex-1 flex-col gap-2.5">
           {shown.map((project, index) => (
             <li key={project.projectId} className="flex items-center gap-2 text-xs text-espresso">
               <span
@@ -721,8 +733,8 @@ function TimeByProjectWidgetBase({ projects }: TimeByProjectProps) {
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
                 aria-hidden
               />
-              <span className="min-w-0 flex-1 truncate">{project.projectName}</span>
-              <span className={MUTED}>{project.totalHours}h</span>
+              <span className="min-w-0 truncate">{project.projectName}</span>
+              <span className={`shrink-0 font-medium ${MUTED}`}>{project.totalHours}h</span>
             </li>
           ))}
         </ul>
@@ -734,7 +746,7 @@ function TimeByProjectWidgetBase({ projects }: TimeByProjectProps) {
 const TimeByProjectWidget = memo(TimeByProjectWidgetBase);
 
 const WEEKS_SHOWN = 6;
-const BAR_AREA_PX = 88;
+const BAR_AREA_PX = 140;
 
 type FrequencyProps = {
   stats: FrequencyStats | undefined;
@@ -763,20 +775,20 @@ function FrequencyWidgetBase({ stats, isLoading, isError }: FrequencyProps) {
   const max = Math.max(1, ...weeks.map((week) => week.count));
 
   return (
-    <section className={CARD}>
-      <h2 className={`mb-3 ${LABEL}`}>Logging frequency — last 6 weeks</h2>
-      <ul className="flex items-end justify-between gap-2">
+    <section className={ADDABLE_CARD}>
+      <h2 className={ADDABLE_LABEL}>Logging frequency — last 6 weeks</h2>
+      <ul className="flex items-end justify-between">
         {weeks.map((week) => {
           const isMax = week.count === max;
           return (
             <li
               key={week.weekStart}
-              className="flex flex-1 flex-col items-center gap-1"
+              className="flex flex-1 flex-col items-center gap-1.5"
               aria-label={`Week of ${formatShortDate(week.weekStart)}: ${week.count} ${week.count === 1 ? 'entry' : 'entries'}`}
             >
-              <span className={`text-[11px] ${MUTED}`}>{week.count}</span>
+              <span className={`text-[11px] font-medium ${MUTED}`}>{week.count}</span>
               <span
-                className={`w-full max-w-7 rounded-t-[3px] ${isMax ? 'bg-gold' : 'bg-clay'}`}
+                className={`w-8 rounded-[4px] ${isMax ? 'bg-gold' : 'bg-clay'}`}
                 style={{ height: `${Math.max(4, (week.count / max) * BAR_AREA_PX)}px` }}
               />
               <span className={`text-[10px] ${MUTED}`}>{formatShortDate(week.weekStart)}</span>
@@ -798,15 +810,17 @@ type DueDormantProps = {
 
 function Row({ title, meta, alert = false }: { title: string; meta: string; alert?: boolean }) {
   return (
-    <li className="flex items-start gap-2">
+    <li className="flex items-center gap-2.5 py-3 first:pt-0 last:pb-0">
       <Clock
-        className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${alert ? 'text-error' : MUTED}`}
+        className={`size-4 shrink-0 ${alert ? 'text-error' : MUTED}`}
         strokeWidth={1.75}
         aria-hidden
       />
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-espresso">{title}</span>
-        <span className={`block text-[11px] ${alert ? 'text-error' : MUTED}`}>{meta}</span>
+      <span className={`flex min-w-0 flex-col gap-0.5 ${alert ? 'text-error' : ''}`}>
+        <span className={`truncate text-sm font-medium ${alert ? '' : 'text-espresso'}`}>
+          {title}
+        </span>
+        <span className={`text-xs ${alert ? '' : MUTED}`}>{meta}</span>
       </span>
     </li>
   );
@@ -826,9 +840,9 @@ function DueDormantWidgetBase({ dormant, overdue, isLoading }: DueDormantProps) 
   }
 
   return (
-    <section className={CARD}>
-      <h2 className={`mb-3 ${LABEL}`}>Due &amp; dormant projects</h2>
-      <ul className="flex flex-col gap-3">
+    <section className={ADDABLE_CARD}>
+      <h2 className={ADDABLE_LABEL}>Due &amp; dormant projects</h2>
+      <ul className="flex flex-col divide-y divide-line">
         {dormant.map((project) => (
           <Row
             key={`dormant-${project.projectId}`}
@@ -1030,8 +1044,9 @@ type FrameProps = {
   children: ReactNode;
 };
 
+// Figma "Customise dashboard" (81:4): cream chips with a soft drop shadow.
 const CHIP =
-  'flex size-6 items-center justify-center rounded-md border border-line-strong bg-paper text-cocoa transition-colors hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
+  'flex h-6 min-w-6 items-center justify-center rounded bg-cream px-1.5 text-cocoa drop-shadow-[0px_2px_2px_rgba(28,13,6,0.1)] transition-colors hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 function WidgetFrameBase({
   widget,
@@ -1080,10 +1095,12 @@ function WidgetFrameBase({
         event.preventDefault();
         onDropOn(id, event);
       }}
-      className={`relative rounded-xl border border-dashed border-line-strong p-1.5 transition-opacity ${
-        isDragging ? 'opacity-40' : ''
-      }`}
+      className={`relative rounded-xl transition-opacity ${isDragging ? 'opacity-40' : ''}`}
     >
+      <div
+        className="pointer-events-none absolute inset-0 z-10 rounded-xl border border-dashed border-clay"
+        aria-hidden
+      />
       <button
         type="button"
         draggable
@@ -1091,32 +1108,33 @@ function WidgetFrameBase({
         onDragEnd={onDragEnd}
         onKeyDown={handleKeyDown}
         aria-label={`Reorder ${title}`}
-        className={`${CHIP} absolute -top-3 left-3 z-10 cursor-grab active:cursor-grabbing`}
+        className={`${CHIP} absolute -top-3 left-2 z-20 cursor-grab active:cursor-grabbing`}
       >
         <GripVertical className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
       </button>
-      <div className="absolute -top-3 right-3 z-10 flex gap-1">
-        <button
-          type="button"
-          onClick={() => onResize(id)}
-          aria-label={wide ? `Make ${title} standard width` : `Make ${title} wide`}
-          className={CHIP}
-        >
-          {wide ? (
-            <Minimize2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-          ) : (
-            <Maximize2 className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => onToggle(id)}
-          aria-label={`Hide ${title}`}
-          className={CHIP}
-        >
-          <Eye className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        aria-label={`Hide ${title}`}
+        className={`${CHIP} absolute -top-3 right-2 z-20`}
+      >
+        <Eye className="size-3.5" strokeWidth={1.75} aria-hidden />
+      </button>
+      <button
+        type="button"
+        onClick={() => onResize(id)}
+        aria-label={wide ? `Make ${title} standard width` : `Make ${title} wide`}
+        className={`${CHIP} absolute right-2 -bottom-3 z-20 gap-1.5 px-1`}
+      >
+        <span
+          className={`size-2.5 rounded-[1px] border border-clay ${wide ? '' : 'bg-gold'}`}
+          aria-hidden
+        />
+        <span
+          className={`h-2.5 w-4 rounded-[1px] border border-clay ${wide ? 'bg-gold' : ''}`}
+          aria-hidden
+        />
+      </button>
       <div inert>{children}</div>
     </div>
   );
@@ -1227,7 +1245,7 @@ type TrayProps = {
 };
 
 const TRAY_TILE =
-  'flex w-full flex-col items-center gap-2 rounded-lg bg-cream px-3 py-3 text-xs font-medium text-espresso transition-colors hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
+  'flex w-full flex-col items-center gap-3 rounded-lg bg-paper px-4 pt-3 pb-2 text-xs font-medium text-espresso transition-colors hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 // Figma's "Your panels" tile: a star over the first panel's value. It opens a
 // list of the saved panels that aren't on the dashboard yet.
@@ -1301,10 +1319,10 @@ export function AddWidgetTray({ hidden, onAdd, panels, panelsLoading, onAddPanel
   return (
     <section
       aria-label="Add widget"
-      className="rounded-xl border border-dashed border-line-strong p-4"
+      className="rounded-xl border-2 border-dashed border-clay bg-canvas px-6 py-4"
     >
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-espresso">
-        <Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+      <h2 className="flex items-center gap-2 text-base font-bold text-espresso">
+        <CirclePlus className="size-5" strokeWidth={1.75} aria-hidden />
         Add widget
       </h2>
       <p className={`mb-3 mt-1 text-xs ${MUTED}`}>
@@ -1441,7 +1459,10 @@ export function DashboardGrid({
   );
 
   return (
-    <div className={`flex flex-col ${customising ? 'gap-6' : 'gap-4'}`} onDragOver={handleDragOver}>
+    <div
+      className={`flex flex-col ${customising || isDesktop ? 'gap-6' : 'gap-4'}`}
+      onDragOver={handleDragOver}
+    >
       {blocks.map((block) =>
         block.kind === 'row' ? (
           renderFrame(block.widget)
