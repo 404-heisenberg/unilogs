@@ -2016,13 +2016,14 @@ export const openapiSpec = {
       get: {
         summary: 'Get entries',
         description:
-          'Returns entries belonging to the authenticated user, with optional search, filters, and pagination.',
+          'Returns entries belonging to the authenticated user, with optional search, filters, and pagination. Every filter given must match (AND). Each entry includes its project with the project’s field names and types.',
         parameters: [
           {
             name: 'q',
             in: 'query',
             schema: { type: 'string' },
-            description: 'Free-text search across title, body, and project name.',
+            description:
+              'Free-text search across title, body, project name and field values (case-insensitive).',
           },
           {
             name: 'projectId',
@@ -2059,6 +2060,31 @@ export const openapiSpec = {
             in: 'query',
             schema: { type: 'integer', default: 50, maximum: 100 },
             description: 'Page size (max 100).',
+          },
+          {
+            name: 'field',
+            in: 'query',
+            schema: { type: 'string' },
+            description:
+              'Filter by the value of one of the project’s fields. Requires projectId, and one of value, min or max. How the value matches depends on the field type: text contains value (case-insensitive); number and duration (hours) equal value or fall within min/max; date (YYYY-MM-DD) equals value or falls within min/max; boolean equals value (true or false).',
+          },
+          {
+            name: 'value',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'The value to match for `field`.',
+          },
+          {
+            name: 'min',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Inclusive lower bound for a number, duration or date `field`.',
+          },
+          {
+            name: 'max',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Inclusive upper bound for a number, duration or date `field`.',
           },
         ],
         responses: {

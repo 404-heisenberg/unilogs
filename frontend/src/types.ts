@@ -8,6 +8,9 @@ export type Project = {
   userId: string;
   reminderFrequency: ReminderFrequency;
   todoEnabled?: boolean;
+  // Only on an entry's project from GET /api/entries: the field names and
+  // types its values need to be shown.
+  fields?: Pick<FieldDefinition, 'name' | 'fieldType'>[];
 };
 
 export type AggregationKind = 'sum' | 'average' | 'max' | 'min';

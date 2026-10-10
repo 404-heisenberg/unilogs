@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Clock, Search, SquareCheck, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import FieldFilterControls from '@/components/entries/FieldFilterControls';
 import { useTags } from '@/hooks/useTags';
+import { loadFieldDefinitions } from '@/lib/dashboard';
 import {
   DATE_RANGE_LABELS,
   DEFAULT_FILTERS,
@@ -32,6 +35,14 @@ export default function FiltersSheet({
   const [draft, setDraft] = useState(filters);
   const { tagsQuery } = useTags();
   const tags = tagsQuery.data ?? [];
+
+  // The chosen project's fields, for the field filter. Same key the project
+  // workspace uses, so it's often already cached.
+  const fieldsQuery = useQuery({
+    queryKey: ['field-definitions', draft.projectId],
+    queryFn: () => loadFieldDefinitions(draft.projectId as number),
+    enabled: open && draft.projectId !== null,
+  });
 
   // Re-sync the draft to whatever's actually applied every time the sheet
   // opens, so a dismissed (not applied) edit never lingers into next time.
@@ -80,6 +91,11 @@ export default function FiltersSheet({
             <X size={16} strokeWidth={2} />
           </button>
         </SheetHeader>
+        {/* Round 2 testing: filters read as "what the notes have in common",
+            which is exactly how they combine. Say so. */}
+        <p className="px-4 text-xs text-clay">
+          Entries must match every filter you set, so each one you add narrows the list.
+        </p>
 
         <div className="flex flex-col gap-5 overflow-y-auto px-4 pt-3 pb-4">
           <label className="flex h-11 w-full items-center gap-2.5 rounded-lg border border-line bg-white px-3 focus-within:ring-2 focus-within:ring-espresso">
@@ -98,7 +114,7 @@ export default function FiltersSheet({
             <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Project</p>
             <button
               type="button"
-              onClick={() => setDraft((d) => ({ ...d, projectId: null }))}
+              onClick={() => setDraft((d) => ({ ...d, projectId: null, field: null }))}
               className="flex min-h-11 w-full items-center justify-between py-1 text-left"
             >
               <span className="text-[13px] font-semibold text-espresso">All projects</span>
@@ -108,7 +124,11 @@ export default function FiltersSheet({
               <button
                 key={project.id}
                 type="button"
-                onClick={() => setDraft((d) => ({ ...d, projectId: project.id }))}
+                onClick={() =>
+                  setDraft((d) =>
+                    d.projectId === project.id ? d : { ...d, projectId: project.id, field: null },
+                  )
+                }
                 className="flex min-h-11 w-full items-center justify-between py-1 text-left"
               >
                 <span className="flex items-center gap-2.5">
@@ -122,6 +142,23 @@ export default function FiltersSheet({
                 {draft.projectId === project.id && <span className="text-gold">✓</span>}
               </button>
             ))}
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <p className="text-[11px] font-medium tracking-wide text-clay uppercase">Field</p>
+            {draft.projectId === null ? (
+              <p className="text-xs text-clay">
+                Choose a project above to filter by one of its fields.
+              </p>
+            ) : fieldsQuery.isError ? (
+              <p className="text-xs text-error">Couldn&apos;t load this project&apos;s fields.</p>
+            ) : (
+              <FieldFilterControls
+                fields={fieldsQuery.data ?? []}
+                filter={draft.field}
+                onChange={(field) => setDraft((d) => ({ ...d, field }))}
+              />
+            )}
           </div>
 
           <div className="flex flex-col gap-2.5">

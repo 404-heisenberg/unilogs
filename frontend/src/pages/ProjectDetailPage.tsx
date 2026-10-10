@@ -210,6 +210,7 @@ export default function ProjectDetailPage() {
             )}
             {tab === 'entries' && (
               <EntriesTab
+                projectId={projectId}
                 entries={sortedEntries}
                 fields={fieldList}
                 isLoading={entries.isPending}

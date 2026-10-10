@@ -1,3 +1,10 @@
+import {
+  describeFieldFilter,
+  fieldFilterParams,
+  isFieldFilterReady,
+  type FieldFilter,
+} from '@/lib/entryFields';
+
 export type DateRangeKey = 'all' | 'today' | '7d' | '30d' | 'custom';
 
 export const DATE_RANGE_LABELS: Record<DateRangeKey, string> = {
@@ -38,6 +45,8 @@ export type EntryFilters = {
   customTo: string;
   tagIds: number[];
   status: EntryStatus | null;
+  /** One of the chosen project's fields; only applies with a project. */
+  field: FieldFilter | null;
 };
 
 export const DEFAULT_FILTERS: EntryFilters = {
@@ -48,6 +57,7 @@ export const DEFAULT_FILTERS: EntryFilters = {
   customTo: '',
   tagIds: [],
   status: null,
+  field: null,
 };
 
 function startOfDay(date: Date): Date {
@@ -86,7 +96,13 @@ export function dateBoundsFor(filters: EntryFilters): { dateFrom?: string; dateT
 export function buildEntriesQuery(filters: EntryFilters): string {
   const params = new URLSearchParams();
   if (filters.search.trim()) params.set('q', filters.search.trim());
-  if (filters.projectId !== null) params.set('projectId', String(filters.projectId));
+  if (filters.projectId !== null) {
+    params.set('projectId', String(filters.projectId));
+    // Field names belong to a project, so the field filter rides with it.
+    for (const [key, value] of Object.entries(fieldFilterParams(filters.field))) {
+      params.set(key, value);
+    }
+  }
   if (filters.tagIds.length > 0) params.set('tagIds', filters.tagIds.join(','));
 
   const { dateFrom, dateTo } = dateBoundsFor(filters);
@@ -105,6 +121,38 @@ export function isFiltering(filters: EntryFilters): boolean {
     filters.projectId !== null ||
     filters.dateRange !== 'all' ||
     filters.tagIds.length > 0 ||
-    filters.status !== null
+    filters.status !== null ||
+    (filters.projectId !== null && isFieldFilterReady(filters.field))
   );
+}
+
+/**
+ * The active filters in words, for filterSummary: every one of them must
+ * hold, which is what the API does with them.
+ */
+export function describeFilters(
+  filters: EntryFilters,
+  names: { project: (id: number) => string | undefined; tag: (id: number) => string | undefined },
+): string[] {
+  const parts: string[] = [];
+  if (filters.projectId !== null) {
+    parts.push(`in ${names.project(filters.projectId) ?? 'the chosen project'}`);
+    if (isFieldFilterReady(filters.field)) parts.push(describeFieldFilter(filters.field));
+  }
+  const search = filters.search.trim();
+  if (search) parts.push(`mention “${search}”`);
+  if (filters.tagIds.length > 0) {
+    const tags = filters.tagIds.map((id) => names.tag(id) ?? 'a tag');
+    parts.push(`tagged ${tags.join(' and ')}`);
+  }
+  if (filters.dateRange === 'custom') {
+    if (filters.customFrom && filters.customTo) {
+      parts.push(`dated ${filters.customFrom} to ${filters.customTo}`);
+    } else if (filters.customFrom) parts.push(`dated from ${filters.customFrom}`);
+    else if (filters.customTo) parts.push(`dated up to ${filters.customTo}`);
+  } else if (filters.dateRange !== 'all') {
+    parts.push(`from ${DATE_RANGE_LABELS[filters.dateRange].toLowerCase()}`);
+  }
+  if (filters.status) parts.push(filters.status === 'overdue' ? 'overdue' : 'unfinished');
+  return parts;
 }
