@@ -76,8 +76,11 @@ describe('EntryCreatePage dynamic form', () => {
     expect(await screen.findByLabelText('Notes')).toHaveAttribute('type', 'text');
     expect(screen.getByLabelText('Reps')).toHaveAttribute('type', 'number');
     expect(screen.getByLabelText('Day')).toHaveAttribute('type', 'date');
-    expect(screen.getByLabelText('Length')).toHaveAttribute('type', 'number');
-    expect(screen.getByLabelText('Length')).toHaveAttribute('placeholder', 'Hours, e.g. 1.5');
+    expect(screen.getByLabelText('Length')).toHaveAttribute('type', 'text');
+    expect(screen.getByLabelText('Length')).toHaveAttribute(
+      'placeholder',
+      'Hours, e.g. 1.5 or 2:30',
+    );
     expect(screen.getByRole('switch', { name: 'Warmup' })).toBeInTheDocument();
   });
 
@@ -129,6 +132,63 @@ describe('EntryCreatePage dynamic form', () => {
 
     expect(await screen.findByText('Reps is required')).toBeInTheDocument();
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('parses a 2:30 duration into hours before saving', async () => {
+    postMock.mockResolvedValue({ id: 99 });
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Chest day' } });
+    fireEvent.change(screen.getByLabelText('Length'), { target: { value: '2:30' } });
+
+    await userEvent.click(screen.getByRole('button', { name: /save entry/i }));
+
+    await waitFor(() => expect(postMock).toHaveBeenCalledTimes(1));
+    expect(postMock).toHaveBeenCalledWith(
+      '/api/entries',
+      expect.objectContaining({
+        content: expect.objectContaining({ Length: 2.5 }),
+      }),
+    );
+  });
+
+  it('blocks an invalid duration even when the entry has a title or notes', async () => {
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Chest day' } });
+    fireEvent.change(screen.getByLabelText('Length'), { target: { value: '2:60' } });
+
+    await userEvent.click(screen.getByRole('button', { name: /save entry/i }));
+
+    expect(await screen.findByText('Enter hours like 1.5 or 2:30')).toBeInTheDocument();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('explains that the right-hand pane holds this project fields', async () => {
+    renderPage();
+
+    expect(
+      await screen.findByText(/These are the fields defined for this project/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Add as many as you like/i)).toBeInTheDocument();
+  });
+
+  it('keeps the + Add tag affordance after a tag is chosen', async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === '/api/projects') return Promise.resolve(PROJECTS);
+      if (path.startsWith('/api/field-definitions')) return Promise.resolve(FIELDS);
+      if (path === '/api/tags') return Promise.resolve([{ id: 1, name: 'Gym', color: null }]);
+      return Promise.reject(new Error(`unexpected GET ${path}`));
+    });
+    renderPage();
+
+    const input = (await screen.findByLabelText('Add tag')) as HTMLInputElement;
+    expect(input.placeholder).toBe('+ Add tag');
+
+    await userEvent.type(input, 'Gym{Enter}');
+
+    expect(await screen.findByLabelText('Remove Gym')).toBeInTheDocument();
+    expect(input.placeholder).toBe('+ Add tag');
   });
 
   it('keeps submit disabled until a project with fields is chosen', async () => {

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { test, expect } from '@playwright/test';
-import { verifyEmail } from './helpers';
+import { dismissWalkthrough, verifyEmail } from './helpers';
 
 // The one test in this file that's worth running slowly and for real: sign up
 // through the actual UI, define a project's shape, log an entry against it,
@@ -27,6 +27,7 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await verifyEmail(page, email);
 
   await expect(page).toHaveURL(/\/dashboard$/);
+  await dismissWalkthrough(page);
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
   // Define a project and its schema via the Details → Fields → Save wizard.
@@ -45,7 +46,9 @@ test('a new user can sign up, define a project, and log an entry', async ({ page
   await page.getByPlaceholder('Field name').fill('Hours');
   await page.locator('form select').selectOption('duration');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
-  await expect(page.getByText('Hours')).toBeVisible();
+  // The step's "what are fields?" explainer mentions 'Hours spent', so pin the
+  // newly added row with an exact match.
+  await expect(page.getByText('Hours', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();

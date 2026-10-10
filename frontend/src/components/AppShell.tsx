@@ -7,6 +7,7 @@ import AppHeader from './app-shell/AppHeader';
 import InstallPrompt from './app-shell/InstallPrompt';
 import MobileBottomNav from './app-shell/MobileBottomNav';
 import MoreSheet from './app-shell/MoreSheet';
+import FirstRunWalkthrough from './app-shell/FirstRunWalkthrough';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 
 export default function AppShell() {
@@ -14,6 +15,7 @@ export default function AppShell() {
   const { pathname } = useLocation();
   const [explorerCollapsed, setExplorerCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   // Replays anything still in the offline queue on every app load, not just
   // when the entry editor happens to be open. Returns are ignored on purpose:
@@ -41,7 +43,8 @@ export default function AppShell() {
         explorerCollapsed={explorerCollapsed}
         onToggleExplorer={() => setExplorerCollapsed((v) => !v)}
       />
-      <ExplorerPane collapsed={explorerCollapsed} />
+      <ExplorerPane collapsed={explorerCollapsed} onTakeTour={() => setTourOpen(true)} />
+      <FirstRunWalkthrough open={tourOpen} onOpenChange={setTourOpen} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <AppHeader />

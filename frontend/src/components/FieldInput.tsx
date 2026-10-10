@@ -38,14 +38,24 @@ export function FieldInput({
           onChange={(e) => onChange(e.target.value)}
           className={inputClassName}
         />
-      ) : field.fieldType === 'number' || field.fieldType === 'duration' ? (
+      ) : field.fieldType === 'number' ? (
         <input
           id={inputId}
           type="number"
           value={value as string | number}
           onChange={(e) => onChange(e.target.value)}
-          // Durations are stored in hours (the backend sums them as hours).
-          placeholder={field.fieldType === 'duration' ? 'Hours, e.g. 1.5' : undefined}
+          className={inputClassName}
+        />
+      ) : field.fieldType === 'duration' ? (
+        <input
+          id={inputId}
+          type="text"
+          inputMode="decimal"
+          value={value as string}
+          onChange={(e) => onChange(e.target.value)}
+          // A duration is stored in hours (the backend sums them as hours),
+          // but people type times like 2:30, so accept text and parse at save.
+          placeholder="Hours, e.g. 1.5 or 2:30"
           className={inputClassName}
         />
       ) : (

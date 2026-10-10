@@ -189,8 +189,11 @@ export default function LandingPage() {
           </Link>
         </section>
 
-        <footer className="relative mt-auto pt-10 pb-6 pl-[31px] text-[9.5px] tracking-[0.02em] text-clay md:pt-16 md:pb-8 md:pl-16 md:text-[11px]">
-          © 2026 UniLogs, built by Code of Duty
+        <footer className="relative mt-auto flex flex-wrap items-center justify-between gap-3 pt-10 pb-6 pl-[31px] text-[9.5px] tracking-[0.02em] text-clay md:pt-16 md:pb-8 md:pl-16 md:text-[11px]">
+          <span>© 2026 UniLogs, built by Code of Duty</span>
+          <Link to="/privacy" className="underline underline-offset-2 hover:text-espresso">
+            Privacy Policy
+          </Link>
         </footer>
       </div>
     </main>

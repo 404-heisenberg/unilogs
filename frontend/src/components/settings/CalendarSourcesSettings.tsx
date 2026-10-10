@@ -36,11 +36,12 @@ function SourceRow({ source }: { source: CalendarSource }) {
       if (context?.previous) queryClient.setQueryData(SOURCES_KEY, context.previous);
       toast.error(error);
     },
-    // The backend only reads enabled calendars, so both lists built from
-    // calendar events have to be fetched again.
+    // The backend only reads enabled calendars, so everything built from
+    // calendar events has to be fetched again, the calendar grid included.
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendar-suggestions'] });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.upcoming });
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
     },
   });
 

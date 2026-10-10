@@ -476,6 +476,16 @@ describe('ProjectDetailPage workspace', () => {
       expect(await screen.findByText("Couldn't load open items.")).toBeInTheDocument();
     });
 
+    it('hides the section entirely when nothing is left open', async () => {
+      server.unfinished = { overdue: [], dueThisWeek: [], noDueDate: [] };
+
+      renderPage();
+
+      await waitFor(() =>
+        expect(screen.queryByRole('region', { name: 'Still open' })).not.toBeInTheDocument(),
+      );
+    });
+
     it('shows the last 8 weeks of activity and the most recent entries', async () => {
       renderPage();
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { configure, render, screen, waitFor, within } from '@testing-library/react';
+import { configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => ({
   apiGet: vi.fn(),
   apiPut: vi.fn(),
   useSession: vi.fn(),
+  getDashboardLayout: vi.fn(),
+  putDashboardLayout: vi.fn(),
+  listAllStatPanels: vi.fn(),
 }));
 
 vi.mock('@/lib/api', async (importOriginal) => ({
@@ -22,6 +25,9 @@ vi.mock('@/lib/api', async (importOriginal) => ({
   api: { get: mocks.apiGet, put: mocks.apiPut },
   getStatsSummary: mocks.getStatsSummary,
   getFrequencyStats: mocks.getFrequencyStats,
+  getDashboardLayout: mocks.getDashboardLayout,
+  putDashboardLayout: mocks.putDashboardLayout,
+  listAllStatPanels: mocks.listAllStatPanels,
 }));
 
 vi.mock('@/hooks/useSession', () => ({ useSession: mocks.useSession }));
@@ -95,6 +101,29 @@ const UNFINISHED = {
   noDueDate: [],
 };
 
+const PANELS = [
+  {
+    id: 7,
+    projectId: 1,
+    name: 'Pages per hour',
+    expression: 'Pages read',
+    aggregation: 'average',
+    rangeDays: 30,
+    position: 0,
+    hidden: false,
+    createdAt: '2026-09-01T00:00:00.000Z',
+    value: 32,
+    sampleCount: 18,
+    series: [
+      { date: '2026-09-18', value: 20 },
+      { date: '2026-09-19', value: 28 },
+      { date: '2026-09-20', value: 32 },
+    ],
+    project: { id: 1, name: 'Thesis Research' },
+    fields: [{ name: 'Pages read', fieldType: 'number' }],
+  },
+];
+
 const server = { unfinished: structuredClone(UNFINISHED), fieldsFail: false };
 
 function paged<T>(entries: T[], limit: number) {
@@ -133,6 +162,9 @@ beforeEach(() => {
   server.fieldsFail = false;
   mocks.useSession.mockReturnValue({ data: { user: { id: 'u1', name: 'Lee', email: 'l@x.io' } } });
   mocks.getStatsSummary.mockResolvedValue(SUMMARY);
+  mocks.getDashboardLayout.mockResolvedValue({ layout: null });
+  mocks.putDashboardLayout.mockImplementation(async (layout: unknown) => ({ layout }));
+  mocks.listAllStatPanels.mockResolvedValue(PANELS);
   mocks.getFrequencyStats.mockResolvedValue({
     weekly: [
       { weekStart: '2026-08-10', count: 2 },
@@ -300,6 +332,35 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
   });
 
+  it('lets a tray tile be dropped onto a grid widget instead of appended', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Customise' }));
+    expect(
+      screen.getByText(/Drag a widget's grip onto another widget to swap them/),
+    ).toBeInTheDocument();
+
+    const tray = screen.getByRole('region', { name: 'Add widget' });
+    const tile = within(tray).getByRole('button', { name: 'Add Time by project' });
+    const summaryGrip = screen.getByRole('button', { name: 'Reorder Summary' });
+    const frame = summaryGrip.closest('[data-widget-frame]') as HTMLElement;
+
+    const dataTransfer = {
+      effectAllowed: 'move',
+      dropEffect: 'none',
+      setData: vi.fn(),
+      getData: vi.fn((type: string) =>
+        type === 'application/x-unilogs-widget' ? 'timeByProject' : '',
+      ),
+    } as unknown as DataTransfer;
+
+    fireEvent.dragStart(tile, { dataTransfer });
+    fireEvent.drop(frame, { dataTransfer });
+
+    expect(await screen.findByText('75%')).toBeInTheDocument();
+  });
+
   it('remembers the layout for the signed-in user', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const first = renderPage();
@@ -323,5 +384,43 @@ describe('DashboardPage', () => {
     expect(await screen.findByRole('link', { name: 'Log' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Continue Logging' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Customise' })).not.toBeInTheDocument();
+  });
+
+  it('adds a saved panel from the tray, shows its value and trend, and saves the layout', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Customise' }));
+    const tray = screen.getByRole('region', { name: 'Add widget' });
+    await user.click(within(tray).getByRole('button', { name: 'Add from your panels' }));
+    await user.click(await screen.findByRole('button', { name: 'Add Pages per hour' }));
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    const card = await screen.findByRole('link', { name: /Pages per hour, Thesis Research/ });
+    expect(card).toHaveAttribute('href', '/projects/1');
+    expect(within(card).getByText('32')).toBeInTheDocument();
+    expect(within(card).getByRole('img', { name: /Daily trend/ })).toBeInTheDocument();
+    expect(within(card).getByText('18 entries · Last 30 days · Avg')).toBeInTheDocument();
+
+    await waitFor(() => expect(mocks.putDashboardLayout).toHaveBeenCalled());
+    const saved = mocks.putDashboardLayout.mock.lastCall![0] as { id: string }[];
+    expect(saved.some((widget) => widget.id === 'statPanel:7')).toBe(true);
+    // One request for every panel, none per widget.
+    expect(mocks.listAllStatPanels).toHaveBeenCalledTimes(1);
+  });
+
+  it('lays out the dashboard from the server', async () => {
+    mocks.getDashboardLayout.mockResolvedValue({
+      layout: [
+        { id: 'statPanel:7', visible: true, size: 'wide' },
+        { id: 'recent', visible: false, size: 'standard' },
+      ],
+    });
+    renderPage();
+
+    expect(
+      await screen.findByRole('link', { name: /Pages per hour, Thesis Research/ }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Recent entries')).not.toBeInTheDocument();
   });
 });

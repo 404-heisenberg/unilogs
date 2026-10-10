@@ -126,6 +126,11 @@ function Report({ report, token }: { report: SharedReport; token: string }) {
             Last {report.rangeDays} days · {entriesLabel(report.entries.length)} · Updated today,{' '}
             {updated}
           </p>
+          <p className="mt-1 text-[10px] text-clay">
+            {report.includeBodies
+              ? "This report includes every entry's notes (bodies)."
+              : "Entry notes (bodies) aren't included — titles and summary data only."}
+          </p>
         </section>
 
         {report.summary && (

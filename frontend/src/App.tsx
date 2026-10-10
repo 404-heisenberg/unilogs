@@ -10,6 +10,7 @@ import {
 import { Toaster } from '@/components/ui/sonner';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 // The landing page is the only route bundled up front: it's where most
 // visitors arrive. Every other page, and the signed-in app shell, is split
@@ -29,6 +30,7 @@ const EntryCreatePage = lazy(() => import('./pages/EntryCreatePage'));
 const EntryDetailPage = lazy(() => import('./pages/EntryDetailPage'));
 const EntryHistoryPage = lazy(() => import('./pages/EntryHistoryPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const SuggestionsPage = lazy(() => import('./pages/SuggestionsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 // Public share page: no app/auth code ships with it.
@@ -84,6 +86,7 @@ function AppToaster() {
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
+  { path: '/privacy', element: <PrivacyPolicyPage /> },
   { path: '/login', element: page(<LoginPage />) },
   { path: '/signup', element: page(<SignupPage />) },
   { path: '/reset-password', element: page(<ResetPasswordPage />) },
@@ -105,6 +108,7 @@ const router = createBrowserRouter([
           { path: '/entries/:entryId', element: <EntryDetailPage /> },
           { path: '/entries/:entryId/history', element: <EntryHistoryPage /> },
           { path: '/entries/:id/edit', element: <EntryCreatePage /> },
+          { path: '/calendar', element: <CalendarPage /> },
           { path: '/suggestions', element: <SuggestionsPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],

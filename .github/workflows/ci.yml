@@ -33,8 +33,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Not `npx tsc --noEmit`: tsconfig.json is solution-style, so that checks
+      # no files and always passes. `tsc -b` follows the references. See the
+      # "frontend/tsconfig.json is solution-style" gotcha in AGENTS.md.
       - name: Type check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Build
         run: npm run build

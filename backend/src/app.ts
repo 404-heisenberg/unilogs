@@ -12,6 +12,8 @@ import fieldDefinitionsRoutes from './routes/field-definitions.js';
 import statsRoutes from './routes/stats.js';
 import calendarRoutes from './routes/calendar.js';
 import settingsRoutes from './routes/settings.js';
+import dashboardRoutes from './routes/dashboard.js';
+import allStatPanelsRoutes from './routes/all-stat-panels.js';
 import notificationsRoutes from './routes/notifications.js';
 import { apiReference } from '@scalar/express-api-reference';
 import { openapiSpec } from './openapi.js';
@@ -42,6 +44,8 @@ export function createApp() {
   app.use('/api/stats', statsRoutes);
   app.use('/api/tags', tagsRoutes);
   app.use('/api/settings', settingsRoutes);
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/stat-panels', allStatPanelsRoutes);
   app.use('/api/notifications', notificationsRoutes);
   app.use('/api/health', healthRouter);
 

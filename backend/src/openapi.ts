@@ -794,6 +794,15 @@ export const openapiSpec = {
         ],
       },
 
+      DashboardWidget: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: 'statPanel:12' },
+          visible: { type: 'boolean' },
+          size: { type: 'string', enum: ['standard', 'wide'] },
+        },
+        required: ['id', 'visible', 'size'],
+      },
       StatPanel: {
         type: 'object',
         properties: {
@@ -1837,6 +1846,111 @@ export const openapiSpec = {
           '401': { description: 'Not authenticated.' },
           '404': { description: 'Notification not found.' },
           '500': { description: 'Failed to mark notification read.' },
+        },
+      },
+    },
+
+    '/api/dashboard/layout': {
+      get: {
+        summary: 'Get the dashboard layout',
+        description:
+          "Returns the authenticated user's saved dashboard layout, or null if they have never saved one.",
+        responses: {
+          '200': {
+            description: 'Layout returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    layout: {
+                      type: 'array',
+                      nullable: true,
+                      items: { $ref: '#/components/schemas/DashboardWidget' },
+                    },
+                  },
+                  required: ['layout'],
+                },
+              },
+            },
+          },
+          '401': { description: 'Not authenticated.' },
+          '500': { description: 'Failed to fetch dashboard layout.' },
+        },
+      },
+      put: {
+        summary: 'Save the dashboard layout',
+        description:
+          'Replaces the saved layout. Widgets are checked for shape only: a built-in widget name or statPanel:<id>, visible, and size. At most 100 widgets, no duplicate ids.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  layout: {
+                    type: 'array',
+                    maxItems: 100,
+                    items: { $ref: '#/components/schemas/DashboardWidget' },
+                  },
+                },
+                required: ['layout'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Layout saved and returned as stored.' },
+          '400': { description: 'The layout is malformed.' },
+          '401': { description: 'Not authenticated.' },
+          '500': { description: 'Failed to save dashboard layout.' },
+        },
+      },
+    },
+
+    '/api/stat-panels': {
+      get: {
+        summary: "List all of the user's stat panels",
+        description:
+          "Every saved panel across the user's active projects, with its computed value and series, its project's name, and the project's field types for formatting. Creating and editing panels stays under /api/projects/{id}/stat-panels.",
+        responses: {
+          '200': {
+            description: 'Panels returned.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    allOf: [
+                      { $ref: '#/components/schemas/StatPanel' },
+                      {
+                        type: 'object',
+                        properties: {
+                          project: {
+                            type: 'object',
+                            properties: { id: { type: 'integer' }, name: { type: 'string' } },
+                          },
+                          fields: {
+                            type: 'array',
+                            items: {
+                              type: 'object',
+                              properties: {
+                                name: { type: 'string' },
+                                fieldType: { type: 'string' },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+          '401': { description: 'Not authenticated.' },
+          '500': { description: 'Failed to fetch panels.' },
         },
       },
     },
@@ -3721,7 +3835,25 @@ export const openapiSpec = {
 
     '/api/calendar/events': {
       get: {
-        summary: 'Get upcoming Google Calendar events',
+        summary: 'Get Google Calendar events',
+        description:
+          'Without from/to, returns the next 30 days (up to 20 events per calendar). With both, returns every event in that window, which may span at most 62 days.',
+        parameters: [
+          {
+            name: 'from',
+            in: 'query',
+            required: false,
+            description: 'Start of the window, as an ISO date-time. Requires to.',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'to',
+            in: 'query',
+            required: false,
+            description: 'End of the window (exclusive), as an ISO date-time. Requires from.',
+            schema: { type: 'string', format: 'date-time' },
+          },
+        ],
         responses: {
           '200': {
             description: 'Upcoming calendar events returned.',
@@ -3745,6 +3877,10 @@ export const openapiSpec = {
                 },
               },
             },
+          },
+
+          '400': {
+            description: 'from and to are not both valid, in order, and at most 62 days apart.',
           },
 
           '401': {

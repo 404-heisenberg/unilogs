@@ -1,4 +1,5 @@
 import type {
+  DashboardStatPanel,
   EntriesAsAt,
   Entry,
   EntryVersion,
@@ -97,6 +98,28 @@ export type CalendarSuggestion = {
   description?: string;
   projectId?: number;
 };
+
+// A Google event as GET /api/calendar/events returns it: Google's own shape,
+// tagged with the calendar it came from.
+export type CalendarEvent = {
+  id?: string;
+  summary?: string;
+  description?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+  calendarId?: string;
+  calendarSummary?: string;
+  color?: string | null;
+};
+
+export type CalendarEventsResponse =
+  { connected: true; events: CalendarEvent[] } | { connected: false; message?: string };
+
+/** Every event from the enabled calendars between two ISO instants. */
+export function getCalendarEvents(range: { from: string; to: string }) {
+  const params = new URLSearchParams(range);
+  return api.get<CalendarEventsResponse>(`/api/calendar/events?${params.toString()}`);
+}
 
 export type CalendarSuggestionsResponse = {
   connected: boolean;
@@ -221,4 +244,21 @@ export type SyncEntryResult = {
 
 export function syncEntries(entries: SyncQueuedEntry[]) {
   return api.post<{ results: SyncEntryResult[] }>('/api/entries/sync', { entries });
+}
+
+/** Every saved stat panel across the user's projects, with values. */
+export function listAllStatPanels() {
+  return api.get<DashboardStatPanel[]>('/api/stat-panels');
+}
+
+// The dashboard layout is typed loosely here on purpose: lib/dashboard.ts
+// owns the widget shape and validates whatever comes back.
+export type DashboardLayoutResponse = { layout: unknown[] | null };
+
+export function getDashboardLayout() {
+  return api.get<DashboardLayoutResponse>('/api/dashboard/layout');
+}
+
+export function putDashboardLayout(layout: unknown[]) {
+  return api.put<DashboardLayoutResponse>('/api/dashboard/layout', { layout });
 }

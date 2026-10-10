@@ -77,7 +77,38 @@ async function getGoogleCalendars(req: Request) {
   return data.items ?? [];
 }
 
-async function getCalendarEvents(req: Request) {
+type EventRange = { timeMin: Date; timeMax: Date };
+
+// The calendar grid asks for one month or week at a time; a few days either
+// side of a month is still well under this.
+const MAX_RANGE_DAYS = 62;
+
+/**
+ * Reads optional `from`/`to` (ISO date-times) from the query. Both absent
+ * means the default upcoming window; anything else malformed is an error
+ * string for a 400.
+ */
+function parseEventRange(query: Request['query']): EventRange | null | string {
+  const { from, to } = query;
+  if (from === undefined && to === undefined) return null;
+  if (typeof from !== 'string' || typeof to !== 'string') {
+    return 'from and to must be given together';
+  }
+
+  const timeMin = new Date(from);
+  const timeMax = new Date(to);
+  if (Number.isNaN(timeMin.getTime()) || Number.isNaN(timeMax.getTime())) {
+    return 'from and to must be ISO dates';
+  }
+  if (timeMax <= timeMin) return 'to must be after from';
+  if (timeMax.getTime() - timeMin.getTime() > MAX_RANGE_DAYS * 24 * 60 * 60 * 1000) {
+    return `The range can be at most ${MAX_RANGE_DAYS} days`;
+  }
+
+  return { timeMin, timeMax };
+}
+
+async function getCalendarEvents(req: Request, range: EventRange | null = null) {
   const account = await prisma.account.findFirst({
     where: {
       userId: req.userId,
@@ -106,10 +137,12 @@ async function getCalendarEvents(req: Request) {
     },
   });
 
-  const now = new Date();
-  const timeMax = new Date();
-
-  timeMax.setDate(timeMax.getDate() + 30);
+  // Without a range this is the upcoming list: the next 30 days, a few
+  // events per calendar. A range is a grid page, which needs all of them.
+  const timeMin = range?.timeMin ?? new Date();
+  const timeMax = range?.timeMax ?? new Date();
+  if (!range) timeMax.setDate(timeMax.getDate() + 30);
+  const maxResults = range ? '250' : '20';
 
   const allEvents: GoogleCalendarEvent[] = [];
 
@@ -118,11 +151,11 @@ async function getCalendarEvents(req: Request) {
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(source.calendarId)}/events`,
     );
 
-    url.searchParams.set('timeMin', now.toISOString());
+    url.searchParams.set('timeMin', timeMin.toISOString());
     url.searchParams.set('timeMax', timeMax.toISOString());
     url.searchParams.set('singleEvents', 'true');
     url.searchParams.set('orderBy', 'startTime');
-    url.searchParams.set('maxResults', '20');
+    url.searchParams.set('maxResults', maxResults);
 
     const googleResponse = await fetch(url, {
       headers: {
@@ -434,7 +467,12 @@ router.delete('/disconnect', authenticate, async (req, res) => {
 
 router.get('/events', authenticate, async (req, res) => {
   try {
-    const events = await getCalendarEvents(req);
+    const range = parseEventRange(req.query);
+    if (typeof range === 'string') {
+      return res.status(400).json({ error: range });
+    }
+
+    const events = await getCalendarEvents(req, range);
 
     if (events === null) {
       return res.status(200).json({

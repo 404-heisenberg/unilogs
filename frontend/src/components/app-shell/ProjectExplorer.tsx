@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -73,10 +74,12 @@ const ProjectRow = memo(function ProjectRow({
   project,
   expanded,
   activeEntryId,
+  onToggle,
 }: {
   project: Project;
   expanded: boolean;
   activeEntryId: number | null;
+  onToggle: () => void;
 }) {
   const { pathname } = useLocation();
   const active = isNavActive(pathname, `/projects/${project.id}`);
@@ -84,24 +87,34 @@ const ProjectRow = memo(function ProjectRow({
 
   return (
     <li className="flex flex-col gap-1">
-      <Link
-        to={`/projects/${project.id}`}
-        aria-current={active ? 'page' : undefined}
-        className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors ${
-          expanded
-            ? 'bg-sand font-semibold text-espresso'
-            : 'font-medium text-espresso hover:bg-sand/60'
-        }`}
-      >
-        <Chevron size={10} strokeWidth={2.5} className="shrink-0 text-clay" aria-hidden />
-        <span className="min-w-0 flex-1 truncate">{project.name}</span>
-      </Link>
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={expanded ? `Collapse ${project.name}` : `Expand ${project.name}`}
+          aria-expanded={expanded}
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-clay transition-colors hover:bg-sand/70 hover:text-espresso"
+        >
+          <Chevron size={12} strokeWidth={2.5} aria-hidden />
+        </button>
+        <Link
+          to={`/projects/${project.id}`}
+          aria-current={active ? 'page' : undefined}
+          className={`flex min-w-0 flex-1 items-center gap-2 rounded-md py-1.5 pr-2 text-[13px] transition-colors ${
+            expanded
+              ? 'bg-sand font-semibold text-espresso'
+              : 'font-medium text-espresso hover:bg-sand/60'
+          }`}
+        >
+          <span className="min-w-0 flex-1 truncate">{project.name}</span>
+        </Link>
+      </div>
       {expanded && <ProjectEntries projectId={project.id} activeEntryId={activeEntryId} />}
     </li>
   );
 });
 
-export default function ProjectExplorer() {
+export default function ProjectExplorer({ onTakeTour }: { onTakeTour?: () => void }) {
   const {
     data: projects,
     isPending,
@@ -113,6 +126,11 @@ export default function ProjectExplorer() {
     queryFn: () => api.get<Project[]>('/api/projects'),
   });
   const { projectId, entryId } = useCurrentProjectId();
+
+  // The current project is expanded by default. A chevron click records the
+  // user's explicit choice for that project, which then wins over the default.
+  // Storing the few overrides as a record keeps the default rule live.
+  const [toggled, setToggled] = useState<Record<number, boolean>>({});
 
   return (
     <div className="flex flex-col gap-5">
@@ -131,17 +149,39 @@ export default function ProjectExplorer() {
 
       {isError && <p className="text-xs text-error">Failed to load projects.</p>}
 
-      {projects?.length === 0 && <p className="text-xs text-clay italic">No projects yet</p>}
+      {projects?.length === 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-clay italic">No projects yet</p>
+          {onTakeTour && (
+            <button
+              type="button"
+              onClick={onTakeTour}
+              className="self-start text-xs font-medium text-gold hover:underline"
+            >
+              Take the tour
+            </button>
+          )}
+        </div>
+      )}
 
       <ul className="flex flex-col gap-1.5">
-        {(projects ?? []).map((project) => (
-          <ProjectRow
-            key={project.id}
-            project={project}
-            expanded={project.id === projectId}
-            activeEntryId={entryId}
-          />
-        ))}
+        {(projects ?? []).map((project) => {
+          const expanded = toggled[project.id] ?? project.id === projectId;
+          return (
+            <ProjectRow
+              key={project.id}
+              project={project}
+              expanded={expanded}
+              activeEntryId={entryId}
+              onToggle={() =>
+                setToggled((prev) => ({
+                  ...prev,
+                  [project.id]: !(prev[project.id] ?? project.id === projectId),
+                }))
+              }
+            />
+          );
+        })}
       </ul>
     </div>
   );

@@ -8,6 +8,7 @@ const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/projects': 'Projects',
   '/entries': 'Entries',
+  '/calendar': 'Calendar',
   '/settings': 'Settings',
   '/suggestions': 'Suggestions',
 };
@@ -41,6 +42,18 @@ function HeaderAction({ pathname, projectId }: { pathname: string; projectId: st
           <Plus size={14} strokeWidth={2} aria-hidden />
           {isProjects ? 'New' : 'Log'}
         </span>
+      </Link>
+    );
+  }
+
+  // The calendar's Figma frame spells the action out as a gold button.
+  if (pathname === '/calendar') {
+    return (
+      <Link
+        to="/entries/new"
+        className="flex h-10 items-center rounded-lg bg-gold px-4 text-[13px] font-bold text-espresso transition-opacity hover:opacity-90"
+      >
+        Log entry
       </Link>
     );
   }

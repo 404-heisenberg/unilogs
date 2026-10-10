@@ -14,3 +14,27 @@ export function formatRelativeTime(iso: string): string {
 
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
+
+/**
+ * Parses a duration a user typed into hours, or null when blank or invalid.
+ * Accepts "2:30" (H:MM), plain hours "2" / "2.5", and text like "1h 30m",
+ * "45m" and "1.5h". Combines with `formatDurationHours` in the dashboards lib
+ * for display; this is the input side of a duration field.
+ */
+export function parseDurationHours(raw: string): number | null {
+  const value = raw.trim();
+  if (value === '') return null;
+
+  const colon = /^(\d+):([0-5]\d)$/.exec(value);
+  if (colon) return Number(colon[1]) + Number(colon[2]) / 60;
+
+  const plain = Number(value);
+  if (Number.isFinite(plain)) return plain;
+
+  const text = /^(?:(\d+(?:\.\d+)?)h)?\s*(?:(\d+(?:\.\d+)?)m)?$/i.exec(value);
+  if (text && (text[1] !== undefined || text[2] !== undefined)) {
+    return Number(text[1] ?? 0) + Number(text[2] ?? 0) / 60;
+  }
+
+  return null;
+}

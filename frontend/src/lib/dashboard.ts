@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   api,
+  getDashboardLayout,
   getFrequencyStats,
   getStatsSummary,
+  putDashboardLayout,
   type CalendarSuggestionsResponse,
   type FrequencyStats,
   type StatsSummary,
@@ -182,7 +184,7 @@ export function entryDateLabel(entry: Entry, today: string): string {
   return formatMonthDay(day);
 }
 
-export type WidgetId =
+export type BuiltinWidgetId =
   | 'summary'
   | 'heatmap'
   | 'whatsLeft'
@@ -193,6 +195,25 @@ export type WidgetId =
   | 'timeByProject'
   | 'frequency'
   | 'dueDormant';
+
+// A saved stat panel on the dashboard, by the panel's id.
+export type PanelWidgetId = `statPanel:${number}`;
+
+export type WidgetId = BuiltinWidgetId | PanelWidgetId;
+
+const PANEL_WIDGET = /^statPanel:(\d+)$/;
+
+export function isPanelWidget(id: WidgetId): id is PanelWidgetId {
+  return PANEL_WIDGET.test(id);
+}
+
+export function panelWidgetId(panelId: number): PanelWidgetId {
+  return `statPanel:${panelId}`;
+}
+
+export function panelIdOf(id: PanelWidgetId): number {
+  return Number(id.slice('statPanel:'.length));
+}
 
 export type WidgetSize = 'standard' | 'wide';
 
@@ -210,7 +231,7 @@ export type WidgetMeta = {
   thumbnail: ThumbnailKind;
 };
 
-export const WIDGET_META: Record<WidgetId, WidgetMeta> = {
+export const WIDGET_META: Record<BuiltinWidgetId, WidgetMeta> = {
   summary: { title: 'Summary', available: true, thumbnail: 'stat' },
   heatmap: { title: 'Activity', available: true, thumbnail: 'stat' },
   whatsLeft: { title: "What's left", available: true, thumbnail: 'list' },
@@ -223,7 +244,7 @@ export const WIDGET_META: Record<WidgetId, WidgetMeta> = {
   dueDormant: { title: 'Due & dormant', available: true, thumbnail: 'list' },
 };
 
-const WIDGET_IDS = Object.keys(WIDGET_META) as WidgetId[];
+const WIDGET_IDS = Object.keys(WIDGET_META) as BuiltinWidgetId[];
 
 // Order matches the Figma mobile dashboard frame's single-column sequence:
 // summary, activity, what's left, continue logging, recent entries, insight,
@@ -247,37 +268,57 @@ export function layoutKey(userId: string): string {
   return `unilogs:dashboard-layout:${userId}`;
 }
 
+function isWidgetId(value: unknown): value is WidgetId {
+  return (
+    typeof value === 'string' &&
+    (WIDGET_IDS.includes(value as BuiltinWidgetId) || PANEL_WIDGET.test(value))
+  );
+}
+
 function isWidgetState(value: unknown): value is WidgetState {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Record<string, unknown>;
   return (
-    typeof candidate.id === 'string' &&
-    WIDGET_IDS.includes(candidate.id as WidgetId) &&
+    isWidgetId(candidate.id) &&
     typeof candidate.visible === 'boolean' &&
     (candidate.size === 'standard' || candidate.size === 'wide')
   );
 }
 
-export function loadLayout(userId: string | null): WidgetState[] {
-  if (!userId) return DEFAULT_LAYOUT;
+/**
+ * A stored layout made safe to render: unknown or repeated widgets dropped,
+ * and any built-in widget the stored copy predates added from the default.
+ * The same rules apply whether the layout came from the server or the
+ * browser. Anything that isn't a list is the default layout.
+ */
+export function normalizeLayout(raw: unknown): WidgetState[] {
+  if (!Array.isArray(raw)) return DEFAULT_LAYOUT;
+  const seen = new Set<WidgetId>();
+  const kept: WidgetState[] = [];
+  for (const item of raw) {
+    if (isWidgetState(item) && !seen.has(item.id)) {
+      seen.add(item.id);
+      kept.push({ id: item.id, visible: item.visible, size: item.size });
+    }
+  }
+  const missing = DEFAULT_LAYOUT.filter((widget) => !seen.has(widget.id));
+  return [...kept, ...missing];
+}
+
+function readLocalLayout(userId: string): unknown {
   try {
     const raw = localStorage.getItem(layoutKey(userId));
-    if (!raw) return DEFAULT_LAYOUT;
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return DEFAULT_LAYOUT;
-    const seen = new Set<WidgetId>();
-    const kept: WidgetState[] = [];
-    for (const item of parsed) {
-      if (isWidgetState(item) && !seen.has(item.id)) {
-        seen.add(item.id);
-        kept.push({ id: item.id, visible: item.visible, size: item.size });
-      }
-    }
-    const missing = DEFAULT_LAYOUT.filter((widget) => !seen.has(widget.id));
-    return [...kept, ...missing];
+    return raw === null ? null : JSON.parse(raw);
   } catch {
-    return DEFAULT_LAYOUT;
+    return null;
   }
+}
+
+/** The copy kept in this browser: the first paint, and the offline fallback. */
+export function loadLayout(userId: string | null): WidgetState[] {
+  if (!userId) return DEFAULT_LAYOUT;
+  const raw = readLocalLayout(userId);
+  return raw === null ? DEFAULT_LAYOUT : normalizeLayout(raw);
 }
 
 export function saveLayout(userId: string, layout: WidgetState[]): void {
@@ -302,8 +343,30 @@ export function moveWidget(layout: WidgetState[], activeId: WidgetId, overId: Wi
   return next;
 }
 
-export function shiftWidget(layout: WidgetState[], id: WidgetId, delta: -1 | 1) {
-  const shown = layout.filter((widget) => widget.visible && WIDGET_META[widget.id].available);
+/**
+ * Reveals a hidden widget and puts it where the drop landed instead of always
+ * appending it to the end - used when a tile is dragged from the add tray onto
+ * an existing widget, so a new widget can go straight to the top.
+ */
+export function revealWidgetAt(layout: WidgetState[], id: WidgetId, overId: WidgetId) {
+  if (layout.findIndex((widget) => widget.id === overId) < 0) return layout;
+  const next = layout.map((widget) => (widget.id === id ? { ...widget, visible: true } : widget));
+  return moveWidget(next, id, overId);
+}
+
+/** Whether a widget can be drawn: a built-in that's available, or a panel that still exists. */
+export function isAvailable(id: WidgetId, panelIds: ReadonlySet<number> | null): boolean {
+  if (isPanelWidget(id)) return panelIds === null || panelIds.has(panelIdOf(id));
+  return WIDGET_META[id].available;
+}
+
+export function shiftWidget(
+  layout: WidgetState[],
+  id: WidgetId,
+  delta: -1 | 1,
+  panelIds: ReadonlySet<number> | null = null,
+) {
+  const shown = layout.filter((widget) => widget.visible && isAvailable(widget.id, panelIds));
   const index = shown.findIndex((widget) => widget.id === id);
   const target = shown[index + delta];
   if (index < 0 || !target) return layout;
@@ -641,26 +704,80 @@ export function useMediaQuery(query: string, fallback = true): boolean {
 
 const SAVE_DELAY_MS = 300;
 
-type Stored = { userId: string | null; layout: WidgetState[] };
+export const LAYOUT_QUERY_KEY = ['dashboard-layout'] as const;
 
-export function useDashboardLayout(userId: string | null) {
-  const [stored, setStored] = useState<Stored>(() => ({ userId, layout: loadLayout(userId) }));
+type Stored = {
+  userId: string | null;
+  layout: WidgetState[];
+  /** The server's copy has been applied (or found empty) for this user. */
+  hydrated: boolean;
+  /** There's a change the server hasn't got yet. */
+  dirty: boolean;
+};
+
+function initialStored(userId: string | null): Stored {
+  return { userId, layout: loadLayout(userId), hydrated: false, dirty: false };
+}
+
+/**
+ * The dashboard layout, kept on the server so it follows the user across
+ * devices. It paints first from the copy in this browser, then takes the
+ * server's once it arrives. If the server has never had one, the browser's
+ * copy is promoted to it once. After that, each change is one PUT on a
+ * 300ms trailing debounce, with the browser copy kept as an offline fallback.
+ *
+ * `panelIds` is the user's saved panels, or null until they've loaded. Panel
+ * widgets whose panel is gone are kept in the layout but never drawn.
+ */
+export function useDashboardLayout(
+  userId: string | null,
+  panelIds: ReadonlySet<number> | null = null,
+) {
+  const queryClient = useQueryClient();
+  const server = useQuery({
+    queryKey: [...LAYOUT_QUERY_KEY, userId],
+    queryFn: getDashboardLayout,
+    enabled: userId !== null,
+    // One fetch per visit: this hook's own state is the live copy after that.
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const [stored, setStored] = useState<Stored>(() => initialStored(userId));
 
   let current = stored;
-  if (stored.userId !== userId) {
-    current = { userId, layout: loadLayout(userId) };
-    setStored(current);
+  if (current.userId !== userId) current = initialStored(userId);
+  if (userId && !current.hydrated && server.isSuccess) {
+    const fromServer = server.data.layout;
+    if (current.dirty) {
+      // Changed before the server answered: keep the user's change, which
+      // the save below then sends.
+      current = { ...current, hydrated: true };
+    } else if (fromServer !== null) {
+      current = { ...current, layout: normalizeLayout(fromServer), hydrated: true };
+    } else {
+      // Nothing on the server yet: promote this browser's copy, if it has one.
+      current = { ...current, hydrated: true, dirty: readLocalLayout(userId) !== null };
+    }
   }
-  const layout = current.layout;
+  if (current !== stored) setStored(current);
+  const { layout, dirty } = current;
 
   useEffect(() => {
-    if (!userId) return;
-    const timer = setTimeout(() => saveLayout(userId, layout), SAVE_DELAY_MS);
+    if (!userId || !dirty) return;
+    const timer = setTimeout(() => {
+      saveLayout(userId, layout);
+      putDashboardLayout(layout)
+        .then((saved) => queryClient.setQueryData([...LAYOUT_QUERY_KEY, userId], saved))
+        // Offline or failing: the browser copy has it, and the next change
+        // or visit tries again.
+        .catch(() => undefined);
+    }, SAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [userId, layout]);
+  }, [userId, layout, dirty, queryClient]);
 
   const update = useCallback((change: (previous: WidgetState[]) => WidgetState[]) => {
-    setStored((previous) => ({ ...previous, layout: change(previous.layout) }));
+    setStored((previous) => ({ ...previous, layout: change(previous.layout), dirty: true }));
   }, []);
 
   const move = useCallback(
@@ -668,9 +785,14 @@ export function useDashboardLayout(userId: string | null) {
     [update],
   );
 
-  const moveBy = useCallback(
-    (id: WidgetId, delta: -1 | 1) => update((prev) => shiftWidget(prev, id, delta)),
+  const addAt = useCallback(
+    (id: WidgetId, overId: WidgetId) => update((prev) => revealWidgetAt(prev, id, overId)),
     [update],
+  );
+
+  const moveBy = useCallback(
+    (id: WidgetId, delta: -1 | 1) => update((prev) => shiftWidget(prev, id, delta, panelIds)),
+    [update, panelIds],
   );
 
   const toggle = useCallback(
@@ -693,25 +815,40 @@ export function useDashboardLayout(userId: string | null) {
     [update],
   );
 
+  // Shows a saved panel: back where it was if it's been on the dashboard
+  // before, otherwise at the end.
+  const addPanel = useCallback(
+    (panelId: number) => {
+      const id = panelWidgetId(panelId);
+      update((prev) =>
+        prev.some((widget) => widget.id === id)
+          ? prev.map((widget) => (widget.id === id ? { ...widget, visible: true } : widget))
+          : [...prev, { id, visible: true, size: 'standard' }],
+      );
+    },
+    [update],
+  );
+
   const reset = useCallback(() => update(() => DEFAULT_LAYOUT), [update]);
 
   const visible = useMemo(
-    () => layout.filter((widget) => widget.visible && WIDGET_META[widget.id].available),
-    [layout],
+    () => layout.filter((widget) => widget.visible && isAvailable(widget.id, panelIds)),
+    [layout, panelIds],
   );
+  // The tray's built-in widgets. Panels have their own "Your panels" entry.
   const hidden = useMemo(
-    () => layout.filter((widget) => !widget.visible && WIDGET_META[widget.id].available),
+    () => layout.filter((widget) => !widget.visible && !isPanelWidget(widget.id)),
     [layout],
   );
 
-  return { layout, visible, hidden, move, moveBy, toggle, resize, reset };
+  return { layout, visible, hidden, move, addAt, moveBy, toggle, resize, addPanel, reset };
 }
 
 export function useDashboardData(today: string, layout: WidgetState[]) {
   const queryClient = useQueryClient();
 
   const isOn = (...ids: WidgetId[]) =>
-    layout.some((w) => ids.includes(w.id) && w.visible && WIDGET_META[w.id].available);
+    layout.some((w) => ids.includes(w.id) && w.visible && isAvailable(w.id, null));
 
   const summary = useQuery({ queryKey: QUERY_KEYS.summary, queryFn: loadSummary });
 
