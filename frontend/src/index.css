@@ -56,6 +56,25 @@
   --color-data-plum: #8c709c;
   --color-data-slate: #6b8fad;
   --color-data-blue: #4a7ab5;
+
+  /* Motion (#350). Each use pairs with motion-reduce:animate-none. page-in and
+     content-in only touch opacity: a transform would make the wrapper the
+     containing block for fixed overlays (the create-project wizard) mid-fade. */
+  --animate-page-in: page-in 180ms ease-out;
+  --animate-content-in: page-in 240ms ease-out;
+  --animate-card-in: card-in 260ms ease-out both;
+
+  @keyframes page-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
 }
 
 @theme inline {
@@ -245,5 +264,21 @@
 
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Reduced motion safety net (#350). Our own animations opt out with
+   motion-reduce: classes; this also covers the shadcn primitives (dialog,
+   sheet, popover, select) and toasts. Durations go near zero rather than to
+   none, so Radix still receives the animationend it waits for to unmount. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

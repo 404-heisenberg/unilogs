@@ -125,7 +125,13 @@ export function TabBar({ tab, onChange }: { tab: TabId; onChange: (tab: TabId) =
 
 export function TabPanel({ tab, children }: { tab: TabId; children: React.ReactNode }) {
   return (
-    <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="pt-6">
+    <div
+      role="tabpanel"
+      id={`panel-${tab}`}
+      aria-labelledby={`tab-${tab}`}
+      key={tab}
+      className="animate-content-in pt-6 motion-reduce:animate-none"
+    >
       {children}
     </div>
   );

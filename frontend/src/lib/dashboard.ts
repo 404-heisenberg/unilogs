@@ -660,7 +660,10 @@ export function findDormantProjects(
     .sort((a, b) => (a.lastLogged ?? '').localeCompare(b.lastLogged ?? ''));
 }
 
-export function useCountUp(target: number, duration = 900) {
+// Counts from the previous value (0 on first paint) up to `target`. Users who
+// prefer reduced motion get the final value on the next frame. Pass
+// round=false for values with decimals; the caller formats each frame.
+export function useCountUp(target: number, duration = 900, round = true) {
   const [value, setValue] = useState(0);
   const valueRef = useRef(0);
 
@@ -677,7 +680,8 @@ export function useCountUp(target: number, duration = 900) {
       if (start === null) start = timestamp;
       const progress = Math.min((timestamp - start) / length, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      const next = Math.round(from + (target - from) * eased);
+      const raw = from + (target - from) * eased;
+      const next = progress === 1 ? target : round ? Math.round(raw) : raw;
       valueRef.current = next;
       setValue(next);
       if (progress < 1) raf = requestAnimationFrame(step);
@@ -685,7 +689,7 @@ export function useCountUp(target: number, duration = 900) {
 
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
+  }, [target, duration, round]);
 
   return value;
 }

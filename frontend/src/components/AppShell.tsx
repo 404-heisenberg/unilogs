@@ -54,7 +54,10 @@ export default function AppShell() {
               the shell means navigation stays on screen while a page's chunk
               downloads, instead of the whole shell blanking out. */}
           <Suspense fallback={<Skeleton rows={4} className="max-w-xl" />}>
-            <Outlet />
+            {/* Keyed on the path so each route change fades the new page in. */}
+            <div key={pathname} className="h-full animate-page-in motion-reduce:animate-none">
+              <Outlet />
+            </div>
           </Suspense>
         </main>
         {/* The as-at view is full screen on mobile, as in Figma: its header

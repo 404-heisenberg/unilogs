@@ -15,7 +15,9 @@ export default function TagPicker({
   };
 
   if (tagsQuery.isPending) {
-    return <div className="h-9 w-full animate-pulse rounded-md bg-caramel/20" />;
+    return (
+      <div className="h-9 w-full animate-pulse motion-reduce:animate-none rounded-md bg-caramel/20" />
+    );
   }
 
   if (tags.length === 0) {

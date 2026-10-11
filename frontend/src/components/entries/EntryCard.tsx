@@ -6,6 +6,7 @@ import { entryFieldPairs, type FieldShape } from '@/lib/entryFields';
 import { formatShortDate } from '@/lib/project-workspace';
 import { stripMarkdownLine } from '@/lib/sharedReport';
 import type { Entry } from '@/types';
+import { CARD_IN, staggerDelay } from '@/lib/motion';
 
 // What a timeline card needs. `createdAt` is optional because the as-at view
 // renders reconstructed entries, which carry no creation time.
@@ -48,6 +49,7 @@ export default function EntryCard({
   wide,
   readOnly = false,
   fields,
+  index = 0,
 }: {
   entry: TimelineEntry;
   projectName: string;
@@ -57,6 +59,8 @@ export default function EntryCard({
   wide: boolean;
   /** No links into the entry or project: the card shows a past state. */
   readOnly?: boolean;
+  /** Position in its list, for the staggered entrance. */
+  index?: number;
 }) {
   const pairs = entryFieldPairs(entry.content as Record<string, unknown>, fields);
   const { headline, snippet, showFields } = entryHeadline(entry, pairs);
@@ -76,8 +80,9 @@ export default function EntryCard({
 
   return (
     <li
-      className={`relative flex flex-col gap-3 rounded-xl border border-cream bg-paper p-4 ${
-        readOnly ? '' : 'transition-shadow hover:shadow-md'
+      style={staggerDelay(index)}
+      className={`relative flex flex-col gap-3 rounded-xl border border-cream bg-paper p-4 ${CARD_IN} ${
+        readOnly ? '' : 'transition-shadow hover:shadow-md motion-reduce:transition-none'
       } ${wide ? 'md:col-span-2' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">

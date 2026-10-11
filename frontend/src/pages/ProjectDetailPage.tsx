@@ -67,8 +67,8 @@ export default function ProjectDetailPage() {
   if (project.isPending && project.fetchStatus !== 'idle') {
     return (
       <div aria-busy className="flex flex-col gap-4">
-        <div className="h-8 w-56 animate-pulse rounded bg-cream" />
-        <div className="h-40 animate-pulse rounded-xl bg-cream/60" />
+        <div className="h-8 w-56 animate-pulse motion-reduce:animate-none rounded bg-cream" />
+        <div className="h-40 animate-pulse motion-reduce:animate-none rounded-xl bg-cream/60" />
       </div>
     );
   }

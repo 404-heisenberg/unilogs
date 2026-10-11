@@ -303,6 +303,7 @@ export default function EntriesPage() {
                   fields={entry.project?.fields}
                   key={entry.id}
                   entry={entry}
+                  index={index}
                   projectName={projectNames.get(entry.projectId) ?? 'Unknown project'}
                   due={dueByEntry.get(entry.id)}
                   // A day's odd last card spans both columns, as in Figma.

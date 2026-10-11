@@ -399,7 +399,8 @@ describe('DashboardPage', () => {
 
     const card = await screen.findByRole('link', { name: /Pages per hour, Thesis Research/ });
     expect(card).toHaveAttribute('href', '/projects/1');
-    expect(within(card).getByText('32')).toBeInTheDocument();
+    // The value counts up on first paint, so wait for it to settle.
+    expect(await within(card).findByText('32', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(within(card).getByRole('img', { name: /Daily trend/ })).toBeInTheDocument();
     expect(within(card).getByText('18 entries · Last 30 days · Avg')).toBeInTheDocument();
 
