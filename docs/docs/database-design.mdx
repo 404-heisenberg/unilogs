@@ -623,6 +623,40 @@ Three separate databases exist, and the team never lets them mix:
   `TEST_DATABASE_URL` points at a database with `test` in its name, as a
   guard against pointing it at the wrong environment by mistake.
 
+### Production and test data
+
+The live app holds a small amount of real data, and every performance figure in
+these docs comes from synthetic data instead.
+
+As of 11 October 2026 the production branch holds **22 accounts, 37 projects and
+55 live entries**, with nothing in the trash. Fifteen of the 22 accounts are
+email-verified. Two of them use the reserved `example.test` and `example.com`
+domains — manual test sign-ups rather than real users — so roughly **20 accounts
+are genuine**; the rest use ordinary addresses (15 `gmail.com`, 3
+`students.wits.ac.za` and two personal domains). The only `example.test` account
+in production was created by hand, not by the load test below, which never
+leaves the test database.
+
+| Production, 11 October 2026     | Count |
+| ------------------------------- | ----: |
+| Accounts                        |    22 |
+| — email-verified                |    15 |
+| — reserved `example.*` accounts |     2 |
+| Projects                        |    37 |
+| Live entries                    |    55 |
+| Trashed (soft-deleted) entries  |     0 |
+
+Every stress, load and benchmark number on the [Performance](/performance) page
+comes from **synthetic data**, not from production. Nothing in the live branch is
+generated — there is no `prisma seed` script and no synthetic rows were loaded
+into it. The 25,000-entry dataset is built at run time by
+`backend/scripts/load-test.ts`: 50 projects × 500 entries for one throwaway
+`load-test-…@example.test` account, against the disposable test database the
+script refuses to point anywhere else, and the account is deleted when the run
+ends. The single-request timings on the Performance page seeded the same
+50 × 500 shape on a local Docker Postgres. Both are test-bed measurements of the
+code, and neither describes the production data above.
+
 ### Migrations
 
 Schema changes are managed entirely through Prisma Migrate, so every change is
@@ -650,4 +684,10 @@ replayable.
   action="edited"
   tools="opencode[deepseek-v4-flash]"
   purpose="bringing the table count, ERD, indexes and design decisions up to the Sprint 4 schema (stat_panels, calendar_sources, user.dashboardLayout, entry.deletedAt and clientId, widened calendar-suggestions key, soft-delete semantics and trimmed audit snapshots)"
+/>
+
+<AiDeclaration
+  action="generated"
+  tools="opencode[deepseek-v4-flash]"
+  purpose="adding the Production and test data section from the production account, project and entry counts the team queried on the live Neon branch, and separating those figures from the synthetic dataset the load test and benchmark generate"
 />
