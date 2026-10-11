@@ -832,9 +832,33 @@ export const openapiSpec = {
     },
   },
 
+  tags: [
+    { name: 'System', description: 'Service health and basic availability.' },
+    {
+      name: 'Authentication',
+      description: 'Sign up, sign in, password reset and account management.',
+    },
+    { name: 'Projects', description: 'Create and manage projects.' },
+    {
+      name: 'Entries',
+      description: 'Log entries, version history, restore, trash, as-at view and offline sync.',
+    },
+    { name: 'Fields', description: 'Per-project custom field definitions.' },
+    { name: 'Tags', description: 'Tag management.' },
+    { name: 'Statistics', description: 'Per-project statistics and custom stat panels.' },
+    { name: 'Calendar', description: 'Google Calendar connection, calendar sources and events.' },
+    { name: 'Sharing', description: 'Share links for read-only project reports.' },
+    { name: 'Notifications', description: 'Reminder notifications and the notification feed.' },
+    { name: 'Dashboard', description: 'User dashboard layout.' },
+    { name: 'Settings', description: 'Account and app settings.' },
+    { name: 'Export', description: 'Export logbooks in CSV or Markdown.' },
+  ],
+
   paths: {
     '/api/health': {
       get: {
+        tags: ['System'],
+        operationId: 'get_health',
         summary: 'Check API health',
         responses: {
           '200': {
@@ -846,6 +870,8 @@ export const openapiSpec = {
 
     '/api/auth/signup': {
       post: {
+        tags: ['Authentication'],
+        operationId: 'post_auth_signup',
         summary: 'Create a new user account',
         description: 'Creates a new UniLogs user account using email, password and name.',
 
@@ -890,6 +916,8 @@ export const openapiSpec = {
 
     '/api/auth/signin': {
       post: {
+        tags: ['Authentication'],
+        operationId: 'post_auth_signin',
         summary: 'Sign in to an account',
         description: 'Signs in a UniLogs user using email and password.',
 
@@ -930,6 +958,8 @@ export const openapiSpec = {
 
     '/api/auth/social/google': {
       post: {
+        tags: ['Authentication'],
+        operationId: 'post_auth_social_google',
         summary: 'Start Google sign-in',
         description:
           'Starts a Google OAuth sign-in or sign-up flow. The request can specify whether the flow originated from signup or login.',
@@ -966,6 +996,8 @@ export const openapiSpec = {
 
     '/api/auth/reset-password': {
       post: {
+        tags: ['Authentication'],
+        operationId: 'post_auth_reset_password',
         summary: 'Reset account password',
         description: 'Resets a user password using a valid reset token.',
 
@@ -1005,6 +1037,8 @@ export const openapiSpec = {
 
     '/api/auth/forgot-password': {
       post: {
+        tags: ['Authentication'],
+        operationId: 'post_auth_forgot_password',
         summary: 'Request a password reset',
         description: 'Generates a password reset token for a user account.',
 
@@ -1062,6 +1096,8 @@ export const openapiSpec = {
 
     '/api/auth/account': {
       delete: {
+        tags: ['Authentication'],
+        operationId: 'delete_auth_account',
         summary: 'Delete user account',
         description: 'Deletes the authenticated user account after verifying the account password.',
 
@@ -1102,6 +1138,8 @@ export const openapiSpec = {
 
     '/api/projects': {
       post: {
+        tags: ['Projects'],
+        operationId: 'post_projects',
         summary: 'Create a new project',
         description: 'Creates a new project for the authenticated user.',
 
@@ -1155,6 +1193,8 @@ export const openapiSpec = {
       },
 
       get: {
+        tags: ['Projects'],
+        operationId: 'get_projects',
         summary: 'Get projects',
         description: "Returns the authenticated user's projects.",
 
@@ -1199,6 +1239,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}': {
       get: {
+        tags: ['Projects'],
+        operationId: 'get_projects_id',
         summary: 'Get a project',
         description: 'Returns a project belonging to the authenticated user.',
 
@@ -1245,6 +1287,8 @@ export const openapiSpec = {
       },
 
       patch: {
+        tags: ['Projects'],
+        operationId: 'patch_projects_id',
         summary: 'Update a project',
         description: 'Updates a project belonging to the authenticated user.',
 
@@ -1318,6 +1362,8 @@ export const openapiSpec = {
       },
 
       delete: {
+        tags: ['Projects'],
+        operationId: 'delete_projects_id',
         summary: 'Delete a project',
         description: 'Deletes a project belonging to the authenticated user.',
 
@@ -1359,6 +1405,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/summary': {
       get: {
+        tags: ['Projects'],
+        operationId: 'get_projects_id_summary',
         summary: 'Get project summary',
         description:
           'Returns summary statistics for an active project belonging to the authenticated user.',
@@ -1408,6 +1456,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/trash': {
       get: {
+        tags: ['Entries'],
+        operationId: 'get_projects_id_trash',
         summary: 'List deleted entries in a project',
         description:
           'Returns the soft-deleted entries of a project, most recently deleted first. These entries are hidden from every other read path while they sit here, and can be brought back with `POST /api/entries/{id}/restore`.',
@@ -1470,6 +1520,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/archive': {
       post: {
+        tags: ['Projects'],
+        operationId: 'post_projects_id_archive',
         summary: 'Archive a project',
         description:
           'Archives a project belonging to the authenticated user. Revokes every live share link for the project, so archiving also takes its public report offline.',
@@ -1519,6 +1571,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/unarchive': {
       post: {
+        tags: ['Projects'],
+        operationId: 'post_projects_id_unarchive',
         summary: 'Unarchive a project',
         description: 'Unarchives a project belonging to the authenticated user.',
 
@@ -1567,6 +1621,8 @@ export const openapiSpec = {
 
     '/api/tags': {
       get: {
+        tags: ['Tags'],
+        operationId: 'get_tags',
         summary: 'Get tags',
         description:
           'Returns all tags belonging to the authenticated user, sorted by usage count and then name.',
@@ -1597,6 +1653,8 @@ export const openapiSpec = {
       },
 
       post: {
+        tags: ['Tags'],
+        operationId: 'post_tags',
         summary: 'Create a tag',
         description: 'Creates a new tag for the authenticated user.',
 
@@ -1651,6 +1709,8 @@ export const openapiSpec = {
 
     '/api/tags/{id}': {
       patch: {
+        tags: ['Tags'],
+        operationId: 'patch_tags_id',
         summary: 'Updates a tag',
         description: 'Updates a tag belonging to the authenticated user.',
 
@@ -1723,6 +1783,8 @@ export const openapiSpec = {
       },
 
       delete: {
+        tags: ['Tags'],
+        operationId: 'delete_tags_id',
         summary: 'Delete a tag',
         description:
           'Deletes a tag belonging to the authenticated user and removes its entry and associations.',
@@ -1769,6 +1831,8 @@ export const openapiSpec = {
 
     '/api/notifications': {
       get: {
+        tags: ['Notifications'],
+        operationId: 'get_notifications',
         summary: 'Get notification feed',
         description:
           'Returns the authenticated user latest 50 notifications, newest first, with the unread count.',
@@ -1799,6 +1863,8 @@ export const openapiSpec = {
 
     '/api/notifications/read-all': {
       post: {
+        tags: ['Notifications'],
+        operationId: 'post_notifications_read_all',
         summary: 'Mark every notification read',
         description: 'Marks all of the authenticated user notifications as read.',
         responses: {
@@ -1822,6 +1888,8 @@ export const openapiSpec = {
 
     '/api/notifications/{id}/read': {
       post: {
+        tags: ['Notifications'],
+        operationId: 'post_notifications_id_read',
         summary: 'Mark one notification read',
         description: 'Marks a single notification owned by the authenticated user as read.',
         parameters: [
@@ -1852,6 +1920,8 @@ export const openapiSpec = {
 
     '/api/dashboard/layout': {
       get: {
+        tags: ['Dashboard'],
+        operationId: 'get_dashboard_layout',
         summary: 'Get the dashboard layout',
         description:
           "Returns the authenticated user's saved dashboard layout, or null if they have never saved one.",
@@ -1879,6 +1949,8 @@ export const openapiSpec = {
         },
       },
       put: {
+        tags: ['Dashboard'],
+        operationId: 'put_dashboard_layout',
         summary: 'Save the dashboard layout',
         description:
           'Replaces the saved layout. Widgets are checked for shape only: a built-in widget name or statPanel:<id>, visible, and size. At most 100 widgets, no duplicate ids.',
@@ -1911,6 +1983,8 @@ export const openapiSpec = {
 
     '/api/stat-panels': {
       get: {
+        tags: ['Statistics'],
+        operationId: 'get_stat_panels',
         summary: "List all of the user's stat panels",
         description:
           "Every saved panel across the user's active projects, with its computed value and series, its project's name, and the project's field types for formatting. Creating and editing panels stays under /api/projects/{id}/stat-panels.",
@@ -1957,6 +2031,8 @@ export const openapiSpec = {
 
     '/api/settings': {
       get: {
+        tags: ['Settings'],
+        operationId: 'get_settings',
         summary: 'Get reminder settings',
         description: 'Returns the authenticated user reminder preferences.',
         responses: {
@@ -1976,6 +2052,8 @@ export const openapiSpec = {
       },
 
       patch: {
+        tags: ['Settings'],
+        operationId: 'patch_settings',
         summary: 'Update reminder settings',
         description: 'Updates the authenticated user global reminder kill switch.',
         requestBody: {
@@ -2014,6 +2092,8 @@ export const openapiSpec = {
 
     '/api/entries': {
       get: {
+        tags: ['Entries'],
+        operationId: 'get_entries',
         summary: 'Get entries',
         description:
           'Returns entries belonging to the authenticated user, with optional search, filters, and pagination. Every filter given must match (AND). Each entry includes its project with the project’s field names and types.',
@@ -2115,6 +2195,8 @@ export const openapiSpec = {
       },
 
       post: {
+        tags: ['Entries'],
+        operationId: 'post_entries',
         summary: 'Create a new entry',
         description: 'Creates a new entry for a project belonging to the authenticated user.',
 
@@ -2201,6 +2283,8 @@ export const openapiSpec = {
 
     '/api/entries/{id}': {
       get: {
+        tags: ['Entries'],
+        operationId: 'get_entries_id',
         summary: 'Get an entry',
         description: 'Returns an entry belonging to the authenticated user.',
 
@@ -2251,6 +2335,8 @@ export const openapiSpec = {
       },
 
       put: {
+        tags: ['Entries'],
+        operationId: 'put_entries_id',
         summary: 'Update an entry',
         description: 'Updates an entry belonging to the authenticated user.',
 
@@ -2347,6 +2433,8 @@ export const openapiSpec = {
       },
 
       delete: {
+        tags: ['Entries'],
+        operationId: 'delete_entries_id',
         summary: 'Delete an entry',
         description:
           'Soft-deletes an entry belonging to the authenticated user: the row is stamped with a deletion timestamp rather than removed, so it leaves the timeline, stats, exports and shared reports immediately and can be brought back from `GET /api/projects/{id}/trash`. Its version history is kept. Deleting an entry that is already deleted returns 404.',
@@ -2393,6 +2481,8 @@ export const openapiSpec = {
 
     '/api/entries/{id}/history': {
       get: {
+        tags: ['Entries'],
+        operationId: 'get_entries_id_history',
         summary: 'Get an entry version history',
         description:
           'Returns every recorded version of an entry, newest first. The list is append-only: restoring an older version adds a new version rather than rewriting history. A `DELETE` version carries the state it removed in its `snapshot`.',
@@ -2448,6 +2538,8 @@ export const openapiSpec = {
 
     '/api/entries/{id}/history/{auditId}/restore': {
       post: {
+        tags: ['Entries'],
+        operationId: 'post_entries_id_history_auditId_restore',
         summary: 'Restore a previous version of an entry',
         description:
           'Applies a previous version to the entry and appends a new version recording the change. History is never rewritten. Refuses with 400 when the version no longer satisfies the project field definitions - for example after a field has been renamed.',
@@ -2515,6 +2607,8 @@ export const openapiSpec = {
 
     '/api/entries/{id}/restore': {
       post: {
+        tags: ['Entries'],
+        operationId: 'post_entries_id_restore',
         summary: 'Restore a deleted entry',
         description:
           'Clears the soft delete on an entry, bringing it back to the timeline with its tags intact. Only meaningful for an entry that is currently in the project trash.',
@@ -2566,6 +2660,8 @@ export const openapiSpec = {
 
     '/api/entries/as-at': {
       get: {
+        tags: ['Entries'],
+        operationId: 'get_entries_as_at',
         summary: 'Get entries as they stood on a given date',
         description:
           'Read-only reconstruction of the logbook as it was on the chosen day, built by replaying the audit log. For each entry the state is the newest audit row at or before the end of that day: an entry edited later appears with its earlier content, an entry deleted later still appears, and an entry created later does not appear at all. Read-only ÔÇö there is nothing here that can be restored or edited. Scoped to the callerÔÇÖs own, non-archived projects. The other list filters (`q`, `tagIds`, `dateFrom`, `dateTo`, pagination) are not supported on this route.',
@@ -2619,6 +2715,8 @@ export const openapiSpec = {
 
     '/api/entries/sync': {
       post: {
+        tags: ['Entries'],
+        operationId: 'post_entries_sync',
         summary: 'Sync a queue of offline entries',
         description:
           'Accepts entries captured while the client was offline, each carrying a client-generated `clientId`. Syncing is idempotent: an entry whose `clientId` already exists is reported as `duplicate` and never created twice, so a batch can be retried safely after a dropped connection. Create-only ÔÇö an entry that already exists is never updated. One invalid entry does not fail the rest of the batch; each entry carries its own outcome so the client can keep the failures in its queue and drop the rest.',
@@ -2679,6 +2777,8 @@ export const openapiSpec = {
 
     '/api/field-definitions': {
       get: {
+        tags: ['Fields'],
+        operationId: 'get_field_definitions',
         summary: 'Get field definitions',
         description:
           'Returns all field definitions for a project belonging to the authenticated user.',
@@ -2729,6 +2829,8 @@ export const openapiSpec = {
       },
 
       post: {
+        tags: ['Fields'],
+        operationId: 'post_field_definitions',
         summary: 'Create a field definition',
         description:
           'Creates a new field definition for a project belonging to the authenticated user.',
@@ -2800,6 +2902,8 @@ export const openapiSpec = {
 
     '/api/field-definitions/{id}': {
       get: {
+        tags: ['Fields'],
+        operationId: 'get_field_definitions_id',
         summary: 'Get a field definition',
         description: 'Returns a field definition belonging to the authenticated user.',
 
@@ -2850,6 +2954,8 @@ export const openapiSpec = {
       },
 
       put: {
+        tags: ['Fields'],
+        operationId: 'put_field_definitions_id',
         summary: 'Update a field definition',
         description: 'Updates a field definition belonging to the authenticated user.',
 
@@ -2928,6 +3034,8 @@ export const openapiSpec = {
       },
 
       delete: {
+        tags: ['Fields'],
+        operationId: 'delete_field_definitions_id',
         summary: 'Delete a field definition',
         description: 'Deletes a field definition belonging to the authenticated user.',
 
@@ -2973,6 +3081,8 @@ export const openapiSpec = {
 
     '/api/stats': {
       get: {
+        tags: ['Statistics'],
+        operationId: 'get_stats',
         summary: 'Get overall statistics',
         description:
           'Returns overall statistics for the authenticated user, including hours tracked per project, total hours, and current streak.',
@@ -3034,6 +3144,8 @@ export const openapiSpec = {
 
     '/api/stats/frequency': {
       get: {
+        tags: ['Statistics'],
+        operationId: 'get_stats_frequency',
         summary: 'Get entry frequency statistics',
         description: 'Returns weekly entry counts and term totals for the authenticated user.',
 
@@ -3100,6 +3212,8 @@ export const openapiSpec = {
 
     '/api/stats/streak': {
       get: {
+        tags: ['Statistics'],
+        operationId: 'get_stats_streak',
         summary: 'Get current streak',
         description: 'Returns the current consecutive-day entry streak for the authenticated user.',
 
@@ -3135,6 +3249,8 @@ export const openapiSpec = {
 
     '/api/stats/unfinished': {
       get: {
+        tags: ['Statistics'],
+        operationId: 'get_stats_unfinished',
         summary: 'Get unfinished items',
         description:
           'Returns unfinished boolean items grouped by overdue, due this week, and no due date for the authenticated user.',
@@ -3260,6 +3376,8 @@ export const openapiSpec = {
 
     '/api/stats/fields/{projectId}': {
       get: {
+        tags: ['Statistics'],
+        operationId: 'get_stats_fields_projectId',
         summary: 'Get field insights',
         description: 'Returns statistics and insights for the fields in a project.',
         parameters: [
@@ -3320,6 +3438,8 @@ export const openapiSpec = {
 
     '/api/export': {
       get: {
+        tags: ['Export'],
+        operationId: 'get_export',
         summary: 'Export project entries',
         description:
           'Exports entries from a project as a CSV or Markdown file. The project must belong to the authenticated user.',
@@ -3416,6 +3536,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/share-links': {
       post: {
+        tags: ['Sharing'],
+        operationId: 'post_projects_id_share_links',
         summary: 'Create a share link for a project',
         description:
           'Creates a tokenised read-only share link for a project owned by the authenticated user.',
@@ -3507,6 +3629,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/share-links/{token}': {
       delete: {
+        tags: ['Sharing'],
+        operationId: 'delete_projects_id_share_links_token',
         summary: 'Revoke a share link',
         description:
           'Soft-revokes a share link so the public URL immediately stops resolving. Idempotent.',
@@ -3558,6 +3682,8 @@ export const openapiSpec = {
 
     '/share/{token}': {
       get: {
+        tags: ['System'],
+        operationId: 'get_share_token',
         summary: 'Get a shared project report',
         description:
           'Public, unauthenticated read-only report for a live share token. Unknown, revoked and expired tokens all return the same 404.',
@@ -3605,6 +3731,8 @@ export const openapiSpec = {
 
     '/share/{token}/export': {
       get: {
+        tags: ['System'],
+        operationId: 'get_share_token_export',
         summary: 'Download a shared project report',
         description:
           "Public CSV or Markdown export, scoped to the share token's own range and body setting. Request parameters cannot widen either.",
@@ -3657,6 +3785,8 @@ export const openapiSpec = {
 
     '/api/calendar/status': {
       get: {
+        tags: ['Calendar'],
+        operationId: 'get_calendar_status',
         summary: 'Get Google Calendar connection status',
         responses: {
           '200': {
@@ -3689,6 +3819,8 @@ export const openapiSpec = {
     },
     '/api/calendar/sources': {
       get: {
+        tags: ['Calendar'],
+        operationId: 'get_calendar_sources',
         summary: 'Get Google Calendar sources',
         description:
           'Refreshes the authenticated user calendar sources from Google Calendar and returns the calendars available for event syncing.',
@@ -3728,6 +3860,8 @@ export const openapiSpec = {
 
     '/api/calendar/sources/{id}': {
       patch: {
+        tags: ['Calendar'],
+        operationId: 'patch_calendar_sources_id',
         summary: 'Update a Google Calendar source',
         description:
           'Updates the enabled state, display colour, or ordering of a calendar source belonging to the authenticated user.',
@@ -3797,6 +3931,8 @@ export const openapiSpec = {
 
     '/api/calendar/connect': {
       post: {
+        tags: ['Calendar'],
+        operationId: 'post_calendar_connect',
         summary: 'Connect Google Calendar',
         responses: {
           '200': {
@@ -3816,6 +3952,8 @@ export const openapiSpec = {
 
     '/api/calendar/disconnect': {
       delete: {
+        tags: ['Calendar'],
+        operationId: 'delete_calendar_disconnect',
         summary: 'Disconnect Google Calendar',
         responses: {
           '200': {
@@ -3835,6 +3973,8 @@ export const openapiSpec = {
 
     '/api/calendar/events': {
       get: {
+        tags: ['Calendar'],
+        operationId: 'get_calendar_events',
         summary: 'Get Google Calendar events',
         description:
           'Without from/to, returns the next 30 days (up to 20 events per calendar). With both, returns every event in that window, which may span at most 62 days.',
@@ -3896,6 +4036,8 @@ export const openapiSpec = {
 
     '/api/calendar/events/suggestions': {
       get: {
+        tags: ['Calendar'],
+        operationId: 'get_calendar_events_suggestions',
         summary: 'Get calendar entry suggestions',
         responses: {
           '200': {
@@ -3935,6 +4077,8 @@ export const openapiSpec = {
 
     '/api/calendar/events/suggestions/{eventId}/accept': {
       post: {
+        tags: ['Calendar'],
+        operationId: 'post_calendar_events_suggestions_eventId_accept',
         summary: 'Accept a calendar suggestion',
         parameters: [
           {
@@ -3991,6 +4135,8 @@ export const openapiSpec = {
 
     '/api/calendar/events/suggestions/{eventId}/reject': {
       post: {
+        tags: ['Calendar'],
+        operationId: 'post_calendar_events_suggestions_eventId_reject',
         summary: 'Reject a calendar suggestion',
         parameters: [
           {
@@ -4034,6 +4180,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/stat-panels': {
       get: {
+        tags: ['Statistics'],
+        operationId: 'get_projects_id_stat_panels',
         summary: 'List stat panels for a project',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
         responses: {
@@ -4054,6 +4202,8 @@ export const openapiSpec = {
         },
       },
       post: {
+        tags: ['Statistics'],
+        operationId: 'post_projects_id_stat_panels',
         summary: 'Create a stat panel',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
         requestBody: {
@@ -4089,6 +4239,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/stat-panels/preview': {
       post: {
+        tags: ['Statistics'],
+        operationId: 'post_projects_id_stat_panels_preview',
         summary: 'Preview an unsaved stat expression',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
         requestBody: {
@@ -4141,6 +4293,8 @@ export const openapiSpec = {
 
     '/api/projects/{id}/stat-panels/{panelId}': {
       patch: {
+        tags: ['Statistics'],
+        operationId: 'patch_projects_id_stat_panels_panelId',
         summary: 'Rename, re-order, or re-scope a stat panel',
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
@@ -4177,6 +4331,8 @@ export const openapiSpec = {
         },
       },
       delete: {
+        tags: ['Statistics'],
+        operationId: 'delete_projects_id_stat_panels_panelId',
         summary: 'Delete a stat panel',
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
