@@ -15,7 +15,14 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Technical',
       collapsed: false,
-      items: ['tech-stack', 'api', 'database-design', 'testing-policy', 'performance'],
+      items: [
+        'tech-stack',
+        'api',
+        'database-design',
+        'testing-policy',
+        'performance',
+        'accessibility',
+      ],
     },
     {
       type: 'category',
