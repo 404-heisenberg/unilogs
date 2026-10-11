@@ -91,8 +91,9 @@ in PostgreSQL hosted on Neon, accessed through Prisma, which supplies type-safe
 queries and generated migrations. Authentication uses Better Auth — the brief
 prohibits a bespoke system — providing email/password credentials, session
 management, password reset and account deletion. The front end deploys to
-Vercel; the back end to Render, with a health endpoint monitored by UptimeRobot
-to mitigate free-tier idle timeouts.
+Vercel; the back end to Render, with a scheduled GitHub Actions workflow
+(`.github/workflows/keep-warm.yml`) pinging `/api/health` every 10 minutes to
+mitigate free-tier idle timeouts.
 
 The data model centres on four entities: a User owns many Projects; a Project
 has a user-defined format and contains many Entries; an Entry stores its payload
