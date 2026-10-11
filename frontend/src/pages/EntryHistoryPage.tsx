@@ -247,28 +247,11 @@ export default function EntryHistoryPage() {
       {/* Center: Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto z-10">
         <div className="flex min-h-12 items-center justify-between gap-3 border-b border-cream px-4 lg:px-8 py-3 bg-paper shrink-0">
-          <nav
-            aria-label="Breadcrumb"
-            className="hidden lg:flex min-w-0 items-center gap-1.5 text-[13px]"
-          >
-            <Link
-              to={`/projects/${entry.projectId}`}
-              className="truncate font-medium text-gold hover:underline"
-            >
-              {projectName ?? 'Project'}
-            </Link>
-            <span className="text-clay">/</span>
-            <Link
-              to={`/entries/${entryId}`}
-              className="truncate font-medium text-gold hover:underline"
-            >
-              {entry.title ?? 'Entry'}
-            </Link>
-            <span className="text-clay">/</span>
-            <span className="truncate text-cocoa">History</span>
-          </nav>
-
-          <div className="flex items-center gap-2 shrink-0 w-full lg:w-auto justify-between lg:justify-end">
+          {/* No breadcrumb here: the centre column is the narrowest in the app
+              (two sidebars plus the shell), so the crumbs were clipped to a
+              character or two. The project name and title are shown below, and
+              "Back to current entry" is the way back. */}
+          <div className="ml-auto flex items-center gap-2 shrink-0 w-full lg:w-auto justify-between lg:justify-end">
             <Link
               to={`/entries/${entryId}`}
               className="inline-flex min-h-8 items-center rounded-lg border border-line px-3 text-[13px] font-medium text-espresso transition-colors hover:bg-cream"
