@@ -200,11 +200,12 @@ describe('DashboardPage', () => {
 
     renderPage();
 
-    expect(await screen.findByText('Set up your first project')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Create project' })).toHaveAttribute(
-      'href',
-      '/projects/new',
-    );
+    // Mobile and desktop each have their own layout (only one is visible).
+    expect((await screen.findAllByText('Set up your first project')).length).toBeGreaterThan(0);
+    expect(screen.getByText('No projects yet')).toBeInTheDocument();
+    for (const link of screen.getAllByRole('link', { name: 'Create project' })) {
+      expect(link).toHaveAttribute('href', '/projects/new');
+    }
   });
 
   it("shows an error state when the stats can't be loaded", async () => {
@@ -218,13 +219,13 @@ describe('DashboardPage', () => {
   it('renders the default widgets in order and leaves off-by-default widgets out', async () => {
     renderPage();
 
-    expect(await screen.findByText('6-day streak')).toBeInTheDocument();
+    expect(await screen.findByText(/^6-day streak · \d+h total$/)).toBeInTheDocument();
     expect(screen.getByText('Top project:', { exact: false })).toHaveTextContent(
       'Thesis Research (75%)',
     );
     expect(screen.getByText('Activity — last 12 weeks')).toBeInTheDocument();
     expect(await screen.findByText("What's left")).toBeInTheDocument();
-    expect(await screen.findByText('Recent entries')).toBeInTheDocument();
+    expect(await screen.findByText('Recent Entries')).toBeInTheDocument();
     expect(await screen.findByText('No data yet')).toBeInTheDocument();
     expect(await screen.findByText('No upcoming events.')).toBeInTheDocument();
 
@@ -421,6 +422,6 @@ describe('DashboardPage', () => {
     expect(
       await screen.findByRole('link', { name: /Pages per hour, Thesis Research/ }),
     ).toBeInTheDocument();
-    expect(screen.queryByText('Recent entries')).not.toBeInTheDocument();
+    expect(screen.queryByText('Recent Entries')).not.toBeInTheDocument();
   });
 });

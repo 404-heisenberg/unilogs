@@ -159,7 +159,8 @@ describe('Google Calendar settings', () => {
     renderPage();
 
     expect(await screen.findByText('Connected')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^disconnect$/i })).toBeInTheDocument();
+    // One button per layout (desktop row, mobile full width); CSS shows one.
+    expect(screen.getAllByRole('button', { name: /^disconnect$/i })).toHaveLength(2);
   });
 
   it('connect redirects the browser to the URL the backend returns', async () => {
@@ -237,7 +238,7 @@ describe('Google Calendar settings', () => {
     renderPage();
     expect(await screen.findByText('Connected')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+    await userEvent.click(screen.getAllByRole('button', { name: /^disconnect$/i })[0]);
 
     expect(deleteMock).toHaveBeenCalledWith('/api/calendar/disconnect');
     expect(await screen.findByText('Not connected')).toBeInTheDocument();

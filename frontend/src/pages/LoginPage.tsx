@@ -62,84 +62,91 @@ export const LoginPage: React.FC = () => {
   return (
     <AuthLayout back={cameFrom === 'signup' ? BACK_TO_SIGN_UP : BACK_TO_HOME}>
       <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
-        <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl">
+        <h2 className="font-cormorant text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-5xl md:leading-[54px]">
           Sign in
         </h2>
-        <label htmlFor="email" className="text-sm font-semibold">
-          Email<span className="ml-0.5">*</span>
-        </label>
-        <input
-          id="email"
-          type="email"
-          placeholder="name@example.com"
-          required
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            if (emailError) setEmailError(null);
-          }}
-          onBlur={() => setEmailError(getEmailError(email))}
-          className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
-            emailError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
-          }`}
-        />
-        {emailError && <p className="text-xs text-error">{emailError}</p>}
-        <label htmlFor="password" className="text-sm font-semibold">
-          Password<span className="ml-0.5">*</span>
-        </label>
-        <article className="relative w-full">
-          <input
-            id="password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm placeholder:text-caramel pr-12 text-espresso outline-none focus:ring-2 focus:ring-espresso"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-clay hover:text-espresso focus:outline-none cursor-pointer"
-          >
-            {showPassword ? (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+        {/* Figma: the two fields sit 14px apart, each label 6px above its box. */}
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="email" className="text-[13px] leading-[18px] font-medium">
+              Email *
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              required
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
+              onBlur={() => setEmailError(getEmailError(email))}
+              className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-[15px] text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
+                emailError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
+              }`}
+            />
+            {emailError && <p className="text-xs text-error">{emailError}</p>}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="password" className="text-[13px] leading-[18px] font-medium">
+              Password
+            </label>
+            <article className="relative w-full">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-[15px] placeholder:text-caramel pr-12 text-espresso outline-none focus:ring-2 focus:ring-espresso"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-clay hover:text-espresso focus:outline-none cursor-pointer"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.04 10.04 0 012.122-.063c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21m-4.225-4.225L3 3"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-              </svg>
-            )}
-          </button>
-        </article>
-        <p className="mt-2 text-center text-sm text-cocoa">
+                {showPassword ? (
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.04 10.04 0 012.122-.063c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21m-4.225-4.225L3 3"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                )}
+              </button>
+            </article>
+          </div>
+        </div>
+        <p className="text-center text-sm leading-5 text-cocoa">
           Forgot password?{' '}
           <Link
             to="/reset-password"
@@ -151,11 +158,11 @@ export const LoginPage: React.FC = () => {
         <button
           type="submit"
           disabled={signIn.isPending}
-          className="mt-2 min-h-12 w-full rounded-xl bg-espresso px-4 text-[13px] font-medium text-cream shadow-[0_2px_6px_rgb(28_13_6/0.08)] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+          className="min-h-12 w-full rounded-xl bg-espresso px-4 text-[13px] font-medium text-cream shadow-[0_2px_6px_rgb(28_13_6/0.08)] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
         >
           {signIn.isPending ? 'Signing in…' : 'Sign in'}
         </button>
-        <p className="mt-2 text-center text-sm text-cocoa">
+        <p className="text-center text-sm leading-5 text-cocoa">
           Don't have an account?{' '}
           <Link
             to="/signup"
@@ -165,17 +172,19 @@ export const LoginPage: React.FC = () => {
             Sign up
           </Link>
         </p>
-        <section className="relative my-4 flex items-center justify-center border-t border-line-strong/60">
-          <span className="absolute bg-cream px-3 text-xs font-semibold tracking-[0.05em] text-cocoa">
+        <div className="flex items-center gap-3">
+          <span aria-hidden className="h-px flex-1 bg-[#cdbaa8]/70" />
+          <span className="text-xs font-semibold tracking-[0.05em] text-cocoa">
             OR Sign in with :
           </span>
-        </section>
+          <span aria-hidden className="h-px flex-1 bg-[#cdbaa8]/70" />
+        </div>
         <section className="flex gap-3">
           <button
             type="button"
             onClick={() => googleSignIn.mutate()}
             disabled={googleSignIn.isPending}
-            className="flex flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border border-line-strong bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 min-h-12 rounded-xl border border-[#cdbaa8] bg-transparent px-4 text-[13px] font-medium text-cocoa transition-colors hover:bg-gold-light/20 cursor-pointer disabled:opacity-60"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path

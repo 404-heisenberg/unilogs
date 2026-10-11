@@ -213,7 +213,7 @@ export default function ProjectsPage() {
           <button
             type="button"
             onClick={() => setArchivedView((v) => !v)}
-            className="-my-3 min-h-11 font-bold text-gold hover:underline md:min-h-0"
+            className="-my-3 min-h-11 font-bold text-gold hover:underline md:min-h-0 md:underline"
           >
             {archivedView ? 'Back to active projects' : 'View'}
           </button>

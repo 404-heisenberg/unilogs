@@ -27,11 +27,16 @@ export default function PaneLayout({
       {showPane && (
         <aside
           aria-label={paneLabel}
-          className={`flex flex-col border-t border-cream bg-paper lg:shrink-0 lg:border-t-0 lg:border-l ${
+          className={`relative flex flex-col border-t border-cream bg-paper lg:shrink-0 lg:border-t-0 lg:border-l ${
             collapsed ? 'lg:w-14' : 'lg:w-72'
           }`}
         >
-          <div className={`flex shrink-0 ${collapsed ? 'justify-center' : 'justify-end'} p-2`}>
+          {/* Expanded on desktop, Figma puts the toggle on the pane's label row. */}
+          <div
+            className={`flex shrink-0 p-2 ${
+              collapsed ? 'justify-center' : 'justify-end lg:absolute lg:top-4 lg:right-4 lg:z-10'
+            }`}
+          >
             <button
               type="button"
               onClick={() => setCollapsed((v) => !v)}
@@ -42,7 +47,7 @@ export default function PaneLayout({
               <PanelRight size={20} strokeWidth={1.75} aria-hidden />
             </button>
           </div>
-          {!collapsed && <div className="p-4 md:p-6 lg:pt-0">{pane}</div>}
+          {!collapsed && <div className="p-4 md:p-6">{pane}</div>}
         </aside>
       )}
     </div>

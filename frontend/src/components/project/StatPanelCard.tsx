@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import {
   AGGREGATION_OPTIONS,
   entryWord,
@@ -11,39 +12,22 @@ import type { FieldDefinition, StatPanel, StatPanelPoint } from '@/types';
 const CARD = 'rounded-xl border border-cream bg-paper';
 const MUTED = 'text-clay';
 const MENU_ITEM =
-  'flex min-h-11 w-full items-center px-3 text-left text-sm text-espresso hover:bg-cream focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold md:min-h-9';
+  'flex min-h-11 w-full items-center px-4 text-left text-[13px] text-rail hover:bg-cream focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold md:min-h-8';
 
+// Figma 21:5's panel "sparkline": a 6px strip of gold 24px segments, one per
+// day in the range that has a value.
 function Sparkline({ series }: { series: StatPanelPoint[] }) {
-  if (series.length < 2) return null;
-  const values = series.map((point) => point.value);
-  const min = Math.min(...values);
-  const span = Math.max(...values) - min || 1;
-  const width = 100;
-  const height = 24;
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width;
-      const y = height - 2 - ((value - min) / span) * (height - 4);
-      return `${x},${y}`;
-    })
-    .join(' ');
-
+  if (series.length === 0) return null;
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
+    <div
+      className="flex h-1.5 w-full gap-0.5 overflow-hidden rounded-[3px]"
       role="img"
-      aria-label="Daily trend over the selected range"
-      className="mt-3 h-6 w-full text-caramel"
+      aria-label={`${series.length} ${series.length === 1 ? 'day' : 'days'} with data in the range`}
     >
-      <polyline
-        points={points}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
+      {series.map((point) => (
+        <span key={point.date} className="h-full w-6 shrink-0 rounded-[2px] bg-gold" />
+      ))}
+    </div>
   );
 }
 
@@ -103,14 +87,14 @@ function OverflowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="flex size-9 items-center justify-center rounded-lg text-lg leading-none text-cocoa hover:bg-cream focus-visible:outline-2 focus-visible:outline-gold"
+        className="-m-2 flex size-9 items-center justify-center rounded-lg text-cocoa hover:bg-cream focus-visible:outline-2 focus-visible:outline-gold"
       >
-        …
+        <MoreHorizontal className="size-4.5" strokeWidth={1.75} aria-hidden />
       </button>
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-10 mt-1 w-40 overflow-hidden rounded-lg border border-line bg-paper shadow-md"
+          className="absolute right-0 z-10 mt-1 min-w-[140px] overflow-hidden rounded-lg border border-line bg-white py-1.5 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.12)]"
         >
           {confirming ? (
             <div className="p-3">
@@ -163,7 +147,7 @@ function OverflowMenu({
               <button
                 type="button"
                 role="menuitem"
-                className={`${MENU_ITEM} text-danger-text`}
+                className={`${MENU_ITEM} text-error`}
                 onClick={() => setConfirming(true)}
               >
                 Remove
@@ -199,12 +183,14 @@ export function StatPanelCard({
   const hasValue = panel.value !== null && panel.sampleCount > 0;
 
   return (
-    <li className={`${CARD} p-3.5 ${panel.hidden ? 'opacity-60' : ''}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-espresso">{panel.name}</p>
-          <p className={`mt-0.5 truncate font-mono text-[11px] ${MUTED}`}>{panel.expression}</p>
-        </div>
+    <li className={`${CARD} flex flex-col gap-2 p-3.5 ${panel.hidden ? 'opacity-60' : ''}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p
+          title={panel.expression}
+          className={`truncate text-[11px] font-bold tracking-[0.44px] uppercase ${MUTED}`}
+        >
+          {panel.name}
+        </p>
         <OverflowMenu
           panelName={panel.name}
           hidden={panel.hidden}
@@ -216,21 +202,21 @@ export function StatPanelCard({
       </div>
 
       {panel.error ? (
-        <p role="alert" className="mt-2 text-sm text-error">
+        <p role="alert" className="text-sm text-error">
           Couldn’t calculate this panel: {panel.error}
         </p>
       ) : hasValue ? (
         <>
-          <p className="mt-1.5 truncate text-2xl font-bold text-espresso">
+          <p className="truncate text-2xl font-bold text-espresso">
             ≈ {formatStatValue(panel.value as number, panel.expression, fields)}
           </p>
-          <p className={`mt-1 text-[11px] ${MUTED}`}>
+          <p className="text-[11px] text-cocoa">
             {aggregationLabel} · Last {panel.rangeDays} days · {entryWord(panel.sampleCount)}
           </p>
           <Sparkline series={panel.series} />
         </>
       ) : (
-        <p className={`mt-2 text-sm ${MUTED}`}>No data yet</p>
+        <p className={`text-sm ${MUTED}`}>No data yet</p>
       )}
     </li>
   );
@@ -278,7 +264,7 @@ export function SavedStatPanels({ projectId, fields, onEdit }: SectionProps) {
         </p>
       )}
       {visible.length > 0 && (
-        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3">
           {visible.map((panel) => (
             <StatPanelCard
               key={panel.id}
