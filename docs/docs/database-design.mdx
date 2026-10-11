@@ -14,10 +14,17 @@ entries, tags, entry history, calendar suggestions, share links and
 notifications. Users can give each project its own entry format, and existing
 entries are kept when that format changes.
 
-It has **thirteen tables**. Four are required by Better Auth (`user`,
-`session`, `account` and `verification`). The other nine belong to UniLogs:
+It has **fifteen tables**. Four are required by Better Auth (`user`,
+`session`, `account` and `verification`). The other eleven belong to UniLogs:
 `projects`, `field_definitions`, `entries`, `tags`, `entry_tags`,
-`audit_logs`, `calendar_suggestions`, `share_tokens` and `notifications`.
+`audit_logs`, `calendar_suggestions`, `calendar_sources`, `stat_panels`,
+`share_tokens` and `notifications`. A twelfth UniLogs model, `Task`, is in
+the schema but has no migration — [see below](#proposed-not-yet-built-tasks).
+
+Since Sprint 4 the logbook is *hard to lose*: entries are **soft-deleted**
+into a recoverable trash, every correction is preserved as an entry version,
+and the dashboard layout, custom stat panels and calendar choices are stored
+server-side.
 
 Column names below are the real names in the database. Prisma keeps the
 camelCase field names from `backend/prisma/schema.prisma`, and `@@map` only
@@ -35,7 +42,10 @@ erDiagram
     user ||--o{ tags : owns
     user ||--o{ notifications : receives
     user ||--o{ calendar_suggestions : decides
+    user ||--o{ calendar_sources : connects
+    user ||--o{ stat_panels : owns
     projects ||--o{ field_definitions : defines
+    projects ||--o{ stat_panels : "panel for"
     projects ||--o{ entries : contains
     projects ||--o{ share_tokens : "shared via"
     projects |o--o{ notifications : about
@@ -47,6 +57,7 @@ erDiagram
         text id PK
         text email UK
         boolean remindersEnabled
+        jsonb dashboardLayout
     }
     projects {
         int id PK
@@ -69,6 +80,8 @@ erDiagram
         text title
         text body
         jsonb content
+        timestamp deletedAt
+        text clientId UK
     }
     tags {
         int id PK
@@ -89,8 +102,29 @@ erDiagram
     calendar_suggestions {
         int id PK
         text userId FK
+        text calendarId
         text eventId
         text status
+    }
+    stat_panels {
+        int id PK
+        int userId FK
+        int projectId FK
+        text name
+        text expression
+        text aggregation
+        int rangeDays
+        int position
+        boolean hidden
+    }
+    calendar_sources {
+        int id PK
+        text userId FK
+        text calendarId UK
+        text summary
+        text color
+        boolean enabled
+        int order
     }
     share_tokens {
         text token PK
@@ -135,9 +169,16 @@ Better Auth requires, plus one UniLogs column.
 | `createdAt`        | timestamp | Not null                 |
 | `updatedAt`        | timestamp | Not null                 |
 | `remindersEnabled` | boolean   | Not null, default `true` |
+| `dashboardLayout`  | jsonb     |                          |
 
 `remindersEnabled` is the account-wide switch in **Settings**. When it is off,
 the reminder scheduler skips all of the user's projects.
+
+`dashboardLayout` is a JSON document holding which widgets appear on the
+dashboard, their positions and sizes — including pinned custom stat panels,
+which appear as `statPanel:<id>` entries. It moved from the browser's
+`localStorage` to the server in Sprint 4, so the arrangement is identical on
+every device.
 
 ### Session
 
@@ -247,9 +288,22 @@ to a project and stores its custom field values as JSON.
 | `content`   | jsonb     | Not null                               |
 | `title`     | text      |                                        |
 | `body`      | text      | Markdown                               |
+| `deletedAt` | timestamp |                                        |
+| `clientId`  | text      | Unique                                 |
 
 An entry must have at least one of a title, a body or a field value. The API
 rejects wholly empty entries.
+
+`deletedAt` implements **soft delete**. When it is set the entry disappears
+from every normal read path — a Prisma extension in `src/lib/prisma.ts`
+filters those rows out automatically — but stays recoverable from the
+project's trash until it is restored. There is no permanent single-entry
+delete.
+
+`clientId` is a client-generated id set only by `POST /api/entries/sync`. It
+makes **offline capture idempotent**: if a queued batch is re-sent after a
+retry, the backend matches on `clientId` instead of creating a duplicate
+entry. Entries logged normally through the app don't have one.
 
 ### Tags
 
@@ -292,6 +346,13 @@ creates a record of the action and the data before and after it.
 | `newData`    | jsonb         |                                       |
 | `modifiedAt` | timestamp     | Not null, default now                 |
 
+Since Sprint 4 the snapshots in `oldData`/`newData` store only `{ title, body,
+content, date, tagIds }` — a one-time lossless backfill normalised rows
+written before that. Restoring an earlier version writes a brand-new `UPDATE`
+row instead of rewriting any existing one, so history stays append-only and
+can be replayed to reconstruct the logbook as it stood on any date (the
+\"as-at\" view).
+
 ### Calendar_suggestions
 
 The `calendar_suggestions` table records what a user has already decided about
@@ -306,9 +367,55 @@ suggested again after being accepted or dismissed.
 | `status`    | text      | Not null (`ACCEPTED` or `REJECTED`) |
 | `createdAt` | timestamp | Not null, default now               |
 
-The combination of `userId` and `eventId` is unique, so deciding on the same
-event twice is rejected by the database rather than relying on application
-code to catch it.
+Google event ids are only unique inside a single calendar, so the unique key
+is the triple (`userId`, `calendarId`, `eventId`): deciding on the same event
+twice within a calendar is rejected by the database rather than relying on
+application code to catch it.
+
+### Calendar_sources
+
+The `calendar_sources` table stores which of the user's Google calendars feed
+the app, and how each one is displayed. It is persisted rather than re-derived
+from the Google API on every load, so enable/disable and colour choices stay
+stable across devices.
+
+| Column      | Type    | Constraints                                |
+| ----------- | ------- | ------------------------------------------ |
+| `id`        | integer | Primary key                                |
+| `userId`    | text    | Not null, foreign key to `user.id`         |
+| `calendarId`| text    | Not null, the Google calendar's own id     |
+| `summary`   | text    | Not null, e.g. "Lectures"                 |
+| `description`| text   |                                            |
+| `color`     | text    | A Google calendar colour id                |
+| `enabled`   | boolean | Not null, default `true`                   |
+| `order`     | integer | Not null, default `0`                      |
+
+The pair (`userId`, `calendarId`) is unique, so the same Google calendar can't
+be listed twice for one user. Suggestions, upcoming events and the calendar
+view all respect `enabled`.
+
+### Stat_panels
+
+The `stat_panels` table stores the custom statistics a user builds from an
+arithmetic expression over a project's numeric fields (`weight * reps`, for
+example). The expression is evaluated safely on the server — never with
+`eval` — for every entry, then aggregated with Sum or Average over a date
+range.
+
+| Column       | Type    | Constraints                            |
+| ------------ | ------- | -------------------------------------- |
+| `id`         | integer | Primary key                            |
+| `userId`     | text    | Not null, foreign key to `user.id`     |
+| `projectId`  | integer | Not null, foreign key to `projects.id` |
+| `name`       | text    | Not null                               |
+| `expression` | text    | Not null, e.g. `weight * reps`         |
+| `aggregation`| text    | Not null, default `sum` (`sum`/`average`) |
+| `rangeDays`  | integer | Not null, default `30`                 |
+| `position`   | integer | Not null, default `0`                  |
+| `hidden`     | boolean | Not null, default `false`              |
+
+A panel lives on a project but belongs to its creator; pinning it to the
+dashboard is recorded as a `statPanel:<id>` entry in `user.dashboardLayout`.
 
 ### Share_tokens
 
@@ -372,15 +479,20 @@ queries. See [Performance](/performance) for the measurements behind them.
 | `entry_tags(tagId)`                | Filtering entries by tag                         |
 | `share_tokens(projectId)`          | Listing a project's share links                  |
 | `notifications(userId, createdAt)` | Loading a user's notification feed, newest first |
+| `entries(projectId, deletedAt)`    | Listing a project's trash, newest deleted first  |
+| `entries(clientId)` (unique)       | Making offline sync idempotent on retry          |
+| `stat_panels(userId)`              | Loading a user's panels for the dashboard        |
+| `stat_panels(projectId)`           | Listing a project's panels                       |
+| `calendar_sources(userId, order)`  | Keeping the calendar picker ordered              |
 
 ## Relationships
 
 - One user has many sessions and many accounts (one per linked sign-in method,
   such as email/password or Google).
-- One user has many projects, tags, notifications and calendar suggestion
-  records.
-- One project has many field definitions, entries, share tokens and
-  notifications.
+- One user has many projects, tags, notifications, calendar suggestion
+  records, calendar sources and stat panels.
+- One project has many field definitions, entries, share tokens,
+  notifications and stat panels.
 - One entry has many tags, and one tag belongs to many entries, through the
   `entry_tags` junction table.
 - One entry has many audit log records, so changes to an entry are tracked over
@@ -441,6 +553,40 @@ Share links could have been a column on `projects`. A separate table lets a
 project have several links, each with its own expiry, and lets each one be
 revoked on its own without affecting the others.
 
+### Soft Delete, Restore and the "As-at" View
+
+Deletion stamps `entries.deletedAt` instead of removing the row. Every normal
+read path excludes soft-deleted rows — mostly through a Prisma extension in
+`src/lib/prisma.ts`, with explicit filters in the raw-SQL stats queries — so a
+deleted entry is invisible everywhere except the project trash, where it can
+be restored. Because `audit_logs` is append-only, the as-at endpoint replays it
+to reconstruct the whole logbook as it stood on any date, with no separate
+snapshot table.
+
+### Server-Side Dashboard Layout
+
+`user.dashboardLayout` is a single JSON column: the dashboard is the one
+surface that is per-user rather than per-project, and its layout is a small,
+opaque document the app doesn't need to query. Storing it server-side made
+arrange-and-persist work across devices, replacing the Sprint 3
+`localStorage` version — the app migrates an existing local layout into the
+server on first load.
+
+### Stat Panels on the Server
+
+A stat panel is a saved arithmetic expression over a project's numeric fields,
+evaluated per entry and aggregated with Sum or Average over a date range.
+Panels live in `stat_panels` (per project, per user) so their expressions stay
+in sync with the fields they reference, and a pinned panel appears on the
+dashboard through `statPanel:<id>` in `user.dashboardLayout`.
+
+### Calendar Sources as a Table
+
+The list of calendars a user has chosen to feed the app is persisted in
+`calendar_sources` rather than re-derived from the Google API on every load.
+That keeps enable/disable and colour choices stable across devices, and gives
+the calendar picker an ordering independent of Google's own list.
+
 ### Proposed, Not Yet Built: Tasks
 
 `schema.prisma` also contains a `Task` model (title, notes, due date,
@@ -498,4 +644,10 @@ replayable.
   action="generated"
   tools="ChatGPT[GPT-5.6 Luna], Claude-Code[Claude Sonnet 5], Claude-Code[Claude Opus 5.5]"
   purpose="drafting and structuring the database design documentation, and updating it to cover the projects table's description/archived columns, the calendar_suggestions table and database deployment, then bringing every table up to date with the Sprint 3 schema (share tokens, notifications, reminders, entry title and body), correcting column names and adding a Mermaid ERD"
+/>
+
+<AiDeclaration
+  action="edited"
+  tools="opencode[deepseek-v4-flash]"
+  purpose="bringing the table count, ERD, indexes and design decisions up to the Sprint 4 schema (stat_panels, calendar_sources, user.dashboardLayout, entry.deletedAt and clientId, widened calendar-suggestions key, soft-delete semantics and trimmed audit snapshots)"
 />
