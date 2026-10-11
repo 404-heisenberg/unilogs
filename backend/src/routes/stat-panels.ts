@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { PrismaClient } from '../generated/prisma/client.js';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { prisma } from '../lib/prisma.js';
 import { authenticate } from '../middleware/authenticate.js';
 import {
   listPanelsForProject,
@@ -9,9 +8,6 @@ import {
   computePanelValue,
   type Aggregation,
 } from '../services/stat-panel-service.js';
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
 
 const router = Router({ mergeParams: true });
 

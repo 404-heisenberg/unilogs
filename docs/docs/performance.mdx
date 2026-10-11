@@ -170,6 +170,38 @@ Recorded for #352. None of these was changed here.
 - **Cold starts.** The keep-warm workflow keeps the API awake, so a 30–60 s
   wake-up only happens if that workflow stops.
 
+## Stat panel queries
+
+The baseline found `GET /api/projects/:id/stat-panels` fanning out **two queries
+per panel** — the project's numeric fields, then its entries — on top of a
+second database client each in `routes/stat-panels.ts` and
+`services/stat-panel-service.ts`. At five panels that was 14 statements per
+request, and it grew with every panel a user added.
+
+`listPanelsForProject` now reads the field names once and the project's entries
+once, from the **widest** panel's range, then evaluates every panel over that one
+set of entries in memory. Both files use the shared client in
+`backend/src/lib/prisma.ts`, so the API is back to a single connection pool.
+
+Same machine and settings as the baseline (one connection, 10 seconds per
+endpoint, 11 October 2026):
+
+| `GET /api/projects/:id/stat-panels` (5 panels) | Baseline | After |
+| ---------------------------------------------- | -------: | ----: |
+| SQL statements per request                     |       14 | **6** |
+| Requests served in 10 s                        |      386 |   453 |
+| p50                                            |    22 ms | 19 ms |
+| p97.5                                          |    41 ms | 35 ms |
+
+The statement count is the point: the two extra queries per panel became one
+shared read, so ten panels now cost the same as five. Latency is already low at
+this size, so the throughput gain (about 17% more requests in the same window)
+matters more than the few milliseconds off the median.
+
+The rest of [what the baseline found](#what-the-baseline-found) — the as-at view,
+offline sync and the missing history index — is left for a separate change, so
+each one can be justified by its own before-and-after number.
+
 ## App load time
 
 ### What we changed
@@ -482,4 +514,10 @@ Recorded so nothing here is overstated:
 <AiDeclaration
   tools="opencode[deepseek-v4.1-flash], Claude-Code[Claude Opus 5.5]"
   purpose="measuring and writing up the 11 October 2026 baseline (the frontend and API timing scripts, the load test's Sprint 4 coverage and statement counts), drafting the database benchmark section from the backend benchmark results, the index migration and the EXPLAIN ANALYZE plans, then adding the load test, the Lighthouse measurements, the code-splitting, font preloading, SQL aggregation and shared connection pool changes, and the keep-warm workflow"
+/>
+
+<AiDeclaration
+  action="generated"
+  tools="opencode[deepseek-v4-flash]"
+  purpose="adding the Stat panel queries section with the before-and-after numbers from re-running the load test after removing the stat-panel N+1 and the two private Prisma clients"
 />
