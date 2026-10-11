@@ -11,12 +11,14 @@ The UniLogs backend is a hand-written Express API, deployed separately from the
 frontend on Render. This page is a map of every endpoint. For request and
 response schemas, and to try a request in the browser, use the live reference:
 
-**[Open the interactive API reference →](https://unilogs.onrender.com/api/docs#description/introduction)**
+**[Open the interactive API reference →](https://unilogs.onrender.com/api/docs)**
 
 The reference is generated from the OpenAPI 3 spec in `backend/src/openapi.ts`,
 and the raw spec is served at
 [`/openapi.json`](https://unilogs.onrender.com/openapi.json). The tables below
-list the same endpoints as that spec.
+list the same endpoints as that spec. In the live reference each section below
+is a group with its own tag, so you can jump straight to it with an anchor like
+`#tag/Entries/get_entries`.
 
 ## Conventions
 
@@ -30,6 +32,9 @@ list the same endpoints as that spec.
 - **Errors:** `400` for invalid input (with a message saying which field),
   `401` when not signed in, `404` when the resource doesn't exist or isn't
   yours.
+- **Soft delete:** deleting an entry is reversible — it moves to the project's
+  trash instead of being destroyed. Every read path excludes trashed entries
+  unless the endpoint is explicitly about them.
 - **Public endpoints:** `/share/*` needs no account, so a supervisor can open a
   report link. These endpoints are rate-limited and return `429` when the limit
   is hit.
@@ -47,18 +52,16 @@ list the same endpoints as that spec.
 
 ## Projects
 
-| Method | Path                                     | What it does                                                 |
-| ------ | ---------------------------------------- | ------------------------------------------------------------ |
-| GET    | `/api/projects`                          | List projects (`?archived=true` for archived ones)           |
-| POST   | `/api/projects`                          | Create a project                                             |
-| GET    | `/api/projects/{id}`                     | Get a project                                                |
-| PATCH  | `/api/projects/{id}`                     | Rename or re-describe a project                              |
-| DELETE | `/api/projects/{id}`                     | Delete a project and everything in it                        |
-| POST   | `/api/projects/{id}/archive`             | Archive a project                                            |
-| POST   | `/api/projects/{id}/unarchive`           | Unarchive a project                                          |
-| GET    | `/api/projects/{id}/summary`             | Entry count, tracked time, last logged and entries this week |
-| POST   | `/api/projects/{id}/share-links`         | Create a read-only share link                                |
-| DELETE | `/api/projects/{id}/share-links/{token}` | Revoke a share link                                          |
+| Method | Path                            | What it does                                                 |
+| ------ | ------------------------------- | ------------------------------------------------------------ |
+| GET    | `/api/projects`                 | List projects (`?archived=true` for archived ones)           |
+| POST   | `/api/projects`                 | Create a project                                             |
+| GET    | `/api/projects/{id}`            | Get a project                                                |
+| PATCH  | `/api/projects/{id}`            | Rename or re-describe a project                              |
+| DELETE | `/api/projects/{id}`            | Delete a project and everything in it                        |
+| POST   | `/api/projects/{id}/archive`    | Archive a project                                            |
+| POST   | `/api/projects/{id}/unarchive`  | Unarchive a project                                          |
+| GET    | `/api/projects/{id}/summary`    | Entry count, tracked time, last logged and entries this week |
 
 ## Fields
 
@@ -75,13 +78,18 @@ date). Entry content is validated against these definitions.
 
 ## Entries
 
-| Method | Path                | What it does                                                                            |
-| ------ | ------------------- | --------------------------------------------------------------------------------------- |
-| GET    | `/api/entries`      | List entries, paged. Filters: `q` (search), `projectId`, `tagIds`, `dateFrom`, `dateTo` |
-| POST   | `/api/entries`      | Log an entry: date, title, Markdown body, field values and tags                         |
-| GET    | `/api/entries/{id}` | Get an entry                                                                            |
-| PUT    | `/api/entries/{id}` | Update an entry (every change is written to the audit log)                              |
-| DELETE | `/api/entries/{id}` | Delete an entry                                                                         |
+| Method | Path                                             | What it does                                                                            |
+| ------ | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| GET    | `/api/entries`                                   | List entries, paged. Filters: `q` (search), `projectId`, `tagIds`, `dateFrom`, `dateTo` |
+| POST   | `/api/entries`                                   | Log an entry: date, title, Markdown body, field values and tags                         |
+| GET    | `/api/entries/{id}`                              | Get an entry                                                                            |
+| PUT    | `/api/entries/{id}`                              | Update an entry (every change is written to the audit log)                              |
+| DELETE | `/api/entries/{id}`                              | Soft-delete an entry — it moves to the project's trash                                   |
+| GET    | `/api/entries/{id}/history`                      | Every recorded version of an entry, newest first (append-only)                          |
+| POST   | `/api/entries/{id}/history/{auditId}/restore`    | Restore an earlier version (writes a *new* version, never rewrites history)             |
+| POST   | `/api/entries/{id}/restore`                      | Bring an entry back from the trash                                                      |
+| GET    | `/api/entries/as-at`                             | Read-only reconstruction of the logbook as it stood on a given date                     |
+| POST   | `/api/entries/sync`                              | Sync a queue of offline-created entries, idempotent by `clientId`                       |
 
 ## Tags
 
@@ -94,33 +102,63 @@ date). Entry content is validated against these definitions.
 
 ## Statistics
 
-| Method | Path                            | What it does                                                  |
-| ------ | ------------------------------- | ------------------------------------------------------------- |
-| GET    | `/api/stats`                    | Totals across all projects, with a per-project breakdown      |
-| GET    | `/api/stats/frequency`          | Entries per week and per term                                 |
-| GET    | `/api/stats/streak`             | Current logging streak in days                                |
-| GET    | `/api/stats/unfinished`         | Open to-do fields: overdue, due this week, no due date        |
-| GET    | `/api/stats/fields/{projectId}` | Per-field insights for one project (totals, averages, trends) |
+| Method | Path                                                      | What it does                                                       |
+| ------ | --------------------------------------------------------- | ------------------------------------------------------------------ |
+| GET    | `/api/stats`                                              | Totals across all projects, with a per-project breakdown           |
+| GET    | `/api/stats/frequency`                                    | Entries per week and per term                                      |
+| GET    | `/api/stats/streak`                                       | Current logging streak in days                                     |
+| GET    | `/api/stats/unfinished`                                   | Open to-do fields: overdue, due this week, no due date             |
+| GET    | `/api/stats/fields/{projectId}`                           | Per-field insights for one project (totals, averages, trends)      |
+| GET    | `/api/projects/{id}/stat-panels`                          | List a project's stat panels with their computed values            |
+| POST   | `/api/projects/{id}/stat-panels`                          | Create a stat panel from an arithmetic expression                  |
+| POST   | `/api/projects/{id}/stat-panels/preview`                  | Evaluate an expression without saving                              |
+| PATCH  | `/api/projects/{id}/stat-panels/{panelId}`                | Rename, re-order, or re-scope a stat panel                         |
+| DELETE | `/api/projects/{id}/stat-panels/{panelId}`                | Delete a stat panel                                                |
+| GET    | `/api/stat-panels`                                        | Every panel across the user's active projects, with computed values |
+
+Custom stat panels evaluate an arithmetic expression (`+ - * / ( )`) over a
+project's numeric fields, **server-side and without `eval`**, then aggregate
+the per-entry results with Sum or Average over a date range.
+
+## Dashboard layout
+
+| Method | Path                    | What it does                                                                   |
+| ------ | ----------------------- | ------------------------------------------------------------------------------ |
+| GET    | `/api/dashboard/layout` | Get the server-persisted dashboard layout (widgets and stat-panel widgets)     |
+| PUT    | `/api/dashboard/layout` | Save the dashboard layout, so arrange-and-persist works across devices         |
 
 ## Export and sharing
 
-| Method | Path                    | What it does                                              |
-| ------ | ----------------------- | --------------------------------------------------------- |
-| GET    | `/api/export`           | Download a project's entries as CSV or Markdown           |
-| GET    | `/share/{token}`        | **Public.** The read-only report behind a share link      |
-| GET    | `/share/{token}/export` | **Public.** Download the shared report as CSV or Markdown |
+| Method | Path                                       | What it does                                              |
+| ------ | ------------------------------------------ | --------------------------------------------------------- |
+| GET    | `/api/export`                              | Download a project's entries as CSV or Markdown           |
+| POST   | `/api/projects/{id}/share-links`           | Create a read-only share link for a project report        |
+| DELETE | `/api/projects/{id}/share-links/{token}`   | Revoke a share link                                       |
+| GET    | `/share/{token}`                           | **Public.** The read-only report behind a share link      |
+| GET    | `/share/{token}/export`                    | **Public.** Download the shared report as CSV or Markdown |
+
+Share links let a supervisor or collaborator read a report without an account.
+The `/share/*` routes are the only endpoints that skip authentication.
 
 ## Google Calendar
 
-| Method | Path                                                | What it does                                        |
-| ------ | --------------------------------------------------- | --------------------------------------------------- |
-| GET    | `/api/calendar/status`                              | Whether the user's Google Calendar is connected     |
-| POST   | `/api/calendar/connect`                             | Start the Google consent flow                       |
-| DELETE | `/api/calendar/disconnect`                          | Disconnect Google Calendar                          |
-| GET    | `/api/calendar/events`                              | Upcoming events from the user's primary calendar    |
-| GET    | `/api/calendar/events/suggestions`                  | Events not yet logged, offered as entry suggestions |
-| POST   | `/api/calendar/events/suggestions/{eventId}/accept` | Turn a suggestion into an entry                     |
-| POST   | `/api/calendar/events/suggestions/{eventId}/reject` | Dismiss a suggestion                                |
+| Method | Path                                                | What it does                                              |
+| ------ | --------------------------------------------------- | --------------------------------------------------------- |
+| GET    | `/api/calendar/status`                              | Whether the user's Google Calendar is connected           |
+| POST   | `/api/calendar/connect`                             | Start the Google consent flow                             |
+| DELETE | `/api/calendar/disconnect`                          | Disconnect Google Calendar                                |
+| GET    | `/api/calendar/sources`                             | List the user's connected calendars                       |
+| PATCH  | `/api/calendar/sources/{id}`                        | Enable/disable a calendar or change its colour            |
+| GET    | `/api/calendar/events`                              | Upcoming events from the user's connected calendars       |
+| GET    | `/api/calendar/events/suggestions`                  | Events not yet logged, offered as entry suggestions       |
+| POST   | `/api/calendar/events/suggestions/{eventId}/accept` | Turn a suggestion into an entry                           |
+| POST   | `/api/calendar/events/suggestions/{eventId}/reject` | Dismiss a suggestion                                      |
+
+UniLogs can read **more than one Google calendar** (lectures, tutorials,
+personal). Each calendar is a `CalendarSource` the user can enable, disable and
+colour from Settings; suggestions and events respect that choice. Google event
+IDs are only unique within a calendar, so suggestions key on calendar *and*
+event.
 
 ## Reminders and notifications
 
@@ -131,6 +169,16 @@ date). Entry content is validated against these definitions.
 | GET    | `/api/notifications`           | The notification feed        |
 | POST   | `/api/notifications/{id}/read` | Mark one notification read   |
 | POST   | `/api/notifications/read-all`  | Mark every notification read |
+
+## Deleted and trashed entries
+
+| Method | Path                       | What it does                                                        |
+| ------ | -------------------------- | ------------------------------------------------------------------- |
+| GET    | `/api/projects/{id}/trash` | List a project's deleted entries, ready to restore or review        |
+
+Deleted entries are soft-deleted (`Entry.deletedAt`): they vanish from normal
+reads, appear in the trash, and can be restored. This sprint ships **no
+permanent delete** — the record is hard to lose.
 
 ## Health
 
@@ -146,5 +194,11 @@ real Postgres database in CI. See [Testing Policy](/testing-policy).
 <AiDeclaration
   action="generated"
   tools="Claude-Code[Claude Opus 5.5]"
-  purpose="summarising the OpenAPI spec in backend/src/openapi.ts into an endpoint map grouped by resource"
+  purpose="writing a user-facing endpoint map from the OpenAPI spec in backend/src/openapi.ts"
+/>
+
+<AiDeclaration
+  action="edited"
+  tools="opencode[deepseek-v4-flash]"
+  purpose="bringing the page up to the Sprint 4 schema and endpoints (history/restore/trash, as-at, sync, stat-panels, dashboard layout, calendar sources) and matching the new OpenAPI tags"
 />
