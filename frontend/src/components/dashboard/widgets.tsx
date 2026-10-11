@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Link } from 'react-router-dom';
+import CountUp from '@/components/CountUp';
 import Skeleton from '@/components/Skeleton';
 import {
   ArrowDownRight,
@@ -102,7 +103,7 @@ export type DashboardCtx = {
 function WidgetSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className={CARD} aria-hidden>
-      <div className="mb-3 h-3 w-24 animate-pulse rounded bg-cream" />
+      <div className="mb-3 h-3 w-24 animate-pulse motion-reduce:animate-none rounded bg-cream" />
       <Skeleton rows={rows} />
     </div>
   );
@@ -1044,7 +1045,12 @@ export function StatPanelWidget({ panel, isLoading, isError }: StatPanelWidgetPr
         <p className="text-sm text-error">Couldn’t calculate this panel: {panel.error}</p>
       ) : hasValue ? (
         <div className="flex flex-col gap-3">
-          <p className="truncate text-4xl font-bold text-rail">{panelValue(panel)}</p>
+          <p className="truncate text-4xl font-bold text-rail">
+            <CountUp
+              value={panel.value as number}
+              format={(value) => formatStatValue(value, panel.expression, panel.fields)}
+            />
+          </p>
           <PanelSparkline series={panel.series} />
           <p className={`text-xs ${MUTED}`}>
             {entryWord(panel.sampleCount)} · Last {panel.rangeDays} days · {aggregation}
@@ -1088,6 +1094,11 @@ function WidgetFrameBase({
   onResize,
   children,
 }: FrameProps) {
+  // Drop-target highlight (#350). dragenter/dragleave also fire for every
+  // child the pointer crosses, so count them rather than toggling.
+  const [isOver, setIsOver] = useState(false);
+  const enterDepth = useRef(0);
+
   if (!customising) return <div>{children}</div>;
 
   const { id, size } = widget;
@@ -1118,11 +1129,24 @@ function WidgetFrameBase({
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
       }}
+      onDragEnter={() => {
+        enterDepth.current += 1;
+        setIsOver(true);
+      }}
+      onDragLeave={() => {
+        enterDepth.current = Math.max(0, enterDepth.current - 1);
+        if (enterDepth.current === 0) setIsOver(false);
+      }}
       onDrop={(event) => {
         event.preventDefault();
+        enterDepth.current = 0;
+        setIsOver(false);
         onDropOn(id, event);
       }}
-      className={`relative rounded-xl transition-opacity ${isDragging ? 'opacity-40' : ''}`}
+      // The dragged widget shrinks back; the one under the pointer lights up.
+      className={`relative rounded-xl transition-[opacity,transform,box-shadow] duration-150 ease-out motion-reduce:transition-none ${
+        isDragging ? 'scale-[0.98] opacity-40 motion-reduce:scale-100' : ''
+      } ${isOver && !isDragging ? 'ring-2 ring-gold ring-offset-4 ring-offset-canvas' : ''}`}
     >
       <div
         className="pointer-events-none absolute inset-0 z-10 rounded-xl border border-dashed border-clay"

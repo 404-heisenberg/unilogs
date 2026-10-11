@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
+import CountUp from '@/components/CountUp';
 import {
   AGGREGATION_OPTIONS,
   entryWord,
@@ -208,7 +209,11 @@ export function StatPanelCard({
       ) : hasValue ? (
         <>
           <p className="truncate text-2xl font-bold text-espresso">
-            ≈ {formatStatValue(panel.value as number, panel.expression, fields)}
+            ≈{' '}
+            <CountUp
+              value={panel.value as number}
+              format={(value) => formatStatValue(value, panel.expression, fields)}
+            />
           </p>
           <p className="text-[11px] text-cocoa">
             {aggregationLabel} · Last {panel.rangeDays} days · {entryWord(panel.sampleCount)}
@@ -255,7 +260,10 @@ export function SavedStatPanels({ projectId, fields, onEdit }: SectionProps) {
       </div>
 
       {panels.isPending && panels.fetchStatus !== 'idle' && (
-        <div aria-busy className="h-24 animate-pulse rounded-xl bg-cream/60" />
+        <div
+          aria-busy
+          className="h-24 animate-pulse motion-reduce:animate-none rounded-xl bg-cream/60"
+        />
       )}
       {panels.isError && <p className={`text-sm ${MUTED}`}>Couldn’t load saved panels.</p>}
       {panels.isSuccess && all.length === 0 && (

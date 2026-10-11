@@ -59,7 +59,8 @@ describe('SavedStatPanels', () => {
     renderSection();
 
     expect(await screen.findByText('Pages per hour')).toBeInTheDocument();
-    expect(screen.getByText(/≈ 12/)).toBeInTheDocument();
+    // The value counts up on first paint, so wait for it to settle.
+    expect(await screen.findByText(/≈ 12/, {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(/Last 30 days/)).toBeInTheDocument();
     expect(screen.getByText(/3 entries/)).toBeInTheDocument();
   });

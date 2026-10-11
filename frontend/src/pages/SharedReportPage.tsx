@@ -146,7 +146,7 @@ function Report({ report, token }: { report: SharedReport; token: string }) {
     `${BASE_URL}/share/${encodeURIComponent(token)}/export?format=${format}`;
 
   return (
-    <div className="min-h-screen bg-paper leading-normal text-espresso">
+    <div className="min-h-screen animate-content-in bg-paper leading-normal text-espresso motion-reduce:animate-none">
       <header className="border-b border-explorer">
         <div className="mx-auto flex h-14 max-w-[960px] items-center justify-between gap-2 px-4 md:px-0">
           <Logo />

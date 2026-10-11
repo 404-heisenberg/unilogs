@@ -15,7 +15,10 @@ export default function Skeleton({
   return (
     <div aria-hidden className={`flex flex-col gap-2 ${className}`}>
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className={`animate-pulse rounded bg-cream ${barClassName}`} />
+        <div
+          key={index}
+          className={`animate-pulse motion-reduce:animate-none rounded bg-cream ${barClassName}`}
+        />
       ))}
     </div>
   );

@@ -142,6 +142,7 @@ export default function EntriesAsAtPage() {
                     <EntryCard
                       key={entry.id}
                       entry={entry}
+                      index={index}
                       projectName={entry.project.name}
                       readOnly
                       // A day's odd last card spans both columns, as on the

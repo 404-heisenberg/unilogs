@@ -141,7 +141,10 @@ export default function TagsSettings() {
         {tagsQuery.isPending && (
           <div className="flex flex-col gap-2 p-4" aria-hidden>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-9 animate-pulse rounded-md bg-sand" />
+              <div
+                key={i}
+                className="h-9 animate-pulse motion-reduce:animate-none rounded-md bg-sand"
+              />
             ))}
           </div>
         )}

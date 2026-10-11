@@ -12,6 +12,7 @@ import {
 } from '@/lib/project-workspace';
 import type { Project } from '@/types';
 import { toast } from '@/lib/toast';
+import { CARD_IN, staggerDelay } from '@/lib/motion';
 
 function entryCount(count: number) {
   return `${count} ${count === 1 ? 'entry' : 'entries'}`;
@@ -23,11 +24,13 @@ function ProjectCard({
   today,
   archivedView,
   wide,
+  index,
   onUnarchive,
   isUnarchiving,
 }: {
   project: Project;
   wide: boolean;
+  index: number;
   summary: ProjectSummary | undefined;
   today: string;
   archivedView: boolean;
@@ -44,7 +47,8 @@ function ProjectCard({
 
   return (
     <li
-      className={`relative flex flex-col gap-2.5 rounded-xl border border-cream bg-paper p-4 transition-shadow hover:shadow-md md:gap-4 md:border-line md:p-5 ${wide ? 'md:col-span-2' : ''}`}
+      style={staggerDelay(index)}
+      className={`relative flex flex-col gap-2.5 rounded-xl border border-cream bg-paper p-4 transition-shadow hover:shadow-md motion-reduce:transition-none md:gap-4 md:border-line md:p-5 ${CARD_IN} ${wide ? 'md:col-span-2' : ''}`}
     >
       <div className="flex items-center gap-2">
         <span
@@ -150,7 +154,10 @@ export default function ProjectsPage() {
       {isPending && (
         <div className="grid gap-3 md:grid-cols-2 md:gap-5">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-cream md:h-40" />
+            <div
+              key={i}
+              className="h-28 animate-pulse motion-reduce:animate-none rounded-xl bg-cream md:h-40"
+            />
           ))}
         </div>
       )}
@@ -184,6 +191,7 @@ export default function ProjectsPage() {
             <ProjectCard
               key={project.id}
               project={project}
+              index={index}
               // An odd last card spans both columns, as in the Figma grid.
               wide={index === list.length - 1 && list.length % 2 === 1}
               summary={summaries[index]?.data}

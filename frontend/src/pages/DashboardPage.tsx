@@ -30,6 +30,8 @@ const DORMANT_AFTER_DAYS = 7;
 // rather than breaking out keeps the dashboard from showing a visible seam
 // against the rest of the app.
 const PAGE = '';
+// Loaded content fades in over the skeleton it replaces (#350).
+const CONTENT_IN = 'animate-content-in motion-reduce:animate-none';
 
 export default function DashboardPage() {
   const session = useSession();
@@ -189,12 +191,12 @@ export default function DashboardPage() {
     return (
       <div className={PAGE}>
         <div className="mx-auto flex max-w-6xl flex-col gap-4">
-          <div className="h-8 w-48 animate-pulse rounded bg-cream" />
-          <div className="h-12 animate-pulse rounded-xl bg-cream" />
-          <div className="h-44 animate-pulse rounded-xl bg-cream" />
+          <div className="h-8 w-48 animate-pulse motion-reduce:animate-none rounded bg-cream" />
+          <div className="h-12 animate-pulse motion-reduce:animate-none rounded-xl bg-cream" />
+          <div className="h-44 animate-pulse motion-reduce:animate-none rounded-xl bg-cream" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="h-40 animate-pulse rounded-xl bg-cream" />
-            <div className="h-40 animate-pulse rounded-xl bg-cream" />
+            <div className="h-40 animate-pulse motion-reduce:animate-none rounded-xl bg-cream" />
+            <div className="h-40 animate-pulse motion-reduce:animate-none rounded-xl bg-cream" />
           </div>
         </div>
       </div>
@@ -214,7 +216,7 @@ export default function DashboardPage() {
 
   if (!hasEntries) {
     return (
-      <div className={PAGE}>
+      <div className={`${PAGE} ${CONTENT_IN}`}>
         <div className="mx-auto flex max-w-6xl flex-col">
           {/* Figma's empty-state frames have no page header. */}
           <h1 className="sr-only">Dashboard</h1>
@@ -225,7 +227,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={PAGE}>
+    <div className={`${PAGE} ${CONTENT_IN}`}>
       <div className="mx-auto max-w-6xl">
         <header className="flex items-start justify-between gap-4 md:mb-8">
           <div>
