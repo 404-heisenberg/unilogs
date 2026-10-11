@@ -91,7 +91,19 @@ export function normaliseInsights(raw: unknown): Insight[] {
   return [];
 }
 
-export function insightDisplay(insight: Insight): { value: string; sub: string } {
+export type InsightShare = { value: string; count: number };
+
+export type InsightDisplay = {
+  value: string;
+  sub: string;
+  /** A text field's most common answers, for Figma's stacked mood bar. */
+  distribution?: InsightShare[];
+};
+
+// Values arrive in the shapes `buildFieldInsights` produces (the same as the
+// project workspace): durations in minutes, numbers as { total, average },
+// text as { top }, yes/no as { pctTrue } and dates as { mostRecent }.
+export function insightDisplay(insight: Insight): InsightDisplay {
   if (insight.hasData === false) return { value: '—', sub: 'No data yet' };
 
   const count = entriesLabel(insight.sampleCount);
@@ -114,6 +126,25 @@ export function insightDisplay(insight: Insight): { value: string; sub: string }
 
   if (value && typeof value === 'object') {
     const record = value as Record<string, unknown>;
+    if (Array.isArray(record.top) && record.top.length > 0) {
+      const top = record.top as InsightShare[];
+      const first = top[0];
+      return {
+        value: top.length > 1 && first.count > 1 ? `Mostly ${first.value}` : first.value,
+        sub: count,
+        ...(top.length > 1 ? { distribution: top } : {}),
+      };
+    }
+    if (typeof record.pctTrue === 'number') {
+      const trueCount = Math.round((record.pctTrue / 100) * insight.sampleCount);
+      return {
+        value: `${Math.round(record.pctTrue)}%`,
+        sub: `${trueCount} of ${count}`,
+      };
+    }
+    if (typeof record.mostRecent === 'string') {
+      return { value: shortDate(dayKey(record.mostRecent)), sub: count };
+    }
     if (
       typeof record.trueCount === 'number' &&
       typeof record.total === 'number' &&

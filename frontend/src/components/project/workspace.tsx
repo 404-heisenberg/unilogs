@@ -18,13 +18,13 @@ import { formatRelativeTime } from '@/lib/time';
 import {
   ArrowDownRight,
   ArrowUpRight,
+  BookOpen,
   CalendarDays,
   CircleCheck,
   Clock,
   FileText,
-  Hash,
+  Smile,
   TrendingUp,
-  Type,
   Trash2,
 } from 'lucide-react';
 import { FIELD_TYPES, type FieldType } from '@/lib/field-types';
@@ -75,10 +75,11 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'fields', label: 'Fields' },
 ];
 
+// Figma 21:5: a book for numbers (Pages read), a smile for text (Mood).
 const INSIGHT_ICONS: Record<FieldType, typeof Clock> = {
   duration: Clock,
-  number: Hash,
-  text: Type,
+  number: BookOpen,
+  text: Smile,
   boolean: CircleCheck,
   date: CalendarDays,
 };
@@ -109,7 +110,7 @@ export function TabBar({ tab, onChange }: { tab: TabId; onChange: (tab: TabId) =
           aria-selected={tab === id}
           aria-controls={`panel-${id}`}
           onClick={() => onChange(id)}
-          className={`-mb-px min-h-11 flex-1 border-b-2 px-1 pb-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-gold md:min-h-0 md:flex-none ${
+          className={`-mb-px min-h-11 flex-1 border-b-2 px-1 pb-2 text-[13px] transition-colors md:text-sm focus-visible:outline-2 focus-visible:outline-gold md:min-h-0 md:flex-none ${
             tab === id
               ? 'border-gold font-bold text-espresso'
               : `border-transparent ${MUTED} hover:text-espresso`
@@ -159,19 +160,22 @@ function SummaryCards({ summary, today }: { summary: ProjectSummary | undefined;
   ];
 
   return (
-    <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    // Mobile (Figma 21:172): compact 10px-radius cards, title-case labels, no
+    // icons, every value Bold 18. Desktop (21:5): uppercase labels with icons.
+    <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
       {cards.map(({ label, value, Icon, numeric }) => (
-        <div key={label} className={`${CARD} p-4`}>
+        <div
+          key={label}
+          className="flex flex-col gap-1 rounded-[10px] border border-cream bg-paper p-2.5 lg:block lg:rounded-xl lg:p-4"
+        >
           <div className="flex items-center justify-between">
-            <dt className={LABEL}>{label}</dt>
-            <Icon className="size-4.5 text-cocoa" strokeWidth={1.75} aria-hidden />
+            <dt className="text-[11px] text-clay capitalize lg:font-bold lg:uppercase">{label}</dt>
+            <Icon className="hidden size-4.5 text-cocoa lg:block" strokeWidth={1.75} aria-hidden />
           </div>
           <dd
             title={value}
-            className={`mt-2 truncate ${
-              numeric
-                ? 'text-[28px] leading-9 font-bold text-espresso'
-                : 'text-lg leading-8 font-semibold text-espresso'
+            className={`truncate text-lg font-bold text-espresso lg:mt-2 ${
+              numeric ? 'lg:text-[28px] lg:leading-9' : 'lg:leading-8 lg:font-semibold'
             }`}
           >
             {value}
@@ -232,15 +236,11 @@ function InsightCard({ insight }: { insight: FieldInsight }) {
       ) : (
         <>
           <p className="mt-1.5 truncate text-2xl font-bold text-espresso">{insight.value}</p>
-          <p
-            className={`mt-1 flex items-center gap-1 text-[11px] ${
-              insight.trend === 'up' ? 'text-success' : 'text-cocoa'
-            }`}
-          >
+          <p className="mt-1 flex items-center gap-1 text-[11px] text-cocoa">
             {insight.sub}
             {insight.trend && (
               <TrendIcon
-                className="h-3 w-3"
+                className={`size-3 ${insight.trend === 'up' ? 'text-success' : 'text-error'}`}
                 strokeWidth={2}
                 aria-label={insight.trend === 'up' ? 'Trending up' : 'Trending down'}
               />
@@ -422,11 +422,12 @@ function RecentlyDeleted({
 }) {
   return (
     <section aria-labelledby="recently-deleted-heading">
-      <div className="mb-4">
+      {/* Figma 21:5: the accent line sits at the right end of the heading row. */}
+      <div className="mb-4 flex items-center justify-between gap-3">
         <h2 id="recently-deleted-heading" className={SECTION_HEADING}>
           Recently deleted
         </h2>
-        <span className="mt-1 block h-1 w-12 rounded-sm bg-gold-light" aria-hidden />
+        <span className="block h-1 w-12 rounded-sm bg-gold-light" aria-hidden />
       </div>
       {isLoading && <Skeleton rows={2} />}
       {isError && <ErrorNote>Failed to load deleted entries. Try refreshing the page.</ErrorNote>}
@@ -455,7 +456,7 @@ function RecentlyDeleted({
                 type="button"
                 onClick={() => onRestore(entry)}
                 disabled={restoringId === entry.id}
-                className={`${DARK_BUTTON} shrink-0 bg-gold text-espresso hover:bg-gold-light`}
+                className="inline-flex min-h-11 shrink-0 items-center rounded-xl border border-gold px-3 text-[13px] leading-[18px] font-medium text-gold transition-colors hover:bg-gold-light disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold md:min-h-8"
               >
                 {restoringId === entry.id ? 'Restoring…' : 'Restore'}
               </button>
@@ -807,7 +808,7 @@ function FieldRow({ field, actions }: { field: FieldDefinition; actions: FieldAc
   return (
     <li className="flex flex-wrap items-center gap-3 border-b border-cream py-2.5 last:border-b-0">
       <span className="min-w-[8rem] flex-1 truncate text-sm text-espresso">{field.name}</span>
-      <span className="w-24 rounded bg-cream py-1 text-center text-[11px] text-cocoa">
+      <span className="w-[120px] rounded bg-cream py-1 text-center text-xs text-cocoa">
         {FIELD_TYPE_LABELS[fieldType]}
       </span>
       {aggregatable && (
@@ -898,10 +899,10 @@ export function FieldsTab({
           {/* Figma's table header; rows below line up with it. */}
           <div
             aria-hidden
-            className={`hidden gap-3 border-b border-cream pb-2 sm:flex ${LABEL} normal-case`}
+            className="hidden gap-3 border-b border-cream pb-2 text-[11px] font-semibold text-clay sm:flex"
           >
             <span className="flex-1">Name</span>
-            <span className="w-24 text-center">Type</span>
+            <span className="w-[120px]">Type</span>
             <span className="w-24 text-center">Insight</span>
             <span className="w-24">Actions</span>
           </div>
@@ -914,7 +915,8 @@ export function FieldsTab({
       )}
 
       <form onSubmit={submit} className="mt-6 flex flex-wrap items-center gap-2">
-        <div className="min-w-[10rem] flex-1 sm:max-w-52">
+        {/* Figma 31:666: a 200px name input, a 140px type select. */}
+        <div className="min-w-[10rem] flex-1 sm:w-[200px] sm:flex-none">
           <label htmlFor="new-field-name" className="sr-only">
             Field name
           </label>
@@ -924,7 +926,7 @@ export function FieldsTab({
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
             placeholder="Field name"
-            className={INPUT}
+            className={`${INPUT} min-h-9 py-1.5`}
             required
           />
         </div>
@@ -936,7 +938,7 @@ export function FieldsTab({
             id="new-field-type"
             value={newType}
             onChange={(event) => setNewType(event.target.value as FieldType)}
-            className={`${INPUT} w-auto`}
+            className={`${INPUT} min-h-9 py-1.5 sm:w-[140px]`}
           >
             {FIELD_TYPES.map((option) => (
               <option key={option} value={option}>
@@ -945,7 +947,11 @@ export function FieldsTab({
             ))}
           </select>
         </div>
-        <button type="submit" disabled={actions.creating} className={DARK_BUTTON}>
+        <button
+          type="submit"
+          disabled={actions.creating}
+          className={`${DARK_BUTTON} ml-1 font-medium`}
+        >
           {actions.creating ? 'Adding…' : 'Add field'}
         </button>
       </form>
@@ -987,7 +993,9 @@ export function MetadataPanel({
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-xs font-bold text-clay uppercase">Metadata</p>
+      <p className="flex min-h-8 items-center text-xs font-bold text-clay uppercase lg:pr-10">
+        Metadata
+      </p>
       <div>
         <p className="flex items-center gap-2 text-lg font-bold text-espresso">
           <span

@@ -63,6 +63,7 @@ function SourceRow({ source }: { source: CalendarSource }) {
         onCheckedChange={(checked) => toggle.mutate(checked)}
         disabled={toggle.isPending}
         aria-label={`Use the ${source.summary} calendar`}
+        size="lg"
         className="data-checked:bg-gold"
       />
     </div>

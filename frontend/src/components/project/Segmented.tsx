@@ -12,10 +12,11 @@ export default function Segmented<T extends string>({
   onChange,
 }: SegmentedProps<T>) {
   return (
+    // Figma 21:172: a sand pill track with the chosen option in gold.
     <div
       role="radiogroup"
       aria-label={label}
-      className="flex overflow-hidden rounded-lg border border-line bg-white"
+      className="flex w-fit gap-0.5 rounded-full border border-line bg-sand p-0.5"
     >
       {options.map((option) => {
         const selected = option.value === value;
@@ -26,8 +27,8 @@ export default function Segmented<T extends string>({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option.value)}
-            className={`min-h-9 flex-1 px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold ${
-              selected ? 'bg-gold text-espresso' : 'text-espresso hover:bg-cream'
+            className={`min-h-9 rounded-full px-3.5 text-[13px] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-gold ${
+              selected ? 'bg-gold font-bold text-rail' : 'font-medium text-clay hover:bg-cream'
             }`}
           >
             {option.label}

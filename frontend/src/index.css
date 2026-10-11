@@ -182,14 +182,57 @@
   }
 }
 
-/* Figma's notebook paper (landing and auth pages): faint ruled lines every
-   32px. */
+/* Figma's notebook paper. Each frame rules its lines differently, so each
+   gets its own utility, with lines at the exact offsets the frames use:
+   landing desktop every 32px from y 30, landing mobile every 24px from y 22,
+   and the auth pages every 28px from y 24 in a darker brown. */
 @utility paper-ruled {
   background-color: var(--color-cream);
   background-image: repeating-linear-gradient(
     to bottom,
-    transparent 0 31px,
-    rgb(183 169 156 / 0.45) 31px 32px
+    transparent 0 30px,
+    rgb(183 169 156 / 0.23) 30px 31px,
+    transparent 31px 32px
+  );
+}
+
+@utility paper-ruled-compact {
+  background-color: var(--color-cream);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 22px,
+    rgb(183 169 156 / 0.23) 22px 23px,
+    transparent 23px 24px
+  );
+}
+
+/* Sign-up's paper: lines every 32px from y 0, warmer and lighter. */
+@utility paper-ruled-signup {
+  background-color: var(--color-cream);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(205 189 170 / 0.34) 0 1px,
+    transparent 1px 32px
+  );
+}
+
+/* Sign-up on mobile: every 30px. */
+@utility paper-ruled-signup-compact {
+  background-color: var(--color-cream);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(205 189 170 / 0.34) 0 1px,
+    transparent 1px 30px
+  );
+}
+
+@utility paper-ruled-auth {
+  background-color: var(--color-cream);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 24px,
+    rgb(122 82 48 / 0.12) 24px 25px,
+    transparent 25px 28px
   );
 }
 

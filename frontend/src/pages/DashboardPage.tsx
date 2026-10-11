@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, FileText, Plus } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 import { AddWidgetTray, DashboardGrid, type DashboardCtx } from '@/components/dashboard/widgets';
 import { useSession } from '@/hooks/useSession';
 import { api, listAllStatPanels } from '@/lib/api';
@@ -215,11 +215,9 @@ export default function DashboardPage() {
   if (!hasEntries) {
     return (
       <div className={PAGE}>
-        <div className="mx-auto flex max-w-6xl flex-col gap-6">
-          <div>
-            <h1 className="sr-only text-[28px] font-bold md:not-sr-only">Dashboard</h1>
-            <p className={`mt-1 hidden text-sm md:block ${MUTED}`}>{formatLongDate(today)}</p>
-          </div>
+        <div className="mx-auto flex max-w-6xl flex-col">
+          {/* Figma's empty-state frames have no page header. */}
+          <h1 className="sr-only">Dashboard</h1>
           <FirstRun hasProjects={(projects.data?.length ?? 0) > 0} />
         </div>
       </div>
@@ -239,10 +237,19 @@ export default function DashboardPage() {
           <div className="hidden items-center gap-2 md:flex">
             {customising ? (
               <>
-                <button type="button" onClick={reset} className={TEXT_BUTTON}>
+                {/* Figma 81:4: 14px semibold clay text, then a gold 8px-radius button. */}
+                <button
+                  type="button"
+                  onClick={reset}
+                  className={`${TEXT_BUTTON} px-4 py-3 text-sm`}
+                >
                   Reset to default
                 </button>
-                <button type="button" onClick={() => setCustomising(false)} className={GOLD_BUTTON}>
+                <button
+                  type="button"
+                  onClick={() => setCustomising(false)}
+                  className={`${GOLD_BUTTON} rounded-lg px-6 py-3 text-paper`}
+                >
                   Done
                 </button>
               </>
@@ -306,39 +313,89 @@ export default function DashboardPage() {
 
 const FIRST_RUN_STEPS = ['Create a project', 'Define fields', 'Log your first entry'];
 
-// Figma "Dashboard — Empty State": a centred setup prompt. With no projects
-// the first step is highlighted; once a project exists, the last one is.
+function Steps({ current, className }: { current: number; className: string }) {
+  return (
+    <ol className={`flex flex-wrap items-center justify-center gap-2 ${className}`}>
+      {FIRST_RUN_STEPS.map((step, index) => (
+        <li key={step} className="flex items-center gap-2">
+          {index > 0 && (
+            <span className="font-normal text-[#b29473] md:text-clay" aria-hidden>
+              →
+            </span>
+          )}
+          <span className={index === current ? 'md:font-semibold' : 'md:font-normal'}>
+            {index + 1}. {step}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+// Figma "Dashboard — Empty State" (17:276 desktop, 37:788 mobile): a centred
+// setup prompt. With no projects the first step is highlighted; once a
+// project exists, the last one is (no frame for that state, same styling).
 function FirstRun({ hasProjects }: { hasProjects: boolean }) {
   const current = hasProjects ? 2 : 0;
+  const action = (
+    <Link
+      to={hasProjects ? '/entries/new' : '/projects/new'}
+      className="inline-flex items-center rounded-lg bg-espresso px-5 py-3 text-[15px] font-medium text-cream transition-opacity hover:opacity-90 md:px-6 md:text-sm md:font-semibold"
+    >
+      {hasProjects ? 'Log entry' : 'Create project'}
+    </Link>
+  );
+
+  // Centred between the mobile top bar (56px), bottom nav (64px) and page padding.
   return (
-    <div className="flex flex-col items-center px-4 py-16 text-center md:py-32">
-      <div className="mb-5 flex size-16 items-center justify-center rounded-full bg-cream">
-        <FileText className="size-7 text-cocoa" strokeWidth={1.5} aria-hidden />
+    <div className="flex min-h-[calc(100dvh-152px)] flex-col items-center justify-center text-center md:min-h-[calc(100dvh-6rem)]">
+      {/* Mobile */}
+      <div className="flex flex-col items-center gap-3 md:hidden">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-cream" aria-hidden>
+          <span className="h-7 w-6 rounded-[3px] border-[1.5px] border-clay" />
+        </div>
+        <p className="text-xl font-bold text-espresso">
+          {hasProjects ? 'Log your first entry' : 'No projects yet'}
+        </p>
+        {!hasProjects && (
+          <p className="text-[15px] font-medium text-clay">Set up your first project</p>
+        )}
+        <p className="text-sm leading-normal text-[#99734d]">
+          {hasProjects ? (
+            'Your hours, streak and activity will show up here once you log something.'
+          ) : (
+            <>
+              Create a project, define its fields,
+              <br />
+              and log your first entry.
+            </>
+          )}
+        </p>
+        <Steps
+          current={current}
+          className="flex-nowrap pt-2 text-[11px] font-medium whitespace-nowrap text-clay"
+        />
+        <div className="mt-1">{action}</div>
       </div>
-      <p className="text-xl font-bold text-espresso">
-        {hasProjects ? 'Log your first entry' : 'Set up your first project'}
-      </p>
-      <p className="mt-2 max-w-sm text-[13px] text-cocoa">
-        {hasProjects
-          ? 'Your hours, streak and activity will show up here once you log something.'
-          : 'Create a project, define its fields, and log your first entry.'}
-      </p>
-      <Link
-        to={hasProjects ? '/entries/new' : '/projects/new'}
-        className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-espresso px-5 text-sm font-semibold text-cream transition-opacity hover:opacity-90 md:min-h-10"
-      >
-        {hasProjects ? 'Log entry' : 'Create project'}
-      </Link>
-      <ol className="mt-8 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-clay">
-        {FIRST_RUN_STEPS.map((step, index) => (
-          <li key={step} className="flex items-center gap-2">
-            {index > 0 && <ArrowRight className="size-3" aria-hidden />}
-            <span className={index === current ? 'font-semibold text-espresso' : ''}>
-              {index + 1}. {step}
-            </span>
-          </li>
-        ))}
-      </ol>
+
+      {/* Desktop */}
+      <div className="hidden w-[520px] max-w-full flex-col items-center gap-7 md:flex">
+        <div className="flex size-20 items-center justify-center rounded-full bg-cream">
+          <FileText className="size-9 text-cocoa" strokeWidth={1.5} aria-hidden />
+        </div>
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-2xl font-bold text-espresso">
+            {hasProjects ? 'Log your first entry' : 'Set up your first project'}
+          </p>
+          <p className="text-[15px] leading-[22px] text-cocoa">
+            {hasProjects
+              ? 'Your hours, streak and activity will show up here once you log something.'
+              : 'Create a project, define its fields, and log your first entry.'}
+          </p>
+        </div>
+        {action}
+        <Steps current={current} className="pt-4 text-xs text-clay" />
+      </div>
     </div>
   );
 }

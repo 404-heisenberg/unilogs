@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, CalendarDays, ChevronRight } from 'lucide-react';
 import Skeleton from '@/components/Skeleton';
 import { useNotifications } from '@/hooks/useNotifications';
+import { projectColor } from '@/lib/colors';
 import { formatRelativeTime } from '@/lib/time';
 import type { Notification } from '@/types';
 
@@ -22,10 +23,18 @@ function NotificationRow({
         unread ? 'bg-sand' : 'hover:bg-sand/50'
       }`}
     >
-      <span
-        className={`mt-1 size-[8px] shrink-0 rounded-full ${unread ? 'bg-gold' : 'bg-transparent'}`}
-        aria-hidden
-      />
+      {/* Figma 103:284: a project reminder is marked with the project's
+          colour, anything else (summaries) with a calendar; read or not. */}
+      <span className="flex w-3.5 shrink-0 justify-start pt-1" aria-hidden>
+        {notification.projectId !== null ? (
+          <span
+            className="size-2 rounded-full"
+            style={{ backgroundColor: projectColor(notification.projectId) }}
+          />
+        ) : (
+          <CalendarDays className="size-3.5 text-clay" strokeWidth={1.75} />
+        )}
+      </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-semibold text-espresso">
           {notification.title}
@@ -54,7 +63,7 @@ export default function NotificationList({ onNavigate }: { onNavigate?: () => vo
             type="button"
             onClick={() => markAllRead.mutate()}
             disabled={markAllRead.isPending}
-            className="text-xs text-clay hover:text-espresso disabled:opacity-50"
+            className="text-xs font-semibold text-clay hover:text-espresso disabled:opacity-50"
           >
             Mark all read
           </button>
@@ -91,8 +100,9 @@ export default function NotificationList({ onNavigate }: { onNavigate?: () => vo
       <Link
         to="/settings?tab=app"
         onClick={onNavigate}
-        className="px-4 py-3 text-xs font-semibold text-clay hover:text-espresso"
+        className="flex items-center gap-1.5 px-4 py-3 text-xs font-semibold text-clay hover:text-espresso"
       >
+        <ChevronRight className="size-3.5" strokeWidth={1.75} aria-hidden />
         Notification settings
       </Link>
     </div>

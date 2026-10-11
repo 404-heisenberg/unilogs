@@ -1,6 +1,23 @@
 import { prisma } from '../lib/prisma.js';
 import { TERMS } from '../config/terms.js';
 
+// Monday-to-Sunday (UTC) weeks covering `first` through `last`. getUTCDay()
+// is 0 on a Sunday, so a Sunday counts as day 7 of its week rather than the
+// day before the next Monday.
+export function weekRange(first: Date, last: Date): { start: Date; end: Date } {
+  const daysSinceMonday = (date: Date) => (date.getUTCDay() + 6) % 7;
+
+  const start = new Date(first);
+  start.setUTCDate(start.getUTCDate() - daysSinceMonday(start));
+  start.setUTCHours(0, 0, 0, 0);
+
+  const end = new Date(last);
+  end.setUTCDate(end.getUTCDate() + (6 - daysSinceMonday(end)));
+  end.setUTCHours(23, 59, 59, 999);
+
+  return { start, end };
+}
+
 export async function getUserDateRange(userId: string): Promise<{ start: Date; end: Date }> {
   const firstEntry = await prisma.entry.findFirst({
     where: { project: { userId, archived: false } },
@@ -8,17 +25,8 @@ export async function getUserDateRange(userId: string): Promise<{ start: Date; e
     select: { date: true },
   });
 
-  const start = firstEntry ? new Date(firstEntry.date) : new Date();
-  const startOfWeek = new Date(start);
-  startOfWeek.setUTCDate(startOfWeek.getUTCDate() - startOfWeek.getUTCDay() + 1);
-  startOfWeek.setUTCHours(0, 0, 0, 0);
-
-  const end = new Date();
-  const endOfWeek = new Date(end);
-  endOfWeek.setUTCDate(endOfWeek.getUTCDate() + (7 - endOfWeek.getUTCDay()));
-  endOfWeek.setUTCHours(23, 59, 59, 999);
-
-  return { start: startOfWeek, end: endOfWeek };
+  const now = new Date();
+  return weekRange(firstEntry ? new Date(firstEntry.date) : now, now);
 }
 
 export async function getWeeklyEntryCounts(

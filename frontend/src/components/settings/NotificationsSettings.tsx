@@ -28,6 +28,7 @@ function ComingSoonRow({ title, description }: { title: string; description: str
         checked={false}
         disabled
         aria-label={`${title} (coming soon)`}
+        size="lg"
         className="data-checked:bg-gold"
       />
     </div>
@@ -143,6 +144,7 @@ export default function NotificationsSettings() {
               onCheckedChange={(checked) => updateSettings.mutate({ remindersEnabled: checked })}
               disabled={updateSettings.isPending}
               aria-label="All notifications"
+              size="lg"
               className="data-checked:bg-gold"
             />
           )}

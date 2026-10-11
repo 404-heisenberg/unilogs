@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { getGoogleOAuthErrorMessage } from '@/lib/oauthErrors';
@@ -10,6 +11,7 @@ import { BACK_TO_HOME, BACK_TO_SIGN_IN, useCameFrom } from '@/lib/authFlow';
 
 export const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -89,197 +91,198 @@ export const SignupPage: React.FC = () => {
 
   return (
     <AuthLayout variant="lora" back={cameFrom === 'login' ? BACK_TO_SIGN_IN : BACK_TO_HOME}>
-      <form className="flex w-full flex-col gap-4 md:max-w-[400px]" onSubmit={handleSubmit}>
-        {/* Scaled-Up Header */}
-        <h2 className="font-lora text-3xl font-semibold md:text-[34px]">Create an account</h2>
+      {/* Figma "Sign Up — Desktop" (521:686): a 14px stack holding a 12px
+          field group, each field a 72px block (label, 6px, 48px input), the
+          password rules 8px under the password field. */}
+      <form
+        className="flex w-full flex-col gap-2 md:max-w-[400px] md:gap-3.5"
+        onSubmit={handleSubmit}
+      >
+        <h2 className="font-lora text-3xl leading-[34px] font-semibold md:text-[34px] md:leading-[42px] md:tracking-[-0.7px]">
+          Create an account
+        </h2>
 
-        <label htmlFor="name" className="text-sm font-semibold">
-          Name<span className="ml-0.5">*</span>
-        </label>
-        <input
-          id="name"
-          type="text"
-          placeholder="John Doe"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full min-h-12 rounded-lg border border-cream bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 focus:ring-espresso"
-        />
+        {/* Mobile (521:784) packs tighter: 6px between fields, 4px to the rules. */}
+        <div className="flex flex-col gap-1.5 md:gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="name" className="text-[13px] leading-[18px] font-medium">
+              Name *
+            </label>
+            <input
+              id="name"
+              type="text"
+              placeholder="John Doe"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full min-h-12 rounded-lg border bg-paper px-4 text-[15px] text-espresso placeholder:text-caramel outline-none focus:ring-2 border-cream focus:ring-espresso"
+            />
+          </div>
 
-        <label htmlFor="email" className="text-sm font-semibold">
-          Email<span className="ml-0.5">*</span>
-        </label>
-        <input
-          id="email"
-          type="email"
-          placeholder="name@example.com"
-          required
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            if (emailError) setEmailError(null);
-          }}
-          onBlur={() => setEmailError(getEmailError(email))}
-          className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-sm text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
-            emailError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
-          }`}
-        />
-        {emailError && <p className="text-xs text-error">{emailError}</p>}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="email" className="text-[13px] leading-[18px] font-medium">
+              Email *
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              required
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
+              onBlur={() => setEmailError(getEmailError(email))}
+              className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-[15px] text-espresso placeholder:text-caramel outline-none focus:ring-2 ${
+                emailError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
+              }`}
+            />
+            {emailError && <p className="text-xs text-error">{emailError}</p>}
+          </div>
 
-        <label htmlFor="password" className="text-sm font-semibold">
-          Password<span className="ml-0.5">*</span>
-        </label>
-        <article className="relative w-full">
-          <input
-            id="password"
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setShowValidationError(false);
-              setShowMismatchError(false);
-            }}
-            onFocus={() => setIsPasswordFocused(true)}
-            onBlur={() => setIsPasswordFocused(false)}
-            placeholder="••••••••"
-            required
-            className={`w-full rounded-md border bg-white p-3 pr-12 text-espresso outline-none focus:ring-2 ${
-              showValidationError
-                ? 'border-error focus:ring-error'
-                : 'border-cream focus:ring-espresso'
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-clay hover:text-espresso focus:outline-none cursor-pointer"
-          >
-            {showPassword ? (
-              /* Eye Off Icon */
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.04 10.04 0 012.122-.063c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21m-4.225-4.225L3 3"
+          <div className="flex flex-col gap-1 md:gap-2">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-[13px] leading-[18px] font-medium">
+                Password *
+              </label>
+              <div className="relative w-full">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setShowValidationError(false);
+                    setShowMismatchError(false);
+                  }}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
+                  placeholder="••••••••"
+                  required
+                  className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-[15px] text-espresso placeholder:text-caramel outline-none focus:ring-2 pr-12 ${
+                    showValidationError
+                      ? 'border-error focus:ring-error'
+                      : 'border-cream focus:ring-espresso'
+                  }`}
                 />
-              </svg>
-            ) : (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-              </svg>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute top-1/2 right-0.5 flex size-11 -translate-y-1/2 cursor-pointer items-center justify-center text-cocoa hover:text-espresso focus:outline-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-[18px]" strokeWidth={1.75} aria-hidden />
+                  ) : (
+                    <Eye className="size-[18px]" strokeWidth={1.75} aria-hidden />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {shouldShowRequirements && (
+              <ul className="flex flex-col gap-px text-xs md:gap-[3px]">
+                {[
+                  [hasMinLength, 'At least 8 characters'],
+                  [hasUppercase, 'At least one uppercase letter (A-Z)'],
+                  [hasNumber, 'At least one number (0-9)'],
+                  [hasSpecialChar, 'At least one special character (!@#$%^&*)'],
+                ].map(([met, rule]) => (
+                  <li key={rule as string} className="flex items-center gap-[7px]">
+                    <span
+                      className={`w-3 font-bold ${met ? 'text-success' : 'text-error'}`}
+                      aria-hidden
+                    >
+                      {met ? '✓' : '•'}
+                    </span>
+                    <span
+                      className={`leading-[14px] md:leading-4 ${met ? 'text-[#66564b]' : 'text-error'}`}
+                    >
+                      {rule}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
-          </button>
-        </article>
+          </div>
 
-        <label htmlFor="confirm-password" className="text-sm font-semibold">
-          Confirm Password<span className="ml-0.5">*</span>
-        </label>
-        <input
-          id="confirm-password"
-          type={showPassword ? 'text' : 'password'}
-          placeholder="••••••••"
-          required
-          value={confirmPassword}
-          onChange={(e) => {
-            setConfirmPassword(e.target.value);
-            setShowMismatchError(false);
-          }}
-          className={`w-full rounded-md border bg-white p-3 pr-10 text-espresso outline-none focus:ring-2 ${
-            showMismatchError ? 'border-error focus:ring-error' : 'border-cream focus:ring-espresso'
-          }`}
-        />
-        {showMismatchError && <p className="text-xs text-error">Passwords do not match.</p>}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="confirm-password" className="text-[13px] leading-[18px] font-medium">
+              Confirm Password *
+            </label>
+            <div className="relative w-full">
+              <input
+                id="confirm-password"
+                type={showConfirm ? 'text' : 'password'}
+                placeholder="••••••••"
+                required
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setShowMismatchError(false);
+                }}
+                className={`w-full min-h-12 rounded-lg border bg-paper px-4 text-[15px] text-espresso placeholder:text-caramel outline-none focus:ring-2 pr-12 ${
+                  showMismatchError
+                    ? 'border-error focus:ring-error'
+                    : 'border-cream focus:ring-espresso'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                aria-label={showConfirm ? 'Hide confirmed password' : 'Show confirmed password'}
+                className="absolute top-1/2 right-0.5 flex size-11 -translate-y-1/2 cursor-pointer items-center justify-center text-cocoa hover:text-espresso focus:outline-none"
+              >
+                {showConfirm ? (
+                  <EyeOff className="size-[18px]" strokeWidth={1.75} aria-hidden />
+                ) : (
+                  <Eye className="size-[18px]" strokeWidth={1.75} aria-hidden />
+                )}
+              </button>
+            </div>
+            {showMismatchError && <p className="text-xs text-error">Passwords do not match.</p>}
+          </div>
+        </div>
 
-        {shouldShowRequirements && (
-          <section className="mt-1 flex flex-col gap-1 text-xs transition-all">
-            <p
-              className={`flex items-center gap-1.5 transition-colors ${hasMinLength ? 'font-medium text-emerald-800' : 'text-error'}`}
-            >
-              <span className="inline-block w-3.5 font-bold">{hasMinLength ? '✓' : '•'}</span>
-              At least 8 characters
-            </p>
-            <p
-              className={`flex items-center gap-1.5 transition-colors ${hasUppercase ? 'font-medium text-emerald-800' : 'text-error'}`}
-            >
-              <span className="inline-block w-3.5 font-bold">{hasUppercase ? '✓' : '•'}</span>
-              At least one uppercase letter (A-Z)
-            </p>
-            <p
-              className={`flex items-center gap-1.5 transition-colors ${hasNumber ? 'font-medium text-emerald-800' : 'text-error'}`}
-            >
-              <span className="inline-block w-3.5 font-bold">{hasNumber ? '✓' : '•'}</span>
-              At least one number (0-9)
-            </p>
-            <p
-              className={`flex items-center gap-1.5 transition-colors ${hasSpecialChar ? 'font-medium text-emerald-800' : 'text-error'}`}
-            >
-              <span className="inline-block w-3.5 font-bold">{hasSpecialChar ? '✓' : '•'}</span>
-              At least one special character (!@#$%^&*)
-            </p>
-          </section>
-        )}
-
-        {/* Terms & Privacy Disclaimer Checkbox */}
-        <div className="flex items-start gap-2.5 mt-1">
-          <input
-            id="disclaimer"
-            type="checkbox"
-            required
-            checked={agreedToTerms}
-            onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-caramel text-espresso accent-espresso focus:ring-2 focus:ring-espresso cursor-pointer"
-          />
-          <label htmlFor="disclaimer" className="text-xs text-cocoa cursor-pointer leading-tight">
+        {/* Terms consent: a 24px target around Figma's 18px box. The two
+            documents stay linked (not in Figma). */}
+        <div className="flex min-h-10 items-center gap-2.5 md:min-h-8">
+          <span className="flex size-8 shrink-0 items-center justify-center md:size-6">
+            <input
+              id="disclaimer"
+              type="checkbox"
+              required
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="size-[18px] cursor-pointer rounded-[3px] border-[1.5px] border-clay accent-espresso focus:ring-2 focus:ring-espresso"
+            />
+          </span>
+          <label
+            htmlFor="disclaimer"
+            className="cursor-pointer text-xs leading-[18px] text-[#66564b]"
+          >
             I agree to the{' '}
-            <a
-              href="/terms"
-              className="inline-block -my-4 py-4 font-semibold text-clay hover:underline"
-            >
+            <a href="/terms" className="-my-4 inline-block py-4 hover:underline">
               Terms of Service
             </a>{' '}
             and{' '}
-            <a
-              href="/privacy"
-              className="inline-block -my-4 py-4 font-semibold text-clay hover:underline"
-            >
+            <a href="/privacy" className="-my-4 inline-block py-4 hover:underline">
               Privacy Policy
             </a>
-            <span className="ml-0.5">*</span>
           </label>
         </div>
 
         <button
           type="submit"
           disabled={signUp.isPending}
-          className="mt-2 min-h-12 w-full rounded-xl bg-espresso px-4 text-[13px] font-medium text-cream shadow-[0_2px_6px_rgb(28_13_6/0.08)] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
+          className="min-h-12 w-full rounded-xl bg-espresso px-4 text-[13px] font-medium text-cream shadow-[0_2px_6px_rgb(28_13_6/0.08)] transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-60"
         >
           {signUp.isPending ? 'Creating account…' : 'Sign Up'}
         </button>
 
         {/* Account Login Link */}
-        <p className="mt-2 text-center text-sm text-cocoa">
+        <p className="text-center text-sm leading-5 text-[#66564b]">
           Already have an account?{' '}
           <Link
             to="/login"
@@ -292,7 +295,7 @@ export const SignupPage: React.FC = () => {
 
         {/* OAuth Separator */}
         <section className="flex justify-center">
-          <span className="text-xs text-taupe">OR Sign up with :</span>
+          <span className="text-xs tracking-[0.4px] text-[#8b796d]">OR Sign up with :</span>
         </section>
 
         {/* OAuth Provider Buttons */}

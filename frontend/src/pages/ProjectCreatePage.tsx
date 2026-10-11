@@ -307,8 +307,14 @@ export default function ProjectCreatePage() {
             {step === 'details' && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <label className="block text-xs font-semibold text-cocoa mb-1.5">Name</label>
+                  <label
+                    htmlFor="project-name"
+                    className="block text-xs font-semibold text-cocoa mb-1.5"
+                  >
+                    Name
+                  </label>
                   <input
+                    id="project-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -319,10 +325,14 @@ export default function ProjectCreatePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-cocoa mb-1.5">
+                  <label
+                    htmlFor="project-description"
+                    className="block text-xs font-semibold text-cocoa mb-1.5"
+                  >
                     Description
                   </label>
                   <textarea
+                    id="project-description"
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}

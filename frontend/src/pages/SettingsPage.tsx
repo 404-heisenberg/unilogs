@@ -76,7 +76,7 @@ function GoogleCalendarSection() {
             ) : statusQuery.data.connected ? (
               <button
                 type="button"
-                className="min-h-11 shrink-0 rounded-lg border border-line px-4 text-[13px] font-semibold text-espresso transition-colors hover:bg-cream disabled:opacity-50 md:min-h-8"
+                className="hidden min-h-8 shrink-0 rounded-lg border border-line px-4 text-[13px] font-semibold text-espresso transition-colors hover:bg-cream disabled:opacity-50 md:block"
                 onClick={() => disconnect.mutate()}
                 disabled={disconnect.isPending}
               >
@@ -94,6 +94,18 @@ function GoogleCalendarSection() {
               </button>
             ))}
         </div>
+
+        {/* Figma 26:381: on mobile, Disconnect is a full-width dark button below. */}
+        {statusQuery.isSuccess && statusQuery.data.connected && (
+          <button
+            type="button"
+            className="mt-4 min-h-11 w-full rounded-lg bg-espresso text-[13px] font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50 md:hidden"
+            onClick={() => disconnect.mutate()}
+            disabled={disconnect.isPending}
+          >
+            {disconnect.isPending ? 'Disconnecting…' : 'Disconnect'}
+          </button>
+        )}
 
         {statusQuery.isPending && <p className="mt-1 text-sm text-clay">Checking connection…</p>}
 
