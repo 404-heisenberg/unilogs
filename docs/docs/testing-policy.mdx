@@ -63,14 +63,17 @@ notice. Each CI run uploads the full HTML report as a `frontend-coverage` or
 
 | Metric     | Backend threshold | Backend measured | Frontend threshold | Frontend measured |
 | ---------- | ----------------- | ---------------- | ------------------ | ----------------- |
-| Statements | 50%               | 82.6%            | 65%                | 69.5%             |
-| Branches   | 40%               | 77.7%            | 57%                | 61.7%             |
-| Functions  | 50%               | 94.1%            | 58%                | 63.2%             |
-| Lines      | 50%               | 83.1%            | 65%                | 70.6%             |
+| Statements | 50%               | 82.4%            | 65%                | 76.2%             |
+| Branches   | 40%               | 79.0%            | 57%                | 70.4%             |
+| Functions  | 50%               | 94.5%            | 58%                | 70.4%             |
+| Lines      | 50%               | 83.3%            | 65%                | 77.7%             |
 
-Measured figures are from 28 September 2026 (#285). When quoting a single
-number, we use line coverage: **frontend 70.6%, backend 83.1%**. The other
-three metrics are there so a drop in any one of them still fails CI.
+Measured **11 October 2026**: the frontend figure from `npm test` in
+`frontend/` and the backend figure from the CI backend job (the same command,
+against the disposable Postgres — both include the Sprint 4 routes and pages).
+When quoting a single number, we use line coverage: **frontend 77.7%,
+backend 83.3%**. The other three metrics are there so a drop in any one of
+them still fails CI.
 
 - **Backend** (`backend/vitest.config.ts`) is scoped to `src/routes/**`,
   `src/lib/**` and `src/middleware/**` — the code that actually handles a
@@ -106,10 +109,12 @@ when you want fast reruns without coverage.
 - **No load, performance, or visual regression testing.** Out of proportion to
   a project at this scale and timeline — this would be the next investment if
   the project kept growing past submission.
-- **`VerifyEmailPage` has no dedicated test file yet.** A real, current gap
-  rather than a deliberate choice — it shipped with the email-verification
-  work late in Sprint 2 and testing it was not caught up before the deadline.
-  Tracked for Sprint 3, not hidden here.
+- **`VerifyEmailPage` still has no dedicated test file.** It is no longer at
+  0% — the auth back-link tests ([`authBackLinks.test.tsx`](https://github.com/404-heisenberg/unilogs/blob/main/frontend/src/pages/authBackLinks.test.tsx))
+  render the page, giving it incidental line coverage — but nothing tests its
+  own behaviour (verification code entry, invalid code, already-verified
+  states). A dedicated `VerifyEmailPage.test.tsx` is the smallest remaining
+  coverage gap.
 
 ## Policy for new work
 
@@ -128,4 +133,10 @@ when you want fast reruns without coverage.
   action="generated"
   tools="Claude-Code[Claude Sonnet 5]"
   purpose="documenting the testing scope, run commands, CI-enforced coverage threshold, and what is deliberately not covered, against the real test setup"
+/>
+
+<AiDeclaration
+  action="edited"
+  tools="opencode[deepseek-v4-flash]"
+  purpose="refreshing the coverage table with measurements taken 11 October 2026 (frontend Vitest run locally, backend Supertest from the CI job) and updating the VerifyEmailPage gap to match its current incidental coverage"
 />
