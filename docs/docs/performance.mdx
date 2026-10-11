@@ -16,6 +16,159 @@ What the rubric asks, and where the answer is on this page:
 | How well does the API handle significant load? | 50 concurrent connections against 25,000 entries, **zero errors**                      | [Load test](#load-test)                                       |
 | How often does it crash?                       | No errors or crashes in any load test run. The health check is pinged every 10 minutes | [Uptime and the first request](#uptime-and-the-first-request) |
 | How long does the first request take?          | About a second. A scheduled ping stops the free-tier host from going to sleep          | [Uptime and the first request](#uptime-and-the-first-request) |
+| Where does the time go on Sprint 4 endpoints?  | The as-at view is the slow one (2.2 s for a large logbook); two endpoints fan out      | [Baseline: 11 October 2026](#baseline-11-october-2026)        |
+
+## Baseline: 11 October 2026
+
+A baseline taken before any Sprint 4 optimisation (#351), so the work in #352
+can be compared against measured numbers rather than guesses. Every table
+names how it was measured. Nothing on this page was optimised as part of
+taking it.
+
+### Deployed frontend: cold and warm first load
+
+**Method.** A script drove Playwright's Chromium against the live site from
+South Africa on a home connection. Each run opened a fresh browser context
+(empty cache, no service worker) for the **cold** load, then reloaded the same
+page in that context for the **warm** load. Times come from the browser's own
+Performance API: Navigation Timing for time to first byte, DOMContentLoaded
+and the load event, Paint Timing for first paint, and the
+`largest-contentful-paint` entry for largest paint. "Transferred" adds up the
+document's and every resource's `transferSize`. 5 runs per page, desktop
+viewport (1440×1024), **medians**. Measured 11 October 2026, 16:16 UTC.
+
+| Page    | Load | First byte | First paint | Largest paint | DOMContentLoaded | Load event | Transferred |
+| ------- | ---- | ---------: | ----------: | ------------: | ---------------: | ---------: | ----------: |
+| Landing | Cold |     191 ms |      984 ms |        984 ms |           645 ms |     654 ms |    339.8 KB |
+| Landing | Warm |      76 ms |      624 ms |        624 ms |           350 ms |     360 ms |      2.4 KB |
+| Sign in | Cold |     231 ms |      1.23 s |        1.23 s |           610 ms |     684 ms |    308.6 KB |
+| Sign in | Warm |      85 ms |      864 ms |        864 ms |           365 ms |     367 ms |      2.1 KB |
+
+A warm load downloads almost nothing (the service worker and HTTP cache serve
+the app), so what's left is the time to render. First paint comes after the
+load event because React draws the page once its JavaScript has run.
+
+### Deployed API: first request
+
+**Method.** `curl` against `https://unilogs.onrender.com/api/health` from the
+same connection, reading curl's own timers. 10 requests, each on a **new
+connection** (DNS, TCP and TLS every time), then 5 runs that make a second
+request on the **same connection**. Measured 11 October 2026, 16:17 UTC.
+The keep-warm workflow had the host awake, so none of these is a 30–60 s cold
+start.
+
+| Request                          | DNS    | TCP connected | TLS done | First byte |  Total |
+| -------------------------------- | ------ | ------------: | -------: | ---------: | -----: |
+| New connection, median of 10     | 54 ms  |         70 ms |   140 ms |     0.58 s | 0.58 s |
+| New connection, first of the day | 289 ms |        308 ms |   1.50 s |     2.54 s | 2.54 s |
+| Same connection, median of 5     | —      |             — |        — |          — | 0.40 s |
+
+About 0.4 s of every request is spent in the API itself: the health check
+runs a database query, and the database is in a different region from the
+API host. Only `/api/health` was measured on the live API; see the
+[note on coverage](#what-this-baseline-does-not-cover) for why.
+
+### Sprint 4 endpoints: one user, 25,000 entries
+
+**Method.** `npm run load-test` (`backend/scripts/load-test.ts`), extended for
+this baseline to cover the four Sprint 4 endpoints. It runs the real API
+against a disposable local Postgres 16 and seeds one account with 50 projects
+× 500 entries. Each seeded entry also gets the CREATE history row a real
+create writes, so the as-at view rebuilds a full logbook. The run adds 5 stat
+panels, one entry edited 10 times through the API, and a 10-entry offline
+sync batch whose first send creates the entries; every later send is a replay.
+`LOAD_CONNECTIONS=1 LOAD_DURATION=10`: **one connection, 10 seconds per
+endpoint** (autocannon), so this is the time one user waits.
+
+| Endpoint                                            | Requests |        p50 |  p97.5 |    p99 | Errors |
+| --------------------------------------------------- | -------: | ---------: | -----: | -----: | -----: |
+| `GET /api/health`                                   |    2,457 |       3 ms |   6 ms |  10 ms |      0 |
+| `GET /api/projects`                                 |      659 |      12 ms |  33 ms |  50 ms |      0 |
+| `GET /api/entries` (page of 20)                     |      171 |      46 ms |  68 ms |  84 ms |      0 |
+| `GET /api/entries` (search + date)                  |       19 |     466 ms | 735 ms | 735 ms |      0 |
+| `GET /api/projects/:id/summary`                     |      382 |      23 ms |  37 ms |  46 ms |      0 |
+| `GET /api/stats`                                    |       83 |     118 ms | 145 ms | 159 ms |      0 |
+| `GET /api/stats/frequency`                          |      104 |      92 ms | 130 ms | 136 ms |      0 |
+| `GET /api/stats/streak`                             |      131 |      68 ms | 143 ms | 162 ms |      0 |
+| `GET /api/stats/fields/:projectId`                  |      362 |      24 ms |  37 ms |  91 ms |      0 |
+| **`GET /api/projects/:id/stat-panels`** (5 panels)  |      205 |      37 ms |  66 ms | 156 ms |      0 |
+| **`GET /api/entries/as-at`** (whole logbook)        |        5 | **2.15 s** | 2.49 s | 2.49 s |      0 |
+| **`GET /api/entries/:id/history`** (10 versions)    |      414 |      23 ms |  33 ms |  35 ms |      0 |
+| **`POST /api/entries/sync`** (10 entries, replayed) |      246 |      39 ms |  49 ms |  52 ms |      0 |
+
+The laptop was busy during this run (see below), so the older endpoints are
+slower than in the September table further down; the search row in
+particular moved from 55 ms to 466 ms. Compare rows within one table, not
+across tables.
+
+### Queries per request
+
+**Method.** The load test reads Postgres's `pg_stat_statements` around a single
+request to each endpoint: reset, one request, then sum the statements run.
+Postgres was started with `shared_preload_libraries=pg_stat_statements` and
+`pg_stat_statements.track_utility=off`, so `BEGIN`/`COMMIT` are left out.
+This counts every database client, including any a route creates for itself.
+Every signed-in request includes the session lookup.
+
+| Endpoint                            | Statements | Grows with the data?                         |
+| ----------------------------------- | ---------: | -------------------------------------------- |
+| `GET /api/health`                   |          1 | No                                           |
+| `GET /api/projects`                 |          3 | No                                           |
+| `GET /api/entries` (page of 20)     |          8 | No                                           |
+| `GET /api/entries` (search + date)  |          9 | No                                           |
+| `GET /api/projects/:id/summary`     |          5 | No                                           |
+| `GET /api/stats`                    |          4 | No                                           |
+| `GET /api/stats/frequency`          |          4 | No                                           |
+| `GET /api/stats/streak`             |          3 | No                                           |
+| `GET /api/stats/fields/:projectId`  |          5 | No                                           |
+| `GET /api/projects/:id/stat-panels` |     **14** | **Yes: 4 + 2 per panel** (5 panels here)     |
+| `GET /api/entries/as-at`            |          5 | No, but each query reads the whole history   |
+| `GET /api/entries/:id/history`      |          4 | No                                           |
+| `POST /api/entries/sync`            |     **54** | **Yes: about 5 per entry** (10 entries here) |
+
+### What the baseline found
+
+Recorded for #352. None of these was changed here.
+
+- **The as-at view reads the whole history on every request.**
+  `reconstructAsAt` (`backend/src/services/asat-service.ts`) loads every
+  history row before the chosen date, for every entry, with no limit, then
+  keeps the newest per entry in JavaScript. For a 25,000-entry logbook that is
+  2.15 s for one user. The query count is fixed, but each query's size grows
+  with the whole logbook.
+- **Stat panels fan out per panel (N+1).** `listPanelsForProject` computes
+  each panel separately, and each one reads the project's numeric fields and
+  then its entries: 2 statements per panel on top of 4. Fine at 5 panels
+  (37 ms), but it grows with every panel a user adds.
+- **Stat panels have their own database pool.** `backend/src/routes/stat-panels.ts`
+  creates its own `PrismaClient` instead of the shared one in
+  `backend/src/lib/prisma.ts`. That brings back a second connection pool, the
+  problem the shared client fixed in Sprint 3 (see
+  [What the load test found and fixed](#what-the-load-test-found-and-fixed)).
+- **Offline sync costs about 5 statements per entry (N+1).** A replayed
+  10-entry batch runs 54 statements: each entry is checked and written on its
+  own. At 39 ms for 10 entries it's fine; a 100-entry batch (the maximum)
+  would run about 500.
+- **History rows have no index on `entryId`.** The `AuditLog` model has no
+  indexes. Reading one entry's history is quick at this size (23 ms), but
+  deleting the 25,000-entry test account took about 5 minutes: removing each
+  entry made Postgres scan the whole history table for that entry's rows.
+  Deleting a large project or account in the app does the same.
+
+### What this baseline does not cover
+
+- **The Sprint 4 endpoints on the live API.** They need a signed-in account,
+  and measuring them in production would mean creating data there. They were
+  measured locally instead, with the same code.
+- **A new 50-connection run.** One was made, but the laptop was at 100% CPU
+  with 1.7 GB of 7.8 GB memory free (a browser was using most of it). Even
+  `GET /api/health` timed out, so those numbers describe the laptop, not the
+  API, and are not published. The September table in
+  [Load test](#load-test) remains the concurrency reference for the older
+  endpoints. Run `LOAD_CONNECTIONS=50 npm run load-test` on a quiet machine
+  or a CI runner to extend it to Sprint 4.
+- **Cold starts.** The keep-warm workflow keeps the API awake, so a 30–60 s
+  wake-up only happens if that workflow stops.
 
 ## App load time
 
@@ -112,7 +265,9 @@ real email-verification flow, and seeds **50 projects × 500 entries = 25,000
 entries** for that one account. That is far more than a student would log in a
 year. It then drives each endpoint with concurrent connections using
 [autocannon](https://github.com/mcollina/autocannon), and deletes the user at
-the end.
+the end. Since the [11 October baseline](#baseline-11-october-2026) it also
+covers the Sprint 4 endpoints and, when Postgres has `pg_stat_statements`
+loaded, prints the SQL statements one request to each endpoint issues.
 
 The laptop running it is the limiting factor: it manages about 240 requests a
 second even on the health check, which does almost nothing. The production
@@ -326,5 +481,5 @@ Recorded so nothing here is overstated:
 
 <AiDeclaration
   tools="opencode[deepseek-v4.1-flash], Claude-Code[Claude Opus 5.5]"
-  purpose="drafting the database benchmark section from the backend benchmark results, the index migration and the EXPLAIN ANALYZE plans, then adding the load test, the Lighthouse measurements, the code-splitting, font preloading, SQL aggregation and shared connection pool changes, and the keep-warm workflow"
+  purpose="measuring and writing up the 11 October 2026 baseline (the frontend and API timing scripts, the load test's Sprint 4 coverage and statement counts), drafting the database benchmark section from the backend benchmark results, the index migration and the EXPLAIN ANALYZE plans, then adding the load test, the Lighthouse measurements, the code-splitting, font preloading, SQL aggregation and shared connection pool changes, and the keep-warm workflow"
 />
