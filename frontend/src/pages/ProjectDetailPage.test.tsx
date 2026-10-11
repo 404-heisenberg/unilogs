@@ -516,9 +516,11 @@ describe('ProjectDetailPage workspace', () => {
 
       const row = (await screen.findByText('Literature review notes')).closest('a');
       expect(row).toHaveAttribute('href', '/entries/1');
-      expect(within(row as HTMLElement).getByText('2h 30m')).toBeInTheDocument();
+      // Once as the row's duration, once in its field values (#314).
+      expect(within(row as HTMLElement).getAllByText('2h 30m')).toHaveLength(2);
+      expect(within(row as HTMLElement).getByText('Time spent')).toBeInTheDocument();
       expect(within(row as HTMLElement).getByText('Today')).toBeInTheDocument();
-      expect(screen.getByText('1h 30m')).toBeInTheDocument();
+      expect(screen.getAllByText('1h 30m').length).toBeGreaterThan(0);
       expect(screen.getByText('Sep 10')).toBeInTheDocument();
     });
 
@@ -528,6 +530,51 @@ describe('ProjectDetailPage workspace', () => {
       await screen.findByText('Literature review notes');
 
       expect(mocks.apiGet).toHaveBeenCalledWith('/api/entries?projectId=1&limit=100&page=1');
+    });
+
+    it('shows each entry’s field values, formatted by type', async () => {
+      renderPage();
+      await openTab('Entries');
+
+      const row = (await screen.findByText('Literature review notes')).closest('a')!;
+      expect(within(row).getByText('Pages read')).toBeInTheDocument();
+      expect(within(row).getByText('40')).toBeInTheDocument();
+      expect(within(row).getByText('focused')).toBeInTheDocument();
+      // Five values filled in, four shown.
+      expect(within(row).getByText('+1 more')).toBeInTheDocument();
+    });
+
+    it('filters by a field through the API and says what it is showing', async () => {
+      const unfiltered = mocks.apiGet.getMockImplementation()!;
+      mocks.apiGet.mockImplementation(async (path: string) => {
+        if (path.startsWith('/api/entries?') && path.includes('field=')) {
+          return paged([structuredClone(ENTRIES[0])]);
+        }
+        return unfiltered(path);
+      });
+
+      renderPage();
+      await openTab('Entries');
+      await screen.findByText('Draft intro pipeline');
+
+      await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Field' }), 'Pages read');
+      await userEvent.type(screen.getByLabelText('Pages read from'), '35');
+
+      await waitFor(() =>
+        expect(mocks.apiGet).toHaveBeenCalledWith(
+          '/api/entries?projectId=1&field=Pages+read&min=35&limit=100',
+        ),
+      );
+      await waitFor(() =>
+        expect(screen.queryByText('Draft intro pipeline')).not.toBeInTheDocument(),
+      );
+      expect(screen.getByText('Literature review notes')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Showing entries that match: Pages read is at least 35.',
+      );
+
+      await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
+      expect(await screen.findByText('Draft intro pipeline')).toBeInTheDocument();
     });
 
     it('shows the first few entries and reveals the rest on request', async () => {

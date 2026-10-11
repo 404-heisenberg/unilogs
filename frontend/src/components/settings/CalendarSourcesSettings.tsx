@@ -75,14 +75,18 @@ function SourceRow({ source }: { source: CalendarSource }) {
 export default function CalendarSourcesSettings() {
   const { statusQuery } = useCalendarConnection();
   const connected = statusQuery.data?.connected === true;
+  const needsReauth = statusQuery.data?.needsReauth === true;
 
   const sourcesQuery = useQuery({
     queryKey: SOURCES_KEY,
     queryFn: listCalendarSources,
-    enabled: connected,
+    // While the credentials are dead the listing would come back empty (or a
+    // generic failure); the Integrations section above owns the Reconnect
+    // prompt, so don't render a misleading "no calendars" list here.
+    enabled: connected && !needsReauth,
   });
 
-  if (!connected) return null;
+  if (!connected || needsReauth) return null;
 
   const sources = sourcesQuery.data?.sources ?? [];
 

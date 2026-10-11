@@ -1,9 +1,11 @@
 import { Router } from 'express';
+import { Prisma } from '../generated/prisma/client.js';
 import type { Request, Response } from 'express';
 import { prisma, prismaWithDeleted } from '../lib/prisma.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { validateEntryContent, isWhollyEmpty } from '../lib/validateEntry.js';
-import { parseEntryListQuery } from '../lib/entryFilters.js';
+import { parseEntryListQuery, searchWhere } from '../lib/entryFilters.js';
+import { contentSearchIds, fieldFilterWhere } from '../lib/entryFieldFilter.js';
 import { toAuditData, toEntrySnapshot } from '../lib/audit-snapshot.js';
 import {
   listEntryVersions,
@@ -38,6 +40,10 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
         dateTo: req.query.dateTo as string | undefined,
         page: req.query.page as string | undefined,
         limit: req.query.limit as string | undefined,
+        field: req.query.field as string | undefined,
+        value: req.query.value as string | undefined,
+        min: req.query.min as string | undefined,
+        max: req.query.max as string | undefined,
       },
       userId,
     );
@@ -46,18 +52,40 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error });
     }
 
+    // Every condition must hold: project, tags, dates, search and field.
+    const conditions: Prisma.EntryWhereInput[] = [parsed.where];
+    if (parsed.searchTerm) {
+      const contentMatches = await contentSearchIds(userId, parsed.searchTerm);
+      conditions.push(searchWhere(parsed.searchTerm, contentMatches));
+    }
+    if (parsed.fieldFilter) {
+      const fieldWhere = await fieldFilterWhere(userId, parsed.fieldFilter);
+      if (typeof fieldWhere === 'string') return res.status(400).json({ error: fieldWhere });
+      conditions.push(fieldWhere);
+    }
+    const where: Prisma.EntryWhereInput =
+      conditions.length === 1 ? parsed.where : { AND: conditions };
+
     const [entries, total] = await Promise.all([
       prisma.entry.findMany({
-        where: parsed.where,
+        where,
         include: {
           tags: { include: { tag: true } },
-          project: { select: { id: true, name: true } },
+          // The project's field types travel with each entry so a list can
+          // format its values (durations, toggles) without another request.
+          project: {
+            select: {
+              id: true,
+              name: true,
+              fields: { select: { name: true, fieldType: true }, orderBy: { id: 'asc' } },
+            },
+          },
         },
         orderBy: [{ date: 'desc' }, { id: 'desc' }],
         skip: parsed.skip,
         take: parsed.take,
       }),
-      prisma.entry.count({ where: parsed.where }),
+      prisma.entry.count({ where }),
     ]);
 
     return res.status(200).json({

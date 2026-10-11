@@ -14,6 +14,7 @@ import { toast } from '@/lib/toast';
 
 function GoogleCalendarSection() {
   const { statusQuery, connect, disconnect } = useCalendarConnection();
+  const needsReauth = statusQuery.data?.needsReauth === true;
 
   return (
     <section className="flex flex-col gap-3">
@@ -25,18 +26,54 @@ function GoogleCalendarSection() {
             <p className="text-sm font-semibold text-espresso">Google Calendar</p>
             {statusQuery.isSuccess && (
               <p
-                className={`flex items-center gap-1.5 text-xs ${statusQuery.data.connected ? 'text-success' : 'text-clay'}`}
+                className={`flex items-center gap-1.5 text-xs ${
+                  needsReauth
+                    ? 'text-error'
+                    : statusQuery.data.connected
+                      ? 'text-success'
+                      : 'text-clay'
+                }`}
               >
                 <span
-                  className={`size-1.5 rounded-full ${statusQuery.data.connected ? 'bg-success' : 'bg-line-strong'}`}
+                  className={`size-1.5 rounded-full ${
+                    needsReauth
+                      ? 'bg-error'
+                      : statusQuery.data.connected
+                        ? 'bg-success'
+                        : 'bg-line-strong'
+                  }`}
                   aria-hidden
                 />
-                {statusQuery.data.connected ? 'Connected' : 'Not connected'}
+                {needsReauth
+                  ? 'Reconnect needed'
+                  : statusQuery.data.connected
+                    ? 'Connected'
+                    : 'Not connected'}
               </p>
             )}
           </div>
           {statusQuery.isSuccess &&
-            (statusQuery.data.connected ? (
+            (needsReauth ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  className="min-h-11 shrink-0 rounded-lg bg-espresso px-4 text-[13px] font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50 md:min-h-8"
+                  onClick={() => connect.mutate()}
+                  disabled={connect.isPending}
+                  aria-label="Reconnect Google Calendar"
+                >
+                  {connect.isPending ? 'Reconnecting…' : 'Reconnect'}
+                </button>
+                <button
+                  type="button"
+                  className="min-h-11 shrink-0 rounded-lg border border-line px-4 text-[13px] font-semibold text-espresso transition-colors hover:bg-cream disabled:opacity-50 md:min-h-8"
+                  onClick={() => disconnect.mutate()}
+                  disabled={disconnect.isPending}
+                >
+                  {disconnect.isPending ? 'Disconnecting…' : 'Disconnect'}
+                </button>
+              </div>
+            ) : statusQuery.data.connected ? (
               <button
                 type="button"
                 className="hidden min-h-8 shrink-0 rounded-lg border border-line px-4 text-[13px] font-semibold text-espresso transition-colors hover:bg-cream disabled:opacity-50 md:block"

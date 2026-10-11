@@ -45,7 +45,7 @@ async function getUserId(email: string) {
   return user.id;
 }
 
-async function linkGoogleAccount(userId: string, scope: string) {
+async function linkGoogleAccount(userId: string, scope: string, refreshTokenExpiresAt?: Date) {
   return prisma.account.create({
     data: {
       id: randomUUID(),
@@ -53,6 +53,7 @@ async function linkGoogleAccount(userId: string, scope: string) {
       providerId: 'google',
       userId,
       scope,
+      refreshTokenExpiresAt,
     },
   });
 }
@@ -118,6 +119,28 @@ describe('POST /api/calendar/connect', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Failed to connect Google Calendar' });
+  });
+
+  it('starts a fresh consent flow when the stored refresh token has expired', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    // Linked with the Calendar scope, but the refresh token is already dead —
+    // the state a Testing-status Google app leaves users in after ~7 days.
+    await linkGoogleAccount(
+      await getUserId(email),
+      'https://www.googleapis.com/auth/calendar.readonly openid',
+      new Date(Date.now() - 60_000),
+    );
+    linkSocialAccount.mockResolvedValue({
+      status: 200,
+      headers: { getSetCookie: () => [] },
+      json: async () => ({ url: 'https://accounts.google.com/o/oauth2/consent' }),
+    });
+
+    const response = await agent.post('/api/calendar/connect');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ url: 'https://accounts.google.com/o/oauth2/consent' });
+    expect(linkSocialAccount).toHaveBeenCalled();
   });
 });
 
@@ -256,6 +279,18 @@ describe('GET /api/calendar/sources', () => {
     expect(response.body).toEqual({
       error: 'Failed to fetch Google Calendar sources',
     });
+  });
+
+  it('asks the user to reconnect when the access token cannot be retrieved', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+
+    getAccessToken.mockRejectedValue(new Error('invalid_grant'));
+
+    const response = await agent.get('/api/calendar/sources');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ connected: true, needsReauth: true, sources: [] });
   });
 });
 
@@ -491,16 +526,16 @@ describe('GET /api/calendar/events', () => {
     expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
   });
 
-  it('returns 500 when the access token cannot be retrieved', async () => {
+  it('asks the user to reconnect when the access token cannot be retrieved', async () => {
     const { agent, email } = await createAuthenticatedUser();
     await connectAccount(email);
 
-    getAccessToken.mockRejectedValue(new Error('token expired'));
+    getAccessToken.mockRejectedValue(new Error('invalid_grant'));
 
     const response = await agent.get('/api/calendar/events');
 
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: 'Failed to fetch the Google Calendar events' });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ connected: true, needsReauth: true, events: [] });
   });
 
   it('asks Google for the next 30 days, 20 per calendar, when no range is given', async () => {
@@ -631,5 +666,17 @@ describe('GET /api/calendar/events/suggestions', () => {
         },
       ],
     });
+  });
+
+  it('asks the user to reconnect when the access token cannot be retrieved', async () => {
+    const { agent, email } = await createAuthenticatedUser();
+    await connectAccount(email);
+
+    getAccessToken.mockRejectedValue(new Error('invalid_grant'));
+
+    const response = await agent.get('/api/calendar/events/suggestions');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ connected: true, needsReauth: true, suggestions: [] });
   });
 });

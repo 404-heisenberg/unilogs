@@ -71,10 +71,10 @@ function otherSettingsSectionsDefault(path: string): unknown {
   return undefined;
 }
 
-function mockCalendarStatus(connected: boolean) {
+function mockCalendarStatus(connected: boolean, needsReauth = false) {
   getMock.mockImplementation((path: string) => {
     if (path === '/api/auth/get-session') return Promise.resolve(SESSION);
-    if (path === '/api/calendar/status') return Promise.resolve({ connected });
+    if (path === '/api/calendar/status') return Promise.resolve({ connected, needsReauth });
     const fallback = otherSettingsSectionsDefault(path);
     if (fallback !== undefined) return Promise.resolve(fallback);
     return Promise.reject(new Error(`unexpected GET ${path}`));
@@ -180,6 +180,43 @@ describe('Google Calendar settings', () => {
       expect(window.location.href).toBe('https://accounts.google.com/o/oauth2/consent'),
     );
     expect(postMock).toHaveBeenCalledWith('/api/calendar/connect');
+
+    Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+  });
+
+  it('shows a reconnect-needed state with a Reconnect action and no calendar list', async () => {
+    mockCalendarStatus(true, true);
+    renderPage();
+
+    expect(await screen.findByText('Reconnect needed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reconnect google calendar/i })).toBeInTheDocument();
+    // While the connection is dead the Calendars section is hidden, so it can't
+    // fall back to "Couldn't load your calendars." or "No calendars found".
+    expect(screen.queryByRole('heading', { name: 'Calendars' })).not.toBeInTheDocument();
+    expect(screen.queryByText("Couldn't load your calendars.")).not.toBeInTheDocument();
+    expect(getMock).not.toHaveBeenCalledWith('/api/calendar/sources');
+  });
+
+  it('reconnect goes straight to consent without disconnecting first', async () => {
+    mockCalendarStatus(true, true);
+    postMock.mockResolvedValue({ url: 'https://accounts.google.com/o/oauth2/consent' });
+
+    const originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, href: '' },
+    });
+
+    renderPage();
+    await userEvent.click(
+      await screen.findByRole('button', { name: /reconnect google calendar/i }),
+    );
+
+    await waitFor(() =>
+      expect(window.location.href).toBe('https://accounts.google.com/o/oauth2/consent'),
+    );
+    expect(postMock).toHaveBeenCalledWith('/api/calendar/connect');
+    expect(deleteMock).not.toHaveBeenCalled();
 
     Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
   });

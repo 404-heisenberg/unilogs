@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Clock, SquareCheck } from 'lucide-react';
 import { projectColor, tagStyle } from '@/lib/colors';
+import FieldValues from '@/components/entries/FieldValues';
+import { entryFieldPairs, type FieldShape } from '@/lib/entryFields';
 import { formatShortDate } from '@/lib/project-workspace';
 import { stripMarkdownLine } from '@/lib/sharedReport';
 import type { Entry } from '@/types';
@@ -23,17 +25,20 @@ function markdownSnippet(body: string | null | undefined): string | null {
   return firstLine ?? null;
 }
 
-function contentSnippet(entry: TimelineEntry): string | null {
-  const parts = Object.entries(entry.content).map(([key, value]) => `${key}: ${String(value)}`);
-  return parts.length > 0 ? parts.join(' · ') : null;
-}
-
-function entryHeadline(entry: TimelineEntry): { headline: string; snippet: string | null } {
+function entryHeadline(
+  entry: TimelineEntry,
+  pairs: { name: string; text: string }[],
+): { headline: string; snippet: string | null; showFields: boolean } {
   if (entry.title) {
-    return { headline: entry.title, snippet: markdownSnippet(entry.body) ?? contentSnippet(entry) };
+    return { headline: entry.title, snippet: markdownSnippet(entry.body), showFields: true };
   }
-  const fromContent = contentSnippet(entry);
-  return { headline: fromContent ?? 'Untitled entry', snippet: markdownSnippet(entry.body) };
+  // Untitled: the field values are the headline, so they aren't listed twice.
+  const fromFields = pairs.map(({ name, text }) => `${name}: ${text}`).join(' · ');
+  return {
+    headline: fromFields || 'Untitled entry',
+    snippet: markdownSnippet(entry.body),
+    showFields: false,
+  };
 }
 
 export default function EntryCard({
@@ -42,15 +47,19 @@ export default function EntryCard({
   due,
   wide,
   readOnly = false,
+  fields,
 }: {
   entry: TimelineEntry;
   projectName: string;
+  /** The project's field names and types, for formatting values. */
+  fields?: FieldShape[];
   due?: DueInfo;
   wide: boolean;
   /** No links into the entry or project: the card shows a past state. */
   readOnly?: boolean;
 }) {
-  const { headline, snippet } = entryHeadline(entry);
+  const pairs = entryFieldPairs(entry.content as Record<string, unknown>, fields);
+  const { headline, snippet, showFields } = entryHeadline(entry, pairs);
   const tags = entry.tags ?? [];
   const dueLabel = due?.dueDate ? formatShortDate(due.dueDate.slice(0, 10)) : null;
 
@@ -107,6 +116,7 @@ export default function EntryCard({
         )}
         {snippet && <p className="line-clamp-2 text-sm text-cocoa">{snippet}</p>}
       </div>
+      {showFields && <FieldValues pairs={pairs} />}
       {(due || tags.length > 0) && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-caramel/30 pt-3">
           {due?.overdue ? (

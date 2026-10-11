@@ -199,7 +199,7 @@ export default function SuggestionsPage() {
   const suggestionsQuery = useQuery({
     queryKey: ['calendar-suggestions'],
     queryFn: () => api.get<CalendarSuggestionsResponse>('/api/calendar/events/suggestions'),
-    enabled: !!statusQuery.data?.connected,
+    enabled: !!statusQuery.data?.connected && statusQuery.data?.needsReauth !== true,
   });
 
   const invalidateSuggestions = () =>
@@ -255,7 +255,24 @@ export default function SuggestionsPage() {
         </div>
       )}
 
-      {statusQuery.isSuccess && statusQuery.data.connected && (
+      {statusQuery.isSuccess && statusQuery.data.needsReauth && (
+        <div className="rounded-md border border-caramel/40 bg-white p-4">
+          <p className="text-sm text-cocoa">
+            Your Google Calendar connection has expired. Reconnect to keep turning upcoming events
+            into suggestions.
+          </p>
+          <Button
+            type="button"
+            className="mt-3 min-h-11 bg-espresso text-cream hover:opacity-90 md:min-h-0"
+            onClick={() => connect.mutate()}
+            disabled={connect.isPending}
+          >
+            {connect.isPending ? 'Reconnecting…' : 'Reconnect Google Calendar'}
+          </Button>
+        </div>
+      )}
+
+      {statusQuery.isSuccess && statusQuery.data.connected && !statusQuery.data.needsReauth && (
         <div>
           {suggestionsQuery.isPending && <p className="text-sm text-clay">Loading suggestions…</p>}
 

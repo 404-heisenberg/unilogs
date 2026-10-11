@@ -29,6 +29,8 @@ import { toast } from '@/lib/toast';
 import type { Entry, FieldDefinition, Project } from '@/types';
 import { tagStyle } from '@/lib/colors';
 import PaneLayout, { PANE_LABEL } from '@/components/PaneLayout';
+import PropertiesSheet from '@/components/entries/PropertiesSheet';
+import { useMediaQuery } from '@/lib/dashboard';
 import Skeleton from '@/components/Skeleton';
 import { Switch } from '@/components/ui/switch';
 
@@ -202,6 +204,10 @@ export default function EntryCreatePage() {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [values, setValues] = useState<Record<string, FieldValue>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // The properties pane sits beside the editor on desktop; below that it's a
+  // bottom sheet (Figma 24-219 / 24-265). Rendered in one place only, so its
+  // inputs and their ids are never duplicated.
+  const isLarge = useMediaQuery('(min-width: 1024px)');
 
   const [isDirty, setIsDirty] = useState(false);
   const allowNavigationRef = useRef(false);
@@ -359,8 +365,11 @@ export default function EntryCreatePage() {
       // Let the post-save navigation through the unsaved-changes blocker.
       allowNavigationRef.current = true;
       if (variables.isKeyboardSave) {
+        // Ctrl/Cmd+S saves without leaving the editor. A new entry moves to
+        // its own edit URL, seeded from the response so it doesn't reload.
         if (!isEditing && data?.id) {
-          navigate(`/entries/${data.id}`, { replace: true });
+          queryClient.setQueryData(['entry', String(data.id)], data);
+          navigate(`/entries/${data.id}/edit`, { replace: true });
         }
       } else if (isEditing) {
         navigate(`/entries/${id}`, { replace: true });
@@ -644,7 +653,8 @@ export default function EntryCreatePage() {
 
   const properties = (
     <div className="flex flex-col gap-5">
-      <h2 className={PANE_LABEL}>Properties</h2>
+      {/* The mobile sheet has its own "Properties" heading. */}
+      {isLarge && <h2 className={PANE_LABEL}>Properties</h2>}
 
       <div className="flex flex-col gap-4">
         <div>
@@ -883,7 +893,7 @@ export default function EntryCreatePage() {
 
   return (
     <form onSubmit={(e) => handleSubmit(e, false)} className="contents">
-      <PaneLayout pane={properties} paneLabel="Entry properties">
+      <PaneLayout pane={properties} paneLabel="Entry properties" showPane={isLarge}>
         <h1 className="sr-only">{isEditing ? 'Edit entry' : 'New entry'}</h1>
 
         {/* Figma's thin top bar: breadcrumb, unsaved-changes hint, save. */}
@@ -946,6 +956,12 @@ export default function EntryCreatePage() {
               </span>
             )}
           </div>
+        )}
+
+        {!isLarge && (
+          <PropertiesSheet hasErrors={Object.keys(fieldErrors).length > 0}>
+            {properties}
+          </PropertiesSheet>
         )}
 
         <label htmlFor="entry-title" className="sr-only">

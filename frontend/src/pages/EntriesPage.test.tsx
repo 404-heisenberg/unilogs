@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -52,6 +52,12 @@ function mockEntries(entries: Entry[], projects: Project[] = PROJECTS) {
     }
     if (path.startsWith('/api/projects')) return Promise.resolve(projects);
     if (path === '/api/tags') return Promise.resolve([]);
+    if (path === '/api/field-definitions?projectId=1') {
+      return Promise.resolve([
+        { id: 1, projectId: 1, name: 'Notes', fieldType: 'text' },
+        { id: 2, projectId: 1, name: 'Pages', fieldType: 'number' },
+      ]);
+    }
     if (path === '/api/stats/unfinished') {
       return Promise.resolve({
         overdue: [
@@ -188,5 +194,56 @@ describe('EntriesPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
 
     expect(await screen.findByText('Literature review notes')).toBeInTheDocument();
+  });
+
+  it('shows each entry’s field values on its card', async () => {
+    mockEntries([
+      {
+        ...ENTRIES[0],
+        content: { Notes: 'Read chapter 3', Time: 1.5 },
+        project: {
+          ...PROJECTS[0],
+          fields: [
+            { name: 'Notes', fieldType: 'text' },
+            { name: 'Time', fieldType: 'duration' },
+          ],
+        },
+      },
+    ]);
+
+    renderPage();
+
+    const card = (await screen.findByText('Literature review notes')).closest('li')!;
+    expect(within(card).getByText('Read chapter 3')).toBeInTheDocument();
+    expect(within(card).getByText('1h 30m')).toBeInTheDocument();
+  });
+
+  it('filters by a field of the chosen project and states the AND rule', async () => {
+    mockEntries(ENTRIES);
+
+    renderPage();
+    await screen.findByText('Literature review notes');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByText(/must match every filter you set/)).toBeInTheDocument();
+    expect(within(sheet).getByText(/Choose a project above/)).toBeInTheDocument();
+
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Thesis' }));
+    await userEvent.selectOptions(
+      await within(sheet).findByRole('combobox', { name: 'Field' }),
+      'Notes',
+    );
+    await userEvent.type(within(sheet).getByLabelText('Notes contains'), 'chapter');
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Apply filters' }));
+
+    await waitFor(() =>
+      expect(getMock).toHaveBeenCalledWith(
+        '/api/entries?projectId=1&field=Notes&value=chapter&limit=100',
+      ),
+    );
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Showing entries that match all of: in Thesis and Notes contains “chapter”.',
+    );
   });
 });

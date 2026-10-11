@@ -1,5 +1,18 @@
 import { useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import FieldFilterControls from '@/components/entries/FieldFilterControls';
+import FieldValues from '@/components/entries/FieldValues';
+import { api } from '@/lib/api';
+import {
+  describeFieldFilter,
+  entryFieldPairs,
+  fieldFilterParams,
+  filterSummary,
+  isFieldFilterReady,
+  type FieldFilter,
+} from '@/lib/entryFields';
+import { useDebouncedValue } from '@/lib/stat-panels';
 import SkeletonPrimitive from '@/components/Skeleton';
 import { formatRelativeTime } from '@/lib/time';
 import {
@@ -25,6 +38,7 @@ import {
   formatDurationHours,
   formatShortDate,
   isFieldType,
+  sortEntries,
   type AggregationKind,
   type FieldActions,
   type FieldInsight,
@@ -35,7 +49,7 @@ import {
   type UnfinishedStats,
   type WeekBar,
 } from '@/lib/project-workspace';
-import type { Entry, FieldDefinition, Project, StatPanel, TrashEntry } from '@/types';
+import type { Entry, FieldDefinition, PagedEntries, Project, StatPanel, TrashEntry } from '@/types';
 import { projectColor } from '@/lib/colors';
 import StatPanelBuilderDialog from '@/components/project/StatPanelBuilderDialog';
 import { SavedStatPanels } from '@/components/project/StatPanelCard';
@@ -584,13 +598,18 @@ export function OverviewTab({
 const ENTRIES_STEP = 20;
 const ENTRIES_FIRST = 8;
 
+// The first page of matches is plenty for one project's field filter.
+const FILTERED_LIMIT = 100;
+
 export function EntriesTab({
+  projectId,
   entries,
   fields,
   isLoading,
   isError,
   today,
 }: {
+  projectId: string;
   entries: Entry[];
   fields: FieldDefinition[];
   isLoading: boolean;
@@ -598,6 +617,22 @@ export function EntriesTab({
   today: string;
 }) {
   const [shown, setShown] = useState(ENTRIES_FIRST);
+  const [fieldFilter, setFieldFilter] = useState<FieldFilter | null>(null);
+
+  // Typing into a text field waits for a pause before asking the API. The
+  // params are debounced as a string: a fresh object every render would
+  // restart the timer forever.
+  const paramsKey = useDebouncedValue(JSON.stringify(fieldFilterParams(fieldFilter)));
+  const params = JSON.parse(paramsKey) as Record<string, string>;
+  const filtering = Object.keys(params).length > 0;
+  const matches = useQuery({
+    queryKey: ['project-entries', projectId, 'field', paramsKey],
+    queryFn: () =>
+      api.get<PagedEntries>(
+        `/api/entries?${new URLSearchParams({ projectId, ...params, limit: String(FILTERED_LIMIT) })}`,
+      ),
+    enabled: filtering,
+  });
 
   if (isLoading) return <Skeleton rows={3} />;
   if (isError) return <ErrorNote>Failed to load entries. Try refreshing the page.</ErrorNote>;
@@ -612,45 +647,92 @@ export function EntriesTab({
     );
   }
 
-  const remaining = entries.length - shown;
+  const list = filtering ? sortEntries(matches.data?.entries ?? []) : entries;
+  const remaining = list.length - shown;
+  const summary =
+    isFieldFilterReady(fieldFilter) && filterSummary([describeFieldFilter(fieldFilter)]);
 
   return (
-    <div>
-      <ul className="flex flex-col">
-        {entries.slice(0, shown).map((entry) => {
-          const hours = entryDurationHours(entry, fields);
-          const day = dayLabel(entry.date.slice(0, 10), today);
-          const duration = hours !== null ? formatDurationHours(hours) : null;
-          return (
-            <li key={entry.id} className="border-b border-cream last:border-b-0">
-              {/* Figma: one compact line on desktop; on mobile the date and
-                  duration sit under the title. */}
-              <Link
-                to={`/entries/${entry.id}`}
-                className="flex flex-col gap-1 py-4 focus-visible:outline-2 focus-visible:outline-gold sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-3"
-              >
-                <span className="min-w-0 truncate text-sm text-espresso">{entryTitle(entry)}</span>
-                <span className="flex shrink-0 gap-2 text-xs text-clay sm:gap-3">
-                  <span className="sm:order-2">{day}</span>
-                  {duration && (
-                    <>
-                      <span aria-hidden className="sm:hidden">
-                        ·
-                      </span>
-                      <span className="sm:order-1">{duration}</span>
-                    </>
-                  )}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="flex flex-col gap-4">
+      <section
+        aria-label="Filter entries by field"
+        className="flex flex-col gap-2 rounded-xl border border-cream bg-paper p-3"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-[13px] font-semibold text-espresso">Filter by field</h3>
+          {fieldFilter && (
+            <button
+              type="button"
+              onClick={() => setFieldFilter(null)}
+              className={`min-h-11 px-1 text-xs font-semibold ${MUTED} hover:text-espresso md:min-h-0`}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <FieldFilterControls fields={fields} filter={fieldFilter} onChange={setFieldFilter} />
+        {summary && (
+          <p role="status" className={`text-xs ${MUTED}`}>
+            {summary}
+          </p>
+        )}
+      </section>
+
+      {filtering && matches.isPending && <Skeleton rows={2} />}
+      {filtering && matches.isError && (
+        <ErrorNote>Couldn&apos;t filter entries. Check the value and try again.</ErrorNote>
+      )}
+      {filtering && matches.isSuccess && list.length === 0 && (
+        <p
+          className={`rounded-xl border border-dashed border-line p-6 text-center text-sm ${MUTED}`}
+        >
+          No entries match this field filter.
+        </p>
+      )}
+
+      {list.length > 0 && (
+        <ul className="flex flex-col">
+          {list.slice(0, shown).map((entry) => {
+            const hours = entryDurationHours(entry, fields);
+            const day = dayLabel(entry.date.slice(0, 10), today);
+            const duration = hours !== null ? formatDurationHours(hours) : null;
+            const pairs = entryFieldPairs(entry.content, fields);
+            return (
+              <li key={entry.id} className="border-b border-cream last:border-b-0">
+                {/* Figma: one compact line on desktop; on mobile the date and
+                    duration sit under the title. The field values follow. */}
+                <Link
+                  to={`/entries/${entry.id}`}
+                  className="flex flex-col gap-1.5 py-4 focus-visible:outline-2 focus-visible:outline-gold sm:py-3"
+                >
+                  <span className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <span className="min-w-0 truncate text-sm text-espresso">
+                      {entryTitle(entry)}
+                    </span>
+                    <span className="flex shrink-0 gap-2 text-xs text-clay sm:gap-3">
+                      <span className="sm:order-2">{day}</span>
+                      {duration && (
+                        <>
+                          <span aria-hidden className="sm:hidden">
+                            ·
+                          </span>
+                          <span className="sm:order-1">{duration}</span>
+                        </>
+                      )}
+                    </span>
+                  </span>
+                  <FieldValues pairs={pairs} />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {remaining > 0 && (
         <button
           type="button"
           onClick={() => setShown((count) => count + ENTRIES_STEP)}
-          className={`mt-3 w-full py-2 text-center text-xs ${MUTED} hover:text-espresso`}
+          className={`w-full py-2 text-center text-xs ${MUTED} hover:text-espresso`}
         >
           {remaining} more {remaining === 1 ? 'entry' : 'entries'}
         </button>

@@ -235,3 +235,15 @@
     transparent 25px 28px
   );
 }
+
+/* Horizontal scroll rows (the calendar legend) hide their scrollbar. On
+   platforms that draw overlay scrollbars the bar floats over the row and
+   clips the labels, and padding cannot reserve space for a bar that takes
+   none; scrolling itself is unaffected. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
