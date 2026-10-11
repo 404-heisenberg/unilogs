@@ -24,7 +24,7 @@ where their time actually goes.
 | ------------------------------ | ------------------------------------------------------------------------------------------- |
 | Use the app                    | [unilogs.vercel.app](https://unilogs.vercel.app)                                            |
 | See what it does               | [Features](/features)                                                                       |
-| Try the API                    | [Interactive API reference](https://unilogs.onrender.com/api/docs#description/introduction) |
+| Try the API                    | [Interactive API reference](https://unilogs.onrender.com/api/docs)                          |
 | See every endpoint on one page | [API Overview](/api)                                                                        |
 | Understand the data model      | [Database Design](/database-design)                                                         |
 | Read the code                  | [GitHub repository](https://github.com/404-heisenberg/unilogs)                              |
@@ -34,19 +34,24 @@ Use the **search box** at the top of every page to find anything else.
 
 ## Rubric evidence
 
-Where to find the evidence for each Milestone 3 criterion. The team walked the
-client through this same list in [Meeting 5](/stakeholder-meetings).
+Milestone 4 is marked holistically against **`project_briefs.pdf` §3.4** across
+four categories — Data, API, App and Misc — over the whole development cycle.
+The table below points at where the evidence for each lives. The team walked the
+client through a version of this list in [Meeting 5](/stakeholder-meetings).
 
-| Criterion              | Evidence                                                                                                                                                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| User feedback          | [User Testing](/user-testing) (17 responses) and five [client meetings](/stakeholder-meetings)                                                                                                                   |
-| Automated testing      | [Testing Policy](/testing-policy): line coverage of 70.6% (frontend) and 83.1% (backend), thresholds enforced in CI, plus Playwright end-to-end tests                                                            |
-| Feature implementation | [Features](/features) and the [live app](https://unilogs.vercel.app)                                                                                                                                             |
-| API implementation     | [API Overview](/api) and the [interactive reference](https://unilogs.onrender.com/api/docs#description/introduction), backed by a Supertest suite for every route group                                          |
-| Performance            | [Performance](/performance): indexes, `EXPLAIN ANALYZE` and the N+1 audit                                                                                                                                        |
-| Improvement            | [User Testing → Changes made as a result](/user-testing#changes-made-as-a-result) and the client's recommendations in [Stakeholder Meetings](/stakeholder-meetings)                                              |
-| Documentation          | This site: [features](/features), [API](/api), [database](/database-design), [testing](/testing-policy) and [tech stack](/tech-stack), including [third-party code and external APIs](/tech-stack#external-apis) |
-| Project methodology    | [Methodology](/methodology), [Git Methodology](/git-methodology), and standups for [Sprint 1](/sprint-1-standups), [Sprint 2](/sprint-2-standups) and [Sprint 3](/sprint-3-standups)                             |
+| Category | Weight | Criterion | Evidence |
+| -------- | ------ | --------- | -------- |
+| Data     | 10%    | Database — real data, test data labelled honestly | [Database Design](/database-design): schema, ERD and the production/development/test environments |
+|          |        | Structure — schema, migrations, best practice     | [Database Design](/database-design); every migration in `backend/prisma/migrations/` |
+| API      | 25%    | Design — hierarchy clear to an outsider           | [API Overview](/api) and the [interactive reference](https://unilogs.onrender.com/api/docs), grouped by tag |
+|          |        | Availability and deployment                       | Live on Render; [`/api/health`](https://unilogs.onrender.com/api/health) |
+|          |        | Performance                                       | [Performance](/performance): indexes, `EXPLAIN ANALYZE`, load test |
+| App      | 40%    | Features                                          | [Features](/features) and the [live app](https://unilogs.vercel.app) |
+|          |        | Responsiveness                                    | [Features → Mobile and install](/features#mobile-and-install) |
+| Misc     | 25%    | Testing                                           | [Testing Policy](/testing-policy): coverage figures, thresholds enforced in CI, Playwright E2E |
+|          |        | Git methodology                                   | [Git Methodology](/git-methodology) |
+|          |        | Integration                                       | [Tech Stack → External APIs](/tech-stack#external-apis) |
+|          |        | Tools                                             | The [issue board](https://github.com/orgs/404-heisenberg/projects) and [How we track bugs](/bug-tracking) |
 
 ## The stack
 
@@ -82,4 +87,10 @@ Copy each `.env.example` to `.env` and fill in the values before running anythin
 <AiDeclaration
   tools="Claude-Web[Claude Opus 5], Claude-Code[Claude Opus 5.5]"
   purpose="drafting and structuring the introduction page, and adding the quick links and rubric evidence tables"
+/>
+
+<AiDeclaration
+  action="edited"
+  tools="opencode[deepseek-v4-flash]"
+  purpose="re-pointing the rubric evidence table at the Milestone 4 categories in brief §3.4 (Data / API / App / Misc) and decoupling the quoted coverage numbers in favour of the Testing Policy page"
 />

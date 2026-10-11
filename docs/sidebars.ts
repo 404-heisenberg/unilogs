@@ -21,6 +21,7 @@ const sidebars: SidebarsConfig = {
         'database-design',
         'testing-policy',
         'performance',
+        'third-party-register',
         'accessibility',
       ],
     },

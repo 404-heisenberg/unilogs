@@ -29,7 +29,7 @@ Agile suits this because it plans in short increments and expects requirements t
 change. Within Agile we chose Scrum over Kanban for one specific reason: **the
 course imposes four hard deadlines.** Scrum's fixed-length sprints map directly
 onto those deadlines, and each sprint ends in something demonstrable. Kanban's
-continuous flow has no equivalent forcing function, and with seven students
+continuous flow has no equivalent forcing function, and with six students
 balancing other courses, a deadline that arrives on a known date is more useful
 than one that does not.
 
@@ -39,7 +39,7 @@ than one that does not.
 | --- | --- | --- |
 | Product Owner | Our tutor-client | Sets and prioritises requirements, signs off on what is done |
 | Scrum Master | Mosey | Runs ceremonies and removes blockers |
-| Development Team | All seven members | Everyone writes code, including the Scrum Master |
+| Development Team | All six members | Everyone writes code, including the Scrum Master |
 
 **The Scrum Master does not assign work.** This is worth stating plainly because
 it is the most commonly misunderstood part of the role. The Scrum Master's job is
@@ -81,7 +81,7 @@ We hold standups over Discord voice, in the `#meetings` channel. Each member cov
 what they did, what they are doing next, and what is blocking them.
 
 **Our deviation from the Scrum Guide is frequency, not format.** The Guide
-specifies a 15-minute meeting every day at the same time. Seven students with
+specifies a 15-minute meeting every day at the same time. Six students with
 different timetables and course loads cannot hold a daily meeting that everyone
 reliably attends, and a ceremony half the team skips is worse than one honestly
 scheduled less often. We hold standups several times per sprint, and members raise
@@ -101,8 +101,9 @@ Feedback from the review feeds directly into the next sprint's backlog.
 ### Sprint Retrospective
 
 After each review the team meets without the client to discuss what went well,
-what did not, and what we will change. Retrospectives are written up and committed
-to the repository.
+what did not, and what we will change. Retrospective notes are recorded after
+each sprint and kept with the team's process records; where a retrospective is
+written up on this site it is linked from the standup page it follows.
 
 Retrospectives are explicitly blame-free. The purpose is to improve the process,
 not to attribute fault.
@@ -131,10 +132,10 @@ Recorded openly, with reasoning.
 
 | Deviation | Why |
 | --- | --- |
-| Standups several times per sprint rather than daily | Seven students with incompatible timetables. A less frequent meeting everyone attends is worth more than a daily one half the team misses. Blockers are raised in Discord between meetings. |
+| Standups several times per sprint rather than daily | Six students with incompatible timetables. A less frequent meeting everyone attends is worth more than a daily one half the team misses. Blockers are raised in Discord between meetings. |
 | Uneven sprint lengths | Sprint boundaries are set by course deadlines, not by us. Sprint 1 runs longer than Sprint 4. The Scrum Guide prefers consistent length; we cannot control this. |
 | The Product Owner is our tutor-client, not a team member | Follows the course structure. It does mean the Product Owner is less available than Scrum assumes, so we prepare specific written questions for each meeting rather than relying on ad-hoc access. |
-| No formal story point estimation | With seven people new to the stack, early estimates would be close to guesswork. We size issues qualitatively — small enough for one person, one branch, one pull request — and refine as we learn our actual velocity. |
+| No formal story point estimation | With six people new to the stack, early estimates would be close to guesswork. We size issues qualitatively — small enough for one person, one branch, one pull request — and refine as we learn our actual velocity. |
 
 Documenting an adaptation and its reasoning is more honest than claiming to run
 textbook Scrum while doing something else.
@@ -146,8 +147,9 @@ textbook Scrum while doing something else.
 | Sprint backlogs | GitHub Milestones |
 | Task-level work | GitHub Projects board |
 | Bugs | GitHub issues labelled `bug` — see [How we track bugs](./bug-tracking.mdx) |
-| Standups | Discord `#meetings` channel, with dated summaries |
-| Sprint planning and retrospectives | Written up in this repository |
+| Standups | Screenshots and dated summaries on the [Sprint 1](/sprint-1-standups), [Sprint 2](/sprint-2-standups) and [Sprint 3](/sprint-3-standups) pages |
+| Sprint planning | Plans committed to the repository (see the [Sprint 4 Plan](https://github.com/404-heisenberg/unilogs/issues)) |
+| Retrospectives | Held after each sprint; notes kept in the team's process records |
 | Client meetings | Discord `#tutor-channel`, with minutes recording dates, attendees, decisions and actions |
 | Delivered increments | Tagged releases, `v0.1.0` through `v1.0.0` |
 
