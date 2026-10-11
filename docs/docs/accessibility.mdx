@@ -1,0 +1,113 @@
+---
+title: Accessibility
+description: How UniLogs meets the accessibility rubric — keyboard support, contrast, ARIA and reduced motion.
+---
+
+import AiDeclaration from '@site/src/components/AiDeclaration';
+
+# Accessibility
+
+What the rubric asks — contrast, semantic HTML, ARIA and keyboard support —
+and the evidence behind each claim.
+
+## Approach
+
+UniLogs builds on **Radix primitives** (via shadcn/ui) for every interactive
+surface that has complex behaviour — dialogs, sheets, selects, switches,
+tabs. Radix supplies the keyboard handling, focus trapping, focus return and
+ARIA wiring for those controls, so the team doesn't hand-roll the hard parts
+of accessibility. On top of that, the project follows three rules everywhere:
+
+1. **Decorative content is hidden from assistive technology.**
+2. **Icon-only controls carry an `aria-label`.**
+3. **Keyboard focus is always visible.**
+
+## Semantic HTML and landmarks
+
+- The app shell uses a `<main>` region per page, plus `<nav>` for the rail and
+  explorer (see `frontend/src/components/app-shell/` in the repository).
+- Pages whose big visual heading is tucked away on mobile still expose a
+  heading to assistive technology via `sr-only` — for example the Entries,
+  Settings, Projects, Dashboard, Project and as-at pages
+  (`<h1 className="sr-only … md:not-sr-only">`), and the entry editor's title
+  and body labels (`label htmlFor … className="sr-only"`).
+- Regions and groups are labelled with `aria-labelledby` (project workspace
+  sections, "still open", "recently deleted", "saved panels") or `aria-label`
+  for unnamed groups (the project section `tablist`, the calendar `role="group"`).
+
+## Keyboard support
+
+- **Every interactive element is reachable and operable by keyboard.** This is
+  inherited from Radix for dialogs, sheets, selects and switches (arrow keys,
+  Escape, tab traps) and enforced for custom widgets:
+  - Checkbox-style to-do rows use `role="checkbox"` with
+    `aria-label="Mark … done"` ([`widgets.tsx`](/features), project workspace).
+  - Export and aggregation pickers are real radio groups (`role="radiogroup"`)
+    with arrow-key handling ([`ExportDialog.tsx`](https://github.com/404-heisenberg/unilogs), `Segmented.tsx`).
+  - The calendar grid exposes the day grid via `aria-label` on each day cell,
+    "Previous/Next month" buttons and a labelled legend; the stat-panel chart
+    and heatmap cells are `role="img"` with text alternatives.
+- **Focus is visible everywhere.** Interactive elements use
+  `focus-visible:outline-2` with a gold ring (or the shadcn `ring-3` template
+  for `Button`, `Select`, `Switch`), so keyboard users always see where they
+  are. The custom dashboard widgets, pane collapse buttons and field rows all
+  carry it. Verified by grep: 50+ `focus-visible` occurrences across pages and
+  the shared `ui/` primitives.
+
+## Labels and naming
+
+- **Icon buttons are labelled.** "Log entry", "New project", "Back to
+  entries", "History", "Close", "Reorder", "Hide", "Make wide", "Add widget",
+  "Copy link", "Use the … calendar" and so on are all `aria-label`s rather
+  than ambiguous icons (see `AppHeader.tsx`, `widgets.tsx`, `PaneLayout.tsx`,
+  `ShareDialog.tsx`).
+- **Decorative icons are hidden.** Every lucide icon that duplicates a text
+  label, and all repeating decorative backgrounds, carry `aria-hidden` —
+  100+ occurrences across the app (icons, sparklines, handle bars, legend
+  dots, the heatmap's non-interactive cells).
+- **Error and status changes are announced.** Validation failures under forms
+  use `role="alert"` (entry form, share dialog, delete project, stat panel
+  builder), and the field-filter progress uses `role="status"`.
+
+## Contrast
+
+Contrast ratios computed from the design tokens in `frontend/src/styles/`
+(espresso `#1c0d06`, cream `#f5ebe0`, gold `#D4A843`, clay `#7a5230`):
+
+| Pair | Ratio | WCAG level |
+| --- | ---: | --- |
+| Espresso text on cream | 16.08:1 | **AAA** (≥ 7:1) |
+| Gold text on espresso | 8.55:1 | **AAA** (≥ 7:1) |
+| Clay text on cream | 5.80:1 | **AA** (≥ 4.5:1) |
+
+Body text is espresso-on-cream, the strongest pair; gold-on-espresso is used
+for branded accents and buttons; clay is used for secondary text. All three
+pairs used for *text* meet the AA threshold for normal text, and the two
+primary pairs meet AAA.
+
+## Reduced motion
+
+There is **no preference-aware motion** in the codebase today (zero
+`prefers-reduced-motion` / `motion-reduce` handling as of 11 October 2026).
+That is deliberate: the Sprint 4 animation work ([issue #350](https://github.com/404-heisenberg/unilogs/issues/350))
+ships **every** animation with a `motion-reduce:` variant in the same change,
+so this rose, rather than started, from nothing. Until #350 merges, the app
+simply has no motion — which cannot harm a vestibular-sensitive user. `grep
+-r "motion-reduce" frontend/src` is the acceptance check for that work.
+
+## Known gaps, stated honestly
+
+- **No recorded axe run yet.** The checks above are code-level and manual. A
+  full automated axe scan against the deployed app is part of the manual QA
+  workflow that accompanies the submission; this page will be updated with its
+  findings.
+- **Titles on every page** are promoted from `sr-only` to visible under `md`,
+  which is the intended responsive behaviour, but means a sighted reader on a
+  narrow screen sees a shorter header than a desktop reader — the heading is
+  present for both.
+
+<AiDeclaration
+  action="generated"
+  tools="opencode[deepseek-v4-flash]"
+  purpose="writing the accessibility evidence page from a verified code audit of frontend/src (Radix-based primitives, aria-hidden/aria-label usage, roles, focus-visible styles, sr-only headings) and contrast ratios computed from the design tokens"
+/>

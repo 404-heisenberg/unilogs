@@ -22,6 +22,7 @@ const sidebars: SidebarsConfig = {
         'testing-policy',
         'performance',
         'third-party-register',
+        'accessibility',
       ],
     },
     {

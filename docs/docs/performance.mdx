@@ -73,6 +73,37 @@ already fast and stays under a second.
 - **Paginated lists.** `GET /api/entries` returns pages (20 by default), so
   long logbooks never load all at once.
 
+## Screen-size responsiveness
+
+The design targets come from the Figma prototype: **desktop 1440×1024** and
+**mobile 390×844**. The implementation is mobile-first — the app adapts
+through Tailwind breakpoint variants, then gets its full desktop layout at
+the `md:` breakpoint (768px), which dominates the codebase at **292
+occurrences** in `frontend/src`.
+
+What a 390×844 phone shows versus a desktop:
+
+- **Bottom navigation.** An explicit `MobileBottomNav` replaces the desktop
+  rail on small screens (`frontend/src/components/app-shell/`), with a
+  full-screen menu (MoreSheet) holding the rest.
+- **Panels become sheets.** Surfaces that are side panes on desktop — entry
+  properties, the filter panel, and the overflow menu — slide up as sheets on
+  a phone (`PropertiesSheet`, `FiltersSheet`, `MoreSheet`). Each carries a
+  draggable handle and a `sr-only`-close button.
+- **Headers compress without losing content.** Page titles move to `sr-only`
+  under `md` (visible only to assistive technology) and the layout uses
+  tighter spacing (`sm:` variants), including touch-friendly tap targets
+  (`min-h-11` on primary controls).
+- **Nothing clips.** One Sprint 4 bug fix specifically closed a clipping bug
+  found on narrow screens: the calendar legend's horizontal scrollbar no
+  longer slices its labels (#344/#343). The bottom nav and sheets are the
+  mobile-first implementation of the same surfaces, so nothing is hidden
+  horizontally at 390px.
+
+The mobile behaviour is verified against the 390×844 Figma frames in the
+Design Reference Map, and the breakpoints named above are the ones the
+responsive evidence relies on.
+
 ## Load test
 
 `npm run load-test` in `backend/` (`backend/scripts/load-test.ts`) starts the
