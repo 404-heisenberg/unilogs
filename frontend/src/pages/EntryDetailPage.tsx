@@ -119,7 +119,10 @@ export default function EntryDetailPage() {
   }
 
   const fieldTypes = new Map(fields.map((field) => [field.name, field.fieldType]));
-  const contentEntries = Object.entries(entry.content ?? {});
+  // The content is a JSON object, but `Object.entries` on it widens the value
+  // type to `unknown` at best, and to `{}` when the fallback is in the union.
+  // The values are inspected below, so say what they are.
+  const contentEntries = Object.entries(entry.content ?? {}) as [string, unknown][];
   const tags = entry.tags ?? [];
   const formattedDate = formatDate(entry.date);
   const formattedDueDate = entry.dueDate ? formatDate(entry.dueDate) : null;
@@ -130,7 +133,8 @@ export default function EntryDetailPage() {
   // the first text field is the next best place for it. The field name is
   // deliberately not written down here: a project defines its own fields, and
   // a note that only shows up for a field called "Notes" is not a note.
-  const textFallback = contentEntries.find(([name, value]) => {
+  const textFallback = contentEntries.find((pair): pair is [string, string] => {
+    const [name, value] = pair;
     if (typeof value !== 'string' || value.trim() === '') return false;
     const type = fieldTypes.get(name);
     // The field definitions have not loaded yet, so the shape of the value is
