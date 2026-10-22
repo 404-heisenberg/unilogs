@@ -18,7 +18,7 @@ const ENTRY: Entry = {
   projectId: 1,
   date: '2026-09-01T00:00:00.000Z',
   createdAt: '2026-09-01T08:00:00.000Z',
-  content: { Notes: 'Read chapter 3' },
+  content: { notes: 'Read chapter 3' },
   project: { id: 1, name: 'Thesis', archived: false, userId: 'u1', reminderFrequency: 'WEEKLY' },
   tags: [{ tag: { id: 1, name: 'reading' } }],
 };
@@ -59,6 +59,52 @@ describe('EntryDetailPage', () => {
     expect(within(article).getByText('Read chapter 3')).toBeInTheDocument();
 
     expect(getMock).toHaveBeenCalledWith('/api/entries/10');
+  });
+
+  it('shows the body as the prose when the entry has one', async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === '/api/entries/10') {
+        return Promise.resolve({
+          ...ENTRY,
+          body: 'The discussion now answers each research question in order.',
+        });
+      }
+      if (path === '/api/field-definitions?projectId=1') {
+        return Promise.resolve([
+          { id: 1, projectId: 1, name: 'hours', fieldType: 'number' },
+          { id: 2, projectId: 1, name: 'notes', fieldType: 'text' },
+        ]);
+      }
+      return Promise.reject(new Error(`unexpected GET ${path}`));
+    });
+
+    renderPage();
+
+    const article = await screen.findByRole('article');
+    expect(
+      await within(article).findByText(/The discussion now answers each research question/),
+    ).toBeInTheDocument();
+    // The body is the prose. A field value is not.
+    expect(within(article).queryByText('Read chapter 3')).not.toBeInTheDocument();
+  });
+
+  it('falls back to a text field when the entry has no body', async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === '/api/entries/10') return Promise.resolve(ENTRY);
+      if (path === '/api/field-definitions?projectId=1') {
+        return Promise.resolve([
+          { id: 1, projectId: 1, name: 'hours', fieldType: 'number' },
+          { id: 2, projectId: 1, name: 'notes', fieldType: 'text' },
+        ]);
+      }
+      return Promise.reject(new Error(`unexpected GET ${path}`));
+    });
+
+    renderPage();
+
+    const article = await screen.findByRole('article');
+    expect(await within(article).findByText('Read chapter 3')).toBeInTheDocument();
+    expect(within(article).queryByText('No notes')).not.toBeInTheDocument();
   });
 
   it('shows a not-found state for a 404', async () => {

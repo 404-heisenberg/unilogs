@@ -120,12 +120,23 @@ export default function EntryDetailPage() {
 
   const fieldTypes = new Map(fields.map((field) => [field.name, field.fieldType]));
   const contentEntries = Object.entries(entry.content ?? {});
-  const contentRecord = (entry.content ?? {}) as Record<string, unknown>;
   const tags = entry.tags ?? [];
   const formattedDate = formatDate(entry.date);
   const formattedDueDate = entry.dueDate ? formatDate(entry.dueDate) : null;
   const hours = fields.length > 0 ? entryDurationHours(entry, fields) : null;
   const projectName = entry.project?.name;
+
+  // The prose of the entry. The body is where it lives; when there is no body
+  // the first text field is the next best place for it. The field name is
+  // deliberately not written down here: a project defines its own fields, and
+  // a note that only shows up for a field called "Notes" is not a note.
+  const textFallback = contentEntries.find(([name, value]) => {
+    if (typeof value !== 'string' || value.trim() === '') return false;
+    const type = fieldTypes.get(name);
+    // The field definitions have not loaded yet, so the shape of the value is
+    // the only clue about what it is.
+    return type ? type === 'text' : true;
+  })?.[1];
 
   const properties = (
     <div className="flex flex-col gap-5">
@@ -265,10 +276,8 @@ export default function EntryDetailPage() {
           <div className="prose prose-sm max-w-none leading-relaxed text-espresso prose-headings:text-espresso prose-p:text-espresso prose-a:text-clay prose-strong:text-espresso prose-blockquote:border-gold prose-blockquote:text-cocoa">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{entry.body}</ReactMarkdown>
           </div>
-        ) : contentRecord['Notes'] ? (
-          <div className="text-sm whitespace-pre-wrap text-espresso">
-            {String(contentRecord['Notes'])}
-          </div>
+        ) : textFallback ? (
+          <div className="text-sm whitespace-pre-wrap text-espresso">{textFallback}</div>
         ) : (
           <p className="text-sm text-clay italic">No notes</p>
         )}

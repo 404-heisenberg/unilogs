@@ -665,7 +665,7 @@ rather than an empty screen.
 | Projects                       |     4 |
 | Live entries                   |    50 |
 | Trashed (soft-deleted) entries |     1 |
-| Audit rows                     |    56 |
+| Audit rows                     |    59 |
 | Tags                           |     6 |
 | Stat panels                    |     3 |
 
@@ -678,14 +678,23 @@ audit timestamps for those rows so the as-at view has a past to show; without
 it, an as-at query for any date before the seed date returns an empty
 logbook, because the API can only stamp rows with the current time.
 
-Both scripts are safe to run twice. The seed matches an existing entry on its
-title _or_ on a name one of its edits gave it — the versioned entry is renamed
-during seeding, so without that second name a re-run would create a duplicate
-— and it reuses a stat panel that already carries the same name instead of
-adding a second one. `--reset` rebuilds the four projects from scratch, which
-is what refreshes the entry dates; they are dated relative to the day the
-script runs, because the dashboard's streak and "this week" widgets count
-against now.
+Both scripts are safe to run twice. The seed matches the entries it wants
+against the entries a project already has by *counting titles*, not by asking
+whether a title is present: a gym log has four sessions all called "Lower body",
+so membership alone would either double the project or skip it. An entry the
+seed renames is matched under the name it ends up with, and the titles it
+carries in its edit history imply that name, so the seed data cannot drift away
+from what it writes. It also reuses a stat panel that already carries the same
+name instead of adding a second one. `--reset` rebuilds the four projects from
+scratch, which is what refreshes the entry dates; they are dated relative to
+the day the script runs, because the dashboard's streak and "this week" widgets
+count against now.
+
+The entries carry their prose in the entry `body` rather than in a custom
+field. The body is Markdown, it is what the timeline card shows as a snippet,
+and it is the same column the version history snapshots — so an edit to an
+entry's prose shows up in the history like any other edit. The custom fields
+on an entry hold the numbers a project wants to compute over.
 
 Two consequences worth being honest about. The demo account's rows are
 generated, so "nothing in the live branch is generated" is no longer true — but

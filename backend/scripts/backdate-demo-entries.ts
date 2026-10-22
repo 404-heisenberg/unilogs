@@ -66,6 +66,7 @@ const outFile = flag('out');
 
 const API = (flag('api') ?? process.env.DEMO_API_URL ?? 'https://unilogs.onrender.com').replace(
   /\/+$/,
+  '',
 );
 
 let EMAIL = '';
