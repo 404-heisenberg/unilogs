@@ -21,7 +21,7 @@ It has **fifteen tables**. Four are required by Better Auth (`user`,
 `share_tokens` and `notifications`. A twelfth UniLogs model, `Task`, is in
 the schema but has no migration — [see below](#proposed-not-yet-built-tasks).
 
-Since Sprint 4 the logbook is *hard to lose*: entries are **soft-deleted**
+Since Sprint 4 the logbook is _hard to lose_: entries are **soft-deleted**
 into a recoverable trash, every correction is preserved as an entry version,
 and the dashboard layout, custom stat panels and calendar choices are stored
 server-side.
@@ -379,16 +379,16 @@ the app, and how each one is displayed. It is persisted rather than re-derived
 from the Google API on every load, so enable/disable and colour choices stay
 stable across devices.
 
-| Column      | Type    | Constraints                                |
-| ----------- | ------- | ------------------------------------------ |
-| `id`        | integer | Primary key                                |
-| `userId`    | text    | Not null, foreign key to `user.id`         |
-| `calendarId`| text    | Not null, the Google calendar's own id     |
-| `summary`   | text    | Not null, e.g. "Lectures"                 |
-| `description`| text   |                                            |
-| `color`     | text    | A Google calendar colour id                |
-| `enabled`   | boolean | Not null, default `true`                   |
-| `order`     | integer | Not null, default `0`                      |
+| Column        | Type    | Constraints                            |
+| ------------- | ------- | -------------------------------------- |
+| `id`          | integer | Primary key                            |
+| `userId`      | text    | Not null, foreign key to `user.id`     |
+| `calendarId`  | text    | Not null, the Google calendar's own id |
+| `summary`     | text    | Not null, e.g. "Lectures"              |
+| `description` | text    |                                        |
+| `color`       | text    | A Google calendar colour id            |
+| `enabled`     | boolean | Not null, default `true`               |
+| `order`       | integer | Not null, default `0`                  |
 
 The pair (`userId`, `calendarId`) is unique, so the same Google calendar can't
 be listed twice for one user. Suggestions, upcoming events and the calendar
@@ -402,17 +402,17 @@ example). The expression is evaluated safely on the server — never with
 `eval` — for every entry, then aggregated with Sum or Average over a date
 range.
 
-| Column       | Type    | Constraints                            |
-| ------------ | ------- | -------------------------------------- |
-| `id`         | integer | Primary key                            |
-| `userId`     | text    | Not null, foreign key to `user.id`     |
-| `projectId`  | integer | Not null, foreign key to `projects.id` |
-| `name`       | text    | Not null                               |
-| `expression` | text    | Not null, e.g. `weight * reps`         |
-| `aggregation`| text    | Not null, default `sum` (`sum`/`average`) |
-| `rangeDays`  | integer | Not null, default `30`                 |
-| `position`   | integer | Not null, default `0`                  |
-| `hidden`     | boolean | Not null, default `false`              |
+| Column        | Type    | Constraints                               |
+| ------------- | ------- | ----------------------------------------- |
+| `id`          | integer | Primary key                               |
+| `userId`      | text    | Not null, foreign key to `user.id`        |
+| `projectId`   | integer | Not null, foreign key to `projects.id`    |
+| `name`        | text    | Not null                                  |
+| `expression`  | text    | Not null, e.g. `weight * reps`            |
+| `aggregation` | text    | Not null, default `sum` (`sum`/`average`) |
+| `rangeDays`   | integer | Not null, default `30`                    |
+| `position`    | integer | Not null, default `0`                     |
+| `hidden`      | boolean | Not null, default `false`                 |
 
 A panel lives on a project but belongs to its creator; pinning it to the
 dashboard is recorded as a `statPanel:<id>` entry in `user.dashboardLayout`.
@@ -628,28 +628,85 @@ Three separate databases exist, and the team never lets them mix:
 The live app holds a small amount of real data, and every performance figure in
 these docs comes from synthetic data instead.
 
-As of 11 October 2026 the production branch holds **22 accounts, 37 projects and
-55 live entries**, with nothing in the trash. Fifteen of the 22 accounts are
+As of 11 October 2026 the production branch held **22 accounts, 37 projects and
+55 live entries**, with nothing in the trash. Fifteen of the 22 accounts were
 email-verified. Two of them use the reserved `example.test` and `example.com`
 domains — manual test sign-ups rather than real users — so roughly **20 accounts
-are genuine**; the rest use ordinary addresses (15 `gmail.com`, 3
+were genuine**; the rest use ordinary addresses (15 `gmail.com`, 3
 `students.wits.ac.za` and two personal domains). The only `example.test` account
 in production was created by hand, not by the load test below, which never
 leaves the test database.
 
-| Production, 11 October 2026     | Count |
+On 22 October 2026 the presentation demo account — disclosed in full below —
+added one account, four projects, fifty live entries and one trashed entry. The
+branch therefore now holds **23 accounts, 41 projects, 105 live entries and one
+trashed entry**, of which the demo account is 1 account, 4 projects, 50 live
+entries and 1 trashed entry.
+
+| Production, 22 October 2026     | Count |
 | ------------------------------- | ----: |
-| Accounts                        |    22 |
-| — email-verified                |    15 |
+| Accounts                        |    23 |
+| — email-verified                |    16 |
 | — reserved `example.*` accounts |     2 |
-| Projects                        |    37 |
-| Live entries                    |    55 |
-| Trashed (soft-deleted) entries  |     0 |
+| Projects                        |    41 |
+| Live entries                    |   105 |
+| Trashed (soft-deleted) entries  |     1 |
+
+#### The presentation demo account
+
+Production also holds **one deliberately generated account**, and it is
+disclosed here rather than left to look like organic data. It exists so the
+UniLogs walkthrough can be given against a logbook with six weeks of history
+rather than an empty screen.
+
+| Demo account                   | Count |
+| ------------------------------ | ----: |
+| Accounts                       |     1 |
+| Projects                       |     4 |
+| Live entries                   |    50 |
+| Trashed (soft-deleted) entries |     1 |
+| Audit rows                     |    59 |
+| Tags                           |     6 |
+| Stat panels                    |     3 |
+
+It is created by a checked-in script, `backend/scripts/seed-demo.ts`, which
+writes through the public API rather than into the tables, so every entry
+carries the audit row a real create writes and the version history and as-at
+view both have something to replay. A second script,
+`backend/scripts/backdate-demo-entries.ts`, then rewrites `created_at` and the
+audit timestamps for those rows so the as-at view has a past to show; without
+it, an as-at query for any date before the seed date returns an empty
+logbook, because the API can only stamp rows with the current time.
+
+Both scripts are safe to run twice. The seed matches the entries it wants
+against the entries a project already has by *counting titles*, not by asking
+whether a title is present: a gym log has four sessions all called "Lower body",
+so membership alone would either double the project or skip it. An entry the
+seed renames is matched under the name it ends up with, and the titles it
+carries in its edit history imply that name, so the seed data cannot drift away
+from what it writes. It also reuses a stat panel that already carries the same
+name instead of adding a second one. `--reset` rebuilds the four projects from
+scratch, which is what refreshes the entry dates; they are dated relative to
+the day the script runs, because the dashboard's streak and "this week" widgets
+count against now.
+
+The entries carry their prose in the entry `body` rather than in a custom
+field. The body is Markdown, it is what the timeline card shows as a snippet,
+and it is the same column the version history snapshots — so an edit to an
+entry's prose shows up in the history like any other edit. The custom fields
+on an entry hold the numbers a project wants to compute over.
+
+Two consequences worth being honest about. The demo account's rows are
+generated, so "nothing in the live branch is generated" is no longer true — but
+it was never about the demo account, it was about the performance figures, and
+those still come from the load test below. And the demo account is a real
+account on a real deployment with a real inbox, so it will appear in the
+account counts above until it is deleted.
 
 Every stress, load and benchmark number on the [Performance](/performance) page
-comes from **synthetic data**, not from production. Nothing in the live branch is
-generated — there is no `prisma seed` script and no synthetic rows were loaded
-into it. The 25,000-entry dataset is built at run time by
+comes from **synthetic data**, not from production. No benchmark dataset was
+ever loaded into the live branch — there is no `prisma seed` script and the
+25,000-entry dataset is built at run time by
 `backend/scripts/load-test.ts`: 50 projects × 500 entries for one throwaway
 `load-test-…@example.test` account, against the disposable test database the
 script refuses to point anywhere else, and the account is deleted when the run
@@ -690,4 +747,16 @@ replayable.
   action="generated"
   tools="opencode[deepseek-v4-flash]"
   purpose="adding the Production and test data section from the production account, project and entry counts the team queried on the live Neon branch, and separating those figures from the synthetic dataset the load test and benchmark generate"
+/>
+
+<AiDeclaration
+  action="edited"
+  tools="opencode[big-pickle]"
+  purpose="disclosing the presentation demo account as a deliberately generated dataset in the live branch, with its own counts, the two scripts that create and backdate it, and correcting the claim that nothing in the live branch is generated"
+/>
+
+<AiDeclaration
+  action="edited"
+  tools="opencode[big-pickle]"
+  purpose="refreshing the production counts to 22 October 2026 after the demo account was seeded and re-seeded, and documenting why the seed script is safe to run twice"
 />

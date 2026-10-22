@@ -10,7 +10,9 @@
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,yml,yaml}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,yml,yaml}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,yml,yaml}\"",
+    "seed:demo": "npm --prefix backend run seed:demo --",
+    "backdate:demo": "npm --prefix backend run backdate:demo --"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
