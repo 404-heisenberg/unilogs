@@ -501,46 +501,47 @@ export default function ProjectCreatePage() {
 
                     {/* Inline Form when Adding Field */}
                     {isAddingField && (
-                      <form
-                        onSubmit={handleAddField}
-                        className="flex flex-col sm:flex-row items-center gap-2 pt-1"
-                      >
-                        <input
-                          type="text"
-                          ref={fieldNameRef}
-                          value={newFieldName}
-                          onChange={(e) => setNewFieldName(e.target.value)}
-                          placeholder="Field name"
-                          autoFocus
-                          className="w-full sm:flex-1 rounded-lg border border-line bg-white px-3 py-2 text-xs text-espresso outline-none"
-                        />
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                          <select
-                            value={newFieldType}
-                            onChange={(e) => setNewFieldType(e.target.value as FieldType)}
-                            className="flex-1 sm:flex-none rounded-lg border border-line bg-white px-3 py-2 text-xs text-espresso outline-none"
-                          >
-                            {FIELD_TYPES.map((type) => (
-                              <option key={type} value={type}>
-                                {FIELD_TYPE_LABELS[type]}
-                              </option>
-                            ))}
-                          </select>
-                          <Button
-                            type="submit"
-                            size="sm"
-                            className="bg-espresso text-xs text-white rounded-xl"
-                          >
-                            Add
-                          </Button>
-                          <button
-                            type="button"
-                            onClick={() => setIsAddingField(false)}
-                            aria-label="Stop adding fields"
-                            className="p-1 text-clay hover:text-espresso"
-                          >
-                            <X size={16} />
-                          </button>
+                      <form onSubmit={handleAddField} className="flex flex-col gap-2 pt-1">
+                        {/* The hint sits below this row, not in it: as a full-width
+                            row item it squeezed the name input to a sliver. */}
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                          <input
+                            type="text"
+                            ref={fieldNameRef}
+                            value={newFieldName}
+                            onChange={(e) => setNewFieldName(e.target.value)}
+                            placeholder="Field name"
+                            autoFocus
+                            className="w-full sm:flex-1 rounded-lg border border-line bg-white px-3 py-2 text-xs text-espresso outline-none"
+                          />
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <select
+                              value={newFieldType}
+                              onChange={(e) => setNewFieldType(e.target.value as FieldType)}
+                              className="flex-1 sm:flex-none rounded-lg border border-line bg-white px-3 py-2 text-xs text-espresso outline-none"
+                            >
+                              {FIELD_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                  {FIELD_TYPE_LABELS[type]}
+                                </option>
+                              ))}
+                            </select>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="bg-espresso text-xs text-white rounded-xl"
+                            >
+                              Add
+                            </Button>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingField(false)}
+                              aria-label="Stop adding fields"
+                              className="p-1 text-clay hover:text-espresso"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
                         </div>
                         <p className="w-full text-center text-[10px] text-clay">
                           Add saves this field and keeps the box open for the next one.
