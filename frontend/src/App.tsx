@@ -35,6 +35,7 @@ const SuggestionsPage = lazy(() => import('./pages/SuggestionsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 // Public share page: no app/auth code ships with it.
 const SharedReportPage = lazy(() => import('./pages/SharedReportPage'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 
 // Full-page placeholder while a route's chunk downloads. Matches the page
 // background so the swap to real content doesn't flash.
@@ -87,6 +88,7 @@ function AppToaster() {
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/privacy', element: <PrivacyPolicyPage /> },
+  { path: '/terms', element: page(<TermsOfServicePage />) },
   { path: '/login', element: page(<LoginPage />) },
   { path: '/signup', element: page(<SignupPage />) },
   { path: '/reset-password', element: page(<ResetPasswordPage />) },

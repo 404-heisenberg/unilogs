@@ -197,9 +197,14 @@ export default function LandingPage() {
 
         <footer className="relative mt-auto flex h-[46px] flex-wrap items-end justify-between gap-3 pl-[31px] text-[9.5px] tracking-[0.02em] text-clay md:h-[76px] md:pl-16 md:text-[11px]">
           <span>© 2026 UniLogs, built by Code of Duty</span>
-          <Link to="/privacy" className="underline underline-offset-2 hover:text-espresso">
-            Privacy Policy
-          </Link>
+          <span className="flex gap-4">
+            <Link to="/terms" className="underline underline-offset-2 hover:text-espresso">
+              Terms of Service
+            </Link>
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-espresso">
+              Privacy Policy
+            </Link>
+          </span>
         </footer>
       </div>
     </main>
