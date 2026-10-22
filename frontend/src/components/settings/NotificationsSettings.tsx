@@ -12,29 +12,6 @@ const FREQUENCY_LABEL: Record<ReminderFrequency, string> = {
   OFF: 'off',
 };
 
-function ComingSoonRow({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 px-5 py-4">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-espresso">{title}</p>
-          <span className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-semibold text-clay uppercase">
-            Coming soon
-          </span>
-        </div>
-        <p className="mt-0.5 text-xs text-clay">{description}</p>
-      </div>
-      <Switch
-        checked={false}
-        disabled
-        aria-label={`${title} (coming soon)`}
-        size="lg"
-        className="data-checked:bg-gold"
-      />
-    </div>
-  );
-}
-
 // Reminders are already live, so this row reports the current state instead of
 // showing a "Coming soon" badge or a second switch. The master switch above and
 // the per-project frequency below are the only controls — repeating them here
@@ -155,11 +132,6 @@ export default function NotificationsSettings() {
           description="Nudges you when a project goes quiet, and warns when a streak is about to break"
           enabled={remindersEnabled ?? false}
           isPending={settingsQuery.isPending || updateSettings.isPending}
-        />
-        <div className="h-px w-full bg-sand" />
-        <ComingSoonRow
-          title="Weekly summary email"
-          description="A Monday recap of your logging activity"
         />
       </div>
 
