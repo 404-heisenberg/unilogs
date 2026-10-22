@@ -16,6 +16,8 @@
     "test:watch": "vitest",
     "load-test": "tsx scripts/load-test.ts",
     "backfill:audit-snapshots": "tsx scripts/backfill-audit-snapshots.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "backdate:demo": "tsx scripts/backdate-demo-entries.ts",
     "test:db:up": "docker compose -f docker-compose.test.yml up -d --wait",
     "postinstall": "prisma generate"
   },
