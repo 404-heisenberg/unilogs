@@ -36,6 +36,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 // Public share page: no app/auth code ships with it.
 const SharedReportPage = lazy(() => import('./pages/SharedReportPage'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Full-page placeholder while a route's chunk downloads. Matches the page
 // background so the swap to real content doesn't flash.
@@ -117,6 +118,8 @@ const router = createBrowserRouter([
       },
     ],
   },
+  // Anything unmatched, signed in or not.
+  { path: '*', element: page(<NotFoundPage />) },
 ]);
 
 export default function App() {
